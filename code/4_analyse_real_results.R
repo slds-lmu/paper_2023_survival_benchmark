@@ -1,4 +1,3 @@
-remotes::install_github("mlr-org/mlr3benchmark")
 library(rstatix)
 library(ggplot2)
 library(gridExtra)
@@ -12,7 +11,7 @@ library(magick)
 # ---------------
 set.seed(011120)
 # load data
-df = read.csv("c7_bench/real_jobs/results/results.csv")
+df = read.csv("results/results.csv")
 df$learner_id = rep(c("KM", "Nel", "AE", "CPH", "GLM", "Pen", "Par", "Flex",
                  "RFB", "RFL", "RFC", "RFCIF", "RRT", "GBC",
                  "GBU", "GBG", "COXB", "SVM", "CoxT",

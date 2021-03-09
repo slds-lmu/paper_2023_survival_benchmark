@@ -7,7 +7,7 @@ c_real = c("aids2", "ALL", "bmt", "channing", "diabetic", "flchain", "gbsg", "gr
 
 for (i in c_real) {
   saveRDS(do.call(paste0("create_", i), list()),
-          paste0("c7_bench/real_jobs/data/", i, ".rds"))
+          paste0("data/", i, ".rds"))
 }
 
 create_diabetic = function(...) {
@@ -370,4 +370,3 @@ create_wbc1 = function(...){
   rm(wbc1, envir = .GlobalEnv)
   data
 }
-
