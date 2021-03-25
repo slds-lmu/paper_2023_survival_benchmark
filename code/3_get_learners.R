@@ -9,10 +9,6 @@ get_learners = function(folds = 3, n_evals = 100) {
   learns$kaplan$encapsulate = c(train = "evaluate", predict = "evaluate")
   learns$kaplan$fallback = fallback
 
-  learns$nelson = lrn("surv.nelson", id = "class_nonpar_nelson")
-  learns$nelson$encapsulate = c(train = "evaluate", predict = "evaluate")
-  learns$nelson$fallback = fallback
-
   learns$akritas = lrn("surv.akritas", id = "class_nonpar_akritas")
   learns$akritas$encapsulate = c(train = "evaluate", predict = "evaluate")
   learns$akritas$fallback = fallback
