@@ -9,9 +9,19 @@ get_learners = function(folds = 3, n_evals = 100) {
   learns$kaplan$encapsulate = c(train = "evaluate", predict = "evaluate")
   learns$kaplan$fallback = fallback
 
-  learns$akritas = lrn("surv.akritas", id = "class_nonpar_akritas")
-  learns$akritas$encapsulate = c(train = "evaluate", predict = "evaluate")
-  learns$akritas$fallback = fallback
+  learner = lrn("surv.akritas", id = "class_nonpar_akritas")
+  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  learner$fallback = fallback
+  learns$akritas = mlr3misc::invoke(
+    AutoTuner$new,
+    learner = learner,
+    search_space = ParamSet$new(list(
+      ParamDbl$new("lambda", lower = 0, upper = 1)
+    )),
+    resampling = rsmp("cv", folds = folds),
+    measure = msr("surv.cindex"),
+    terminator = trm("evals", n_evals = n_evals),
+    tuner = tnr("random_search"))
 
   learns$cox = lrn("surv.coxph", id = "class_semipar_coxph")
   learns$cox$encapsulate = c(train = "evaluate", predict = "evaluate")
@@ -80,7 +90,7 @@ get_learners = function(folds = 3, n_evals = 100) {
     tuner = tnr("grid_search"))
 
   ps = ParamSet$new(list(
-    ParamInt$new("ntree", lower = 250, upper = 2500),
+    ParamInt$new("ntree", lower = 250, upper = 5000),
     ParamInt$new("mtry", lower = 1, upper = 12),
     ParamInt$new("nodesize", lower = 1, upper = 20)
   ))
@@ -111,7 +121,7 @@ get_learners = function(folds = 3, n_evals = 100) {
     tuner = tnr("random_search"))
 
   ps = ParamSet$new(list(
-    ParamInt$new("num.trees", lower = 250, upper = 2500),
+    ParamInt$new("num.trees", lower = 250, upper = 5000),
     ParamInt$new("min.node.size", lower = 1, upper = 20),
     ParamInt$new("mtry", lower = 1, upper = 12)
   ))
@@ -129,7 +139,7 @@ get_learners = function(folds = 3, n_evals = 100) {
     tuner = tnr("random_search"))
 
   ps = ParamSet$new(list(
-    ParamInt$new("ntree", lower = 250, upper = 2500),
+    ParamInt$new("ntree", lower = 250, upper = 5000),
     ParamInt$new("mtry", lower = 1, upper = 12)
   ))
 
@@ -162,6 +172,24 @@ get_learners = function(folds = 3, n_evals = 100) {
     terminator = trm("evals", n_evals = n_evals),
     tuner = tnr("random_search"))
 
+  ps = ParamSet$new(list(
+    ParamInt$new("nrounds", lower = 10, upper = 2500),
+    ParamDbl$new("eta", lower = 0, upper = 0.1),
+    ParamFct$new("gbtree", levels = c("gbtree", "gblinear", "dart")),
+    ParamInt$new("maxdepth", lower = 1, upper = 10)
+  ))
+
+  learner = lrn("surv.xgboost", id = "ml_gbm_xgboost", nthread = 1)
+  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  learner$fallback = fallback
+  learns$xgboost = mlr3misc::invoke(
+    AutoTuner$new,
+    learner = learner,
+    search_space = ps,
+    resampling = rsmp("cv", folds = folds),
+    measure = msr("surv.cindex"),
+    terminator = trm("evals", n_evals = n_evals),
+    tuner = tnr("random_search"))
 
   ps = ParamSet$new(list(
     ParamInt$new("mstop", lower = 10, upper = 2500),
