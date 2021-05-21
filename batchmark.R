@@ -92,17 +92,21 @@ grid = benchmark_grid(
 reg = batchtools::makeExperimentRegistry(tempfile(), work.dir = here::here(), seed = 123)
 batchmark(grid, store_models = FALSE)
 
+batchtools::summarizeExperiments(by = c("task_id", "learner_id"))
 unnest(batchtools::getJobTable(), c("prob.pars", "algo.pars"))
 
 if (FALSE) {
-  ids = batchtools::findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_par_flex")
+  ids = batchtools::findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_semipar_coxph")
   ids = batchtools::ajoin(ids, batchtools::findDone())
+  batchtools::submitJobs(ids)
 
-  ids = batchtools::findNotDone()[sample(.N, 5)]
+  ids = batchtools::findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_nonpar_kaplan")
+  ids = batchtools::ajoin(ids, batchtools::findDone())
   batchtools::submitJobs(ids)
 }
 
 bmr = reduceResultsBatchmark()
 aggr = bmr$aggregate(conditions = TRUE)
 resamplings_with_error = aggr[errors > 0, nr]
+mlr3viz::autoplot(bmr)
 bmr$resample_result(resamplings_with_error[1])$errors
