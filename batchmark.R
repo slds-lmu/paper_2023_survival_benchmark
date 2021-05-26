@@ -5,6 +5,7 @@ library(mlr3learners)
 library(mlr3extralearners)
 library(mlr3pipelines)
 library(mlr3tuning)
+library(batchtools)
 library(mlr3batchmark)
 
 ###################################################################################################
@@ -69,10 +70,32 @@ learners = list(
     ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
 
   auto_tune(bl("surv.ranger", id = "ml_ranfor_ranger_c", splitrule = "C"),
-    ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20)))
+    ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
 
-  # TODO: more learners in Raphaels benchmark study
+  auto_tune(bl("surv.cforest", id = "ml_ranfor_rscif"),
+    ps(ntree = p_int(250, 5000), mtry = p_int(1, 12))),
 
+  auto_tune(bl("surv.rpart", id = "ml_ranfor_rrt"),
+    ps(minbucket = p_int(1, 20), maxdepth = p_int(2, 30))),
+
+  auto_tune(bl("surv.xgboost", id = "ml_gbm_xgboost"),
+    ps(nrounds = p_int(10, 2500), eta = p_dbl(0, 0.01), gbtree = p_fct(c("gbtree", "gblinear", "dart")), maxdepth = p_int(1, 10))),
+
+  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_coxph", family = "coxph"),
+    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+
+  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_cindex", family = "cindex"),
+    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+
+  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_gehan", family = "gehan"),
+    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+
+  bl("surv.cv_coxboost", id = "ml_gbm_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 1000),
+
+  auto_tune(po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", id = "ml_svm_van", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
+    ps(kernel = p_fct(c("lin_kernel", "rbf_kernel")), gamma = p_dbl(1e-3, 1e3), mu = p_dbl(1e-3, 1e3))) #  FIXME: logscale?
+
+  # TODO: 4 more learners
 )
 
 ###################################################################################################
@@ -89,24 +112,35 @@ grid = benchmark_grid(
   resamplings = list(outer)
 )
 
-reg = batchtools::makeExperimentRegistry(tempfile(), work.dir = here::here(), seed = 123)
+
+root = here::here()
+reg_dir = file.path(root, "registry")
+reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = 123)
 batchmark(grid, store_models = FALSE)
 
-batchtools::summarizeExperiments(by = c("task_id", "learner_id"))
-unnest(batchtools::getJobTable(), c("prob.pars", "algo.pars"))
+summarizeExperiments(by = c("task_id", "learner_id"))
+unnest(getJobTable(), c("prob.pars", "algo.pars"))
+
+# test some random jobs
+ids = findNotDone()[sample(.N, 10)]
+submitJobs(ids)
 
 if (FALSE) {
-  ids = batchtools::findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_semipar_coxph")
-  ids = batchtools::ajoin(ids, batchtools::findDone())
-  batchtools::submitJobs(ids)
+  ids = findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_semipar_coxph")
+  ids = ajoin(ids, findDone())
+  submitJobs(ids)
 
-  ids = batchtools::findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_nonpar_kaplan")
-  ids = batchtools::ajoin(ids, batchtools::findDone())
-  batchtools::submitJobs(ids)
+  ids = findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_nonpar_kaplan")
+  ids = ajoin(ids, findDone())
+  submitJobs(ids)
+
+  bmr = reduceResultsBatchmark()
+  aggr = bmr$aggregate(conditions = TRUE)
+  resamplings_with_error = aggr[errors > 0, nr]
+  mlr3viz::autoplot(bmr)
+  bmr$resample_result(resamplings_with_error[1])$errors
+
+
+  ids = findJobs()[sample(.N, 10)]
+  submitJobs(ids)
 }
-
-bmr = reduceResultsBatchmark()
-aggr = bmr$aggregate(conditions = TRUE)
-resamplings_with_error = aggr[errors > 0, nr]
-mlr3viz::autoplot(bmr)
-bmr$resample_result(resamplings_with_error[1])$errors
