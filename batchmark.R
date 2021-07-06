@@ -1,3 +1,10 @@
+### Todo:
+# * resampling: ensure 30 obs per fold 
+# * resampling: ensure 1 uncens obs per fold
+# * tune for 3 measures (graf, c-index, ...?)
+# * budget: 50 * p
+# * discuss what to store
+
 library(mlr3)
 library(mlr3misc)
 library(mlr3proba)
@@ -69,6 +76,7 @@ learners = list(
   auto_tune(bl("surv.ranger", id = "ml_ranfor_ranger_c", splitrule = "C"),
     ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
 
+  # FIXME: Copy-paste error here
   auto_tune(bl("surv.ranger", id = "ml_ranfor_ranger_c", splitrule = "C"),
     ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
 
