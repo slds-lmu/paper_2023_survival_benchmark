@@ -1,12 +1,11 @@
 ### Todo:
-# * resampling: ensure 30 obs per fold 
-# * resampling: ensure 1 uncens obs per fold
 # * tune for 3 measures (graf, c-index, ...?)
 # * budget: 50 * p
 # * discuss what to store
 
 library(mlr3)
 library(mlr3misc)
+library(stringi)
 library(mlr3proba)
 library(mlr3learners)
 library(mlr3extralearners)
@@ -16,16 +15,28 @@ library(batchtools)
 library(mlr3batchmark)
 
 ###################################################################################################
-### Tasks
+### Tasks + Resamplings
 ###################################################################################################
 files = dir(file.path(here::here(), "code", "data"), pattern = "\\.rds$", full.names = TRUE)
-tasks = lapply(files, function(f) {
-  id = basename(f)
-  id = substr(id, 1, nchar(id)-4)
-  data = readRDS(f)
-  as_task_surv(data, target = "time", event = "status", id = id)
-})
-names(tasks) = ids(tasks)
+names = stri_sub(basename(files), 1, -5)
+tasks = resamplings = named_list(names)
+outer_folds = 5
+min_obs = 30
+
+for (i in seq_along(files)) {
+  data = readRDS(files[i])
+  task = as_task_surv(data, target = "time", event = "status", id = names[i])
+  task$set_col_roles("status", add_to = "stratum")
+
+  folds = min(floor(task$nrow / min_obs), outer_folds)
+  resampling = rsmp("cv", folds = folds)$instantiate(task)
+  stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
+
+  tasks[[i]] = task 
+  resamplings[[i]] = resampling
+}
+
+
 
 ###################################################################################################
 ### Learners
@@ -107,22 +118,15 @@ learners = list(
 )
 
 ###################################################################################################
-### Resampling
-###################################################################################################
-outer = rsmp("cv", folds = 3)
-
-###################################################################################################
 ### Registry
 ###################################################################################################
-grid = benchmark_grid(
-  tasks = tasks,
-  learners = learners,
-  resamplings = list(outer)
-)
+# build custom grid
+grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
+grid$resampling = rep(resamplings, each = length(learners))
 
 
 root = here::here()
-reg_dir = file.path(root, "registry")
+reg_dir = NA #file.path(root, "registry")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = 123)
 batchmark(grid, store_models = FALSE)
 
