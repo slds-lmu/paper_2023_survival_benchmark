@@ -3,25 +3,41 @@
 # * budget: 50 * p
 # * discuss what to store
 
-library(mlr3)
-library(mlr3misc)
-library(stringi)
-library(mlr3proba)
-library(mlr3learners)
-library(mlr3extralearners)
-library(mlr3pipelines)
-library(mlr3tuning)
-library(batchtools)
-library(mlr3batchmark)
+root = here::here()
+source(file.path(root, "settings.R"))
 
 ###################################################################################################
-### Tasks + Resamplings
+### Packages
 ###################################################################################################
-files = dir(file.path(here::here(), "code", "data"), pattern = "\\.rds$", full.names = TRUE)
+
+library("stringi")
+library("mlr3misc")
+library("mlr3")
+library("mlr3proba")
+library("mlr3learners")
+library("mlr3pipelines")
+library("mlr3tuning")
+library("batchtools")
+
+if (length(find.package("mlr3batchmark", quiet = TRUE)) == 0L) {
+  devtools::install_github("mlr-org/mlr3batchmark")
+}
+library("mlr3batchmark")
+
+if (length(find.package("mlr3extralearners", quiet = TRUE)) == 0L) {
+  devtools::install_github("mlr-org/mlr3extralearners")
+}
+library("mlr3extralearners")
+
+
+
+###################################################################################################
+### Create Tasks corresponding instantiated Resamplings
+###################################################################################################
+set.seed(seed)
+files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
 names = stri_sub(basename(files), 1, -5)
 tasks = resamplings = named_list(names)
-outer_folds = 5
-min_obs = 30
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
@@ -34,12 +50,12 @@ for (i in seq_along(files)) {
 
   tasks[[i]] = task 
   resamplings[[i]] = resampling
+  rm(data, task, folds, resampling)
 }
 
 
-
 ###################################################################################################
-### Learners
+### Create Learners
 ###################################################################################################
 bl = function(key, id, ...) { # get base learner with fallback + encapsulation
   learner = lrn(key, id = id, ...)
@@ -118,41 +134,40 @@ learners = list(
 )
 
 ###################################################################################################
-### Registry
+### Create Registry + populate with experiments
 ###################################################################################################
-# build custom grid
+reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed, 
+  packages = c("mlr3", "mlr3proba"))
+
+# custom grid design (with instantiated resamplings)
 grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
 grid$resampling = rep(resamplings, each = length(learners))
 
-
-root = here::here()
-reg_dir = NA #file.path(root, "registry")
-reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = 123)
 batchmark(grid, store_models = FALSE)
 
 summarizeExperiments(by = c("task_id", "learner_id"))
-unnest(getJobTable(), c("prob.pars", "algo.pars"))
 
-# test some random jobs
-ids = findNotDone()[sample(.N, 10)]
-submitJobs(ids)
+
+###################################################################################################
+### Submit
+###################################################################################################
 
 if (FALSE) {
-  ids = findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_semipar_coxph")
-  ids = ajoin(ids, findDone())
-  submitJobs(ids)
+  tab = unnest(getJobTable(), c("prob.pars", "algo.pars"))
+  unique(tab$task_id)
+  unique(tab$learner_id)
 
-  ids = findExperiments(prob.pars = task_id == "lung", algo.pars = learner_id == "class_nonpar_kaplan")
-  ids = ajoin(ids, findDone())
-  submitJobs(ids)
+  # some small id sets to toy around
+  ids = findExperiments(
+    prob.pars = task_id %in% c("lung", "whas"), 
+    algo.pars = learner_id %in% c("class_semipar_coxph", "class_nonpar_kaplan", "ml_ranfor_ranger_c.tuned"),
+    repls = 1:3
+  )
 
-  bmr = reduceResultsBatchmark()
-  aggr = bmr$aggregate(conditions = TRUE)
-  resamplings_with_error = aggr[errors > 0, nr]
-  mlr3viz::autoplot(bmr)
-  bmr$resample_result(resamplings_with_error[1])$errors
-
-
-  ids = findJobs()[sample(.N, 10)]
-  submitJobs(ids)
+  # this would be a good first start on the cluster
+  ids = findExperiments(repls = 1)
 }
+
+# ids = findNotDone()
+ids = ajoin(ids, findDone())
+submitJobs(ids, resources = resources)
