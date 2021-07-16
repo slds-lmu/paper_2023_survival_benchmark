@@ -10,6 +10,8 @@ source(file.path(root, "settings.R"))
 ### Packages
 ###################################################################################################
 
+# requires devel version of bbotk
+devtools::install_github("mlr-org/bbotk")
 library("stringi")
 library("mlr3misc")
 library("mlr3")
@@ -27,7 +29,7 @@ library("mlr3batchmark")
 if (length(find.package("mlr3extralearners", quiet = TRUE)) == 0L) {
   devtools::install_github("mlr-org/mlr3extralearners")
 }
-library("mlr3extralearners")
+requireNamespace("mlr3extralearners")
 
 
 
@@ -65,15 +67,13 @@ bl = function(key, id, ...) { # get base learner with fallback + encapsulation
   learner
 }
 
-auto_tune = function(learner, search_space, folds = 3L, n_evals = 100L) { # wrap into random search
-  # FIXME: do we want to stick to a fixed budget?
-  #        should it depend on the dimension of search_space?
+auto_tune = function(learner, search_space) { # wrap into random search
   AutoTuner$new(
     learner = as_learner(learner),
     search_space = search_space,
-    resampling = rsmp("cv", folds = folds),
+    resampling = rsmp("cv", folds = inner_folds),
     measure = msr("surv.cindex"),
-    terminator = trm("evals", n_evals = n_evals),
+    terminator = trm("evals", n_evals = budget_constant, k = budget_multiplier),
     tuner = tnr("random_search")
   )
 }
@@ -168,6 +168,7 @@ if (FALSE) {
   ids = findExperiments(repls = 1)
 }
 
-# ids = findNotDone()
-ids = ajoin(ids, findDone())
-submitJobs(ids, resources = resources)
+if (FALSE) {
+  ids = ajoin(ids, findDone())
+  submitJobs(ids, resources = resources)
+}
