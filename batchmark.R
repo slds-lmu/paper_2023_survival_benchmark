@@ -67,9 +67,13 @@ bl = function(key, id, ...) { # get base learner with fallback + encapsulation
   learner
 }
 
-auto_tune = function(learner, search_space) { # wrap into random search
+auto_tune = function(learner, ...) { # wrap into random search
+  learner = as_learner(learner)
+  search_space = ps(...)
+  checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
+
   AutoTuner$new(
-    learner = as_learner(learner),
+    learner = learner,
     search_space = search_space,
     resampling = rsmp("cv", folds = inner_folds),
     measure = msr("surv.cindex"),
@@ -79,58 +83,109 @@ auto_tune = function(learner, search_space) { # wrap into random search
 }
 
 learners = list(
-  bl("surv.kaplan", id = "class_nonpar_kaplan"),
+  bl("surv.kaplan", id = "kaplan"),
 
-  auto_tune(bl("surv.akritas", id = "class_nonpar_akritas"), ps(lambda = p_dbl(0, 1))),
+  auto_tune(
+    bl("surv.akritas", id = "akritas"), 
+    lambda = p_dbl(0, 1)
+  ),
 
-  bl("surv.coxph", id = "class_semipar_coxph"),
+  bl("surv.coxph", id = "coxph"),
 
-  auto_tune(po("encode", method = "treatment") %>>% bl("surv.cv_glmnet", id = "class_semipar_cvglmnet"), ps(alpha = p_dbl(0, 1))),
 
-  auto_tune(bl("surv.penalized", id = "class_semipar_penalized"), ps(lambda1 = p_dbl(0, 10), lambda2 = p_dbl(0, 10))),
+  auto_tune(
+    po("encode", method = "treatment") %>>% bl("surv.cv_glmnet", id = "cvglmnet"), 
+    cvglmnet.alpha = p_dbl(0, 1)
+  ),
 
-  auto_tune(bl("surv.parametric", id = "class_par_param", type = "aft"), ps(dist = p_fct(c("weibull", "logistic", "lognormal", "loglogistic")))),
+  auto_tune(
+    bl("surv.penalized", id = "penalized"), 
+    lambda1 = p_dbl(0, 10), 
+    lambda2 = p_dbl(0, 10)
+  ),
 
-  auto_tune(bl("surv.flexible", id = "class_par_flex"), ps(k = p_int(1, 7))),
+  auto_tune(
+    bl("surv.parametric", id = "parametric", type = "aft"), 
+    dist = p_fct(c("weibull", "logistic", "lognormal", "loglogistic"))
+  ),
 
-  auto_tune(bl("surv.rfsrc", id = "ml_ranfor_rfsrc_brier", splitrule = "bs.gradient"),
-    ps(ntree = p_int(250, 5000), mtry = p_int(1, 12), nodesize = p_int(1, 20))),
+  auto_tune(
+    bl("surv.flexible", id = "flexible"), 
+    k = p_int(1, 10)
+  ),
 
-  # FIXME: Why is splitrule not regular hyperparameter? Where do we draw the line?
-  auto_tune(bl("surv.rfsrc", id = "ml_ranfor_rfsrc_logrank", splitrule = "logrank"),
-    ps(ntree = p_int(250, 5000), mtry = p_int(1, 12), nodesize = p_int(1, 20))),
+  auto_tune(
+    bl("surv.rfsrc", id = "rfsrc", ntree = 5000),
+    splitrule = p_fct(c("bs.gradient", "logrank")),
+    mtry = p_int(1, 12),  # FIXME mtry patch
+    nodesize = p_int(1, 50),
+    samptype = p_fct(c("swr", "swor")),
+    sampsize = p_int(1, 2) #  FIXME patch
+  ),
 
-  auto_tune(bl("surv.ranger", id = "ml_ranfor_ranger_c", splitrule = "C"),
-    ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
 
-  # FIXME: Copy-paste error here
-  auto_tune(bl("surv.ranger", id = "ml_ranfor_ranger_c", splitrule = "C"),
-    ps(num.trees = p_int(250, 5000), mtry = p_int(1, 12), min.node.size = p_int(1, 20))),
+  auto_tune(
+    bl("surv.ranger", id = "ranger", num.trees = 5000),
+    splitrule = p_fct(c("C", "maxstat", "logrank")),
+    mtry.ratio = p_dbl(0.3, 1), # FIXME lower bound?
+    min.node.size = p_int(1, 50),
+    replace = p_lgl(),
+    sample.fraction = p_dbl(0, 1)
+  ),
 
-  auto_tune(bl("surv.cforest", id = "ml_ranfor_rscif"),
-    ps(ntree = p_int(250, 5000), mtry = p_int(1, 12))),
 
-  auto_tune(bl("surv.rpart", id = "ml_ranfor_rrt"),
-    ps(minbucket = p_int(1, 20), maxdepth = p_int(2, 30))),
+  auto_tune(
+    bl("surv.cforest", id = "cforest", ntree = 5000),
+    mtry = p_int(1, 12), # FIXME patch
+    minsplit = p_int(1, 50),
+    mincriterion = p_dbl(0, 1),
+    replace = p_lgl(),
+    fraction = p_dbl(0, 1)
+  ),
 
-  auto_tune(bl("surv.xgboost", id = "ml_gbm_xgboost"),
-    ps(nrounds = p_int(10, 2500), eta = p_dbl(0, 0.01), gbtree = p_fct(c("gbtree", "gblinear", "dart")), maxdepth = p_int(1, 10))),
 
-  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_coxph", family = "coxph"),
-    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+  auto_tune(
+    bl("surv.obliqueRSF", id = "obliqueRSF", ntree = 5000),
+    alpha = p_dbl(0, 1),
+    use_cv = p_lgl(),
+    min_obs_to_split_node = p_int(1, 50),
+    mtry = p_int(1, 12) # FXIME patch
+  ),
 
-  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_cindex", family = "cindex"),
-    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+  auto_tune(
+    bl("surv.rpart", id = "rpart"),
+    minbucket = p_int(1, 50), 
+    cp = p_dbl(-10, -1, trafo = function(x) 10^x)
+  ),
 
-  auto_tune(bl("surv.mboost", id = "ml_gbm_mboost_gehan", family = "gehan"),
-    ps(mstop = p_int(10, 2500), nu = p_dbl(0, 0.01), baselearner = p_fct(c("bols", "btree")))),
+  auto_tune(bl("surv.mboost", id = "mboost"),
+    familiy = p_fct(c("gehan", "cindex", "coxph")),
+    mstop = p_int(10, 5000), 
+    nu = p_dbl(0, 0.1), 
+    baselearner = p_fct(c("bols", "btree"))
+  ),
 
-  bl("surv.cv_coxboost", id = "ml_gbm_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 1000),
+  bl("surv.cv_coxboost", id = "coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000),
 
-  auto_tune(po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", id = "ml_svm_van", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
-    ps(kernel = p_fct(c("lin_kernel", "rbf_kernel")), gamma = p_dbl(1e-3, 1e3), mu = p_dbl(1e-3, 1e3))) #  FIXME: logscale?
+  auto_tune(
+    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", id = "svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
+    svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")), 
+    svm.gamma = p_dbl(-3, 3, trafo = function(x) 10^x),
+    svm.mu = p_dbl(-3, 3, trafo = function(x) 10^x)
+  ),
 
-  # TODO: 4 more learners
+
+  auto_tune(
+    bl("surv.xgboost", id = "xgboost"),
+    maxdepth = p_int(1, 20),
+    subsample = p_dbl(0, 1),
+    colsample_bytree = p_dbl(0, 1),
+    nrounds = p_int(10, 5000), 
+    eta = p_dbl(0, 0.1)
+  )
+
+
+  # FIXME neural networks
 )
 
 ###################################################################################################
