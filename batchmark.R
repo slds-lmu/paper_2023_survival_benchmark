@@ -180,7 +180,7 @@ learners = list(
     XGB.subsample = p_dbl(0, 1),
     XGB.colsample_bytree = p_dbl(0, 1),
     XGB.nrounds = p_int(10, 5000),
-    XGB.eta = p_dbl(-5, 5, trafo = function(x) 2^x),
+    XGB.eta = p_dbl(0, 1),
     XGB.grow_policy = p_fct(c("depthwise", "lossguide"))
   ),
 
@@ -268,7 +268,7 @@ learners = list(
   ),
 
   auto_tune(
-    bl("surv.dnnsurv", id = "DNN", epochs = 100),
+    bl("surv.dnnsurv", id = "DNN", optimizer = "adam", epochs = 100),
     decay = p_dbl(0, 0.5),
     lr = p_dbl(0, 1),
     cuts = p_int(3, 50)
@@ -280,6 +280,7 @@ learners = list(
 ###################################################################################################
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
   packages = c("mlr3", "mlr3proba"))
+reg$cluster.functions = makeClusterFunctionsMulticore(4)
 
 # custom grid design (with instantiated resamplings)
 grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
@@ -303,6 +304,9 @@ if (FALSE) {
   ids = findExperiments(repls = 1)
   ids = ijoin(ids, findExperiments(prob.pars = task_id == "rats"))
   submitJobs(ids)
+
+  summarizeExperiments(findErrors(), by = "learner_id")
+  getErrorMessages()
 }
 
 if (FALSE) {
