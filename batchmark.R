@@ -4,7 +4,6 @@
 # * discuss what to store
 
 root = here::here()
-seed = 123
 source(file.path(root, "settings.R"))
 
 ###################################################################################################
@@ -155,7 +154,7 @@ learners = list(
     min_events_in_leaf_node = p_int(5, 50),
     alpha = p_dbl(0, 1),
     .extra_trafo = function(x, param_set) {
-      x$min_obs_to_split_node = x$min_events_to_split_node + 5L
+      x$min_obs_to_split_node = x$min_events_in_leaf_node + 5L
       x
     }
   ),
@@ -175,7 +174,8 @@ learners = list(
   bl("surv.cv_coxboost", id = "CoxB", penalty = "optimCoxBoostPenalty", maxstepno = 5000),
 
   auto_tune(
-    po("encode", method = "treatment") %>>% bl("surv.xgboost", id = "XGB"),
+    # FIXME: tree_method and booster missing in overleaf
+    po("encode", method = "treatment") %>>% bl("surv.xgboost", id = "XGB", tree_method = "hist", booster = "gbtree"),
     XGB.max_depth = p_int(1, 20),
     XGB.subsample = p_dbl(0, 1),
     XGB.colsample_bytree = p_dbl(0, 1),
@@ -198,17 +198,80 @@ learners = list(
   ),
 
   auto_tune(
-    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.coxtime", id = "CoxT", standardize_time = TRUE, epochs = 100),
+    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.coxtime", id = "CoxT", standardize_time = TRUE, epochs = 100, optimizer = "adam"),
     CoxT.dropout = p_dbl(0, 1),
     CoxT.weight_decay = p_dbl(0, 0.5),
     CoxT.learning_rate = p_dbl(0, 1),
-    CoxT.num_nodes_i = p_int(1, 32),
-    CoxT.num_nodes_k = p_int(1, 4),
+    CoxT.nodes = p_int(1, 32),
+    CoxT.k = p_int(1, 4),
     .extra_trafo = function(x, param_set) {
-      x$CoxT.num_nodes = x$CoxT.num_nodes_i^x$CoxT.num_nodes_k
-      x$CoxT.num_nodes_i = x$CoxT.num_nodes_k = NULL
+      x$CoxT.num_nodes = rep(x$CoxT.nodes, x$CoxT.k)
+      x$CoxT.nodes = x$CoxT.k = NULL
       x
     }
+  ),
+
+  auto_tune(
+    bl("surv.deephit", id = "DH", optimizer = "adam"),
+    nodes = p_int(1, 32),
+    k = p_int(1, 4),
+    dropout = p_dbl(0, 1),
+    weight_decay = p_dbl(0, 5),
+    learning_rate = p_dbl(0, 1),
+    .extra_trafo = function(x, param_set) {
+      x$num_nodes = rep(x$nodes, x$k)
+      x$nodes = x$k = NULL
+      x
+    }
+  ),
+
+  auto_tune(
+    bl("surv.deepsurv", id = "DS", optimizer = "adam"),
+    nodes = p_int(1, 32),
+    k = p_int(1, 4),
+    dropout = p_dbl(0, 1),
+    weight_decay = p_dbl(0, 5),
+    learning_rate = p_dbl(0, 1),
+    .extra_trafo = function(x, param_set) {
+      x$num_nodes = rep(x$nodes, x$k)
+      x$nodes = x$k = NULL
+      x
+    }
+  ),
+
+  auto_tune(
+    bl("surv.loghaz", id = "LH", optimizer = "adam"),
+    nodes = p_int(1, 32),
+    k = p_int(1, 4),
+    dropout = p_dbl(0, 1),
+    weight_decay = p_dbl(0, 5),
+    learning_rate = p_dbl(0, 1),
+    .extra_trafo = function(x, param_set) {
+      x$num_nodes = rep(x$nodes, x$k)
+      x$nodes = x$k = NULL
+      x
+    }
+  ),
+
+  auto_tune(
+    bl("surv.pchazard", id = "PCH", optimizer = "adam"),
+    nodes = p_int(1, 32),
+    k = p_int(1, 4),
+    dropout = p_dbl(0, 1),
+    weight_decay = p_dbl(0, 5),
+    learning_rate = p_dbl(0, 1),
+    .extra_trafo = function(x, param_set) {
+      x$num_nodes = rep(x$nodes, x$k)
+      x$nodes = x$k = NULL
+      x
+    }
+  ),
+
+  auto_tune(
+    bl("surv.dnnsurv", id = "DNN", epochs = 100),
+    decay = p_dbl(0, 0.5),
+    lr = p_dbl(0, 1),
+    cuts = p_int(3, 50)
   )
 )
 
@@ -236,18 +299,19 @@ if (FALSE) {
   unique(tab$task_id)
   unique(tab$learner_id)
 
-  # some small id sets to toy around
-  ids = findExperiments(
-    prob.pars = task_id %in% c("lung", "whas"),
-    algo.pars = learner_id %in% c("class_semipar_coxph", "class_nonpar_kaplan", "ml_ranfor_ranger_c.tuned"),
-    repls = 1:3
-  )
-
   # this would be a good first start on the cluster
   ids = findExperiments(repls = 1)
+  ids = ijoin(ids, findExperiments(prob.pars = task_id == "rats"))
+  submitJobs(ids)
 }
 
 if (FALSE) {
   ids = ajoin(ids, findDone())
   submitJobs(ids, resources = resources)
+
+  getJobStatus()
+  findErrors()
+
+  getErrorMessages(findErrors())
+
 }
