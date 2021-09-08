@@ -4,6 +4,7 @@
 # * discuss what to store
 
 root = here::here()
+seed = 123
 source(file.path(root, "settings.R"))
 
 ###################################################################################################
@@ -50,7 +51,7 @@ for (i in seq_along(files)) {
   resampling = rsmp("cv", folds = folds)$instantiate(task)
   stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
 
-  tasks[[i]] = task 
+  tasks[[i]] = task
   resamplings[[i]] = resampling
   rm(data, task, folds, resampling)
 }
@@ -70,7 +71,8 @@ bl = function(key, id, ...) { # get base learner with fallback + encapsulation
 auto_tune = function(learner, ...) { # wrap into random search
   learner = as_learner(learner)
   search_space = ps(...)
-  checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
+  if (is.null(search_space$trafo))
+    checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
   AutoTuner$new(
     learner = learner,
@@ -83,51 +85,53 @@ auto_tune = function(learner, ...) { # wrap into random search
 }
 
 learners = list(
-  bl("surv.kaplan", id = "kaplan"),
+  bl("surv.kaplan", id = "KM"),
+
+  bl("surv.nelson", id = "Nel"),
 
   auto_tune(
-    bl("surv.akritas", id = "akritas"), 
+    bl("surv.akritas", id = "AE"),
     lambda = p_dbl(0, 1)
   ),
 
-  bl("surv.coxph", id = "coxph"),
+  bl("surv.coxph", id = "CPH"),
 
 
   auto_tune(
-    po("encode", method = "treatment") %>>% bl("surv.cv_glmnet", id = "cvglmnet"), 
-    cvglmnet.alpha = p_dbl(0, 1)
+    po("encode", method = "treatment") %>>% bl("surv.cv_glmnet", id = "GLM"),
+    GLM.alpha = p_dbl(0, 1)
   ),
 
   auto_tune(
-    bl("surv.penalized", id = "penalized"), 
-    lambda1 = p_dbl(0, 10), 
-    lambda2 = p_dbl(0, 10)
+    bl("surv.penalized", id = "Pen"),
+    lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
+    lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
   ),
 
   auto_tune(
-    bl("surv.parametric", id = "parametric", type = "aft"), 
-    dist = p_fct(c("weibull", "logistic", "lognormal", "loglogistic"))
+    bl("surv.parametric", id = "Par", type = "aft"),
+    dist = p_fct(c("weibull", "lognormal", "loglogistic"))
   ),
 
   auto_tune(
-    bl("surv.flexible", id = "flexible"), 
+    bl("surv.flexible", id = "Flex"),
     k = p_int(1, 10)
   ),
 
   auto_tune(
-    bl("surv.rfsrc", id = "rfsrc", ntree = 5000),
+    bl("surv.rfsrc", id = "RFSRC", ntree = 5000),
     splitrule = p_fct(c("bs.gradient", "logrank")),
-    mtry = p_int(1, 12),  # FIXME mtry patch
+    mtry.ratio = p_dbl(0, 1),
     nodesize = p_int(1, 50),
     samptype = p_fct(c("swr", "swor")),
-    sampsize = p_int(1, 2) #  FIXME patch
+    sampsize.ratio = p_dbl(0, 1)
   ),
 
 
   auto_tune(
-    bl("surv.ranger", id = "ranger", num.trees = 5000),
+    bl("surv.ranger", id = "RAN", num.trees = 5000),
     splitrule = p_fct(c("C", "maxstat", "logrank")),
-    mtry.ratio = p_dbl(0.3, 1), # FIXME lower bound?
+    mtry.ratio = p_dbl(0, 1),
     min.node.size = p_int(1, 50),
     replace = p_lgl(),
     sample.fraction = p_dbl(0, 1)
@@ -135,8 +139,8 @@ learners = list(
 
 
   auto_tune(
-    bl("surv.cforest", id = "cforest", ntree = 5000),
-    mtry = p_int(1, 12), # FIXME patch
+    bl("surv.cforest", id = "CIF", ntree = 5000),
+    mtryratio = p_dbl(0, 1),
     minsplit = p_int(1, 50),
     mincriterion = p_dbl(0, 1),
     replace = p_lgl(),
@@ -145,53 +149,73 @@ learners = list(
 
 
   auto_tune(
-    bl("surv.obliqueRSF", id = "obliqueRSF", ntree = 5000),
+    bl("surv.obliqueRSF", id = "ORSF", ntree = 5000),
+    mtry_ratio = p_dbl(0, 1),
+    use.cv = p_lgl(),
+    min_events_in_leaf_node = p_int(5, 50),
     alpha = p_dbl(0, 1),
-    use_cv = p_lgl(),
-    min_obs_to_split_node = p_int(1, 50),
-    mtry = p_int(1, 12) # FXIME patch
+    .extra_trafo = function(x, param_set) {
+      x$min_obs_to_split_node = x$min_events_to_split_node + 5L
+      x
+    }
   ),
 
   auto_tune(
-    bl("surv.rpart", id = "rpart"),
-    minbucket = p_int(1, 50), 
-    cp = p_dbl(-10, -1, trafo = function(x) 10^x)
+    bl("surv.rpart", id = "RRT"),
+    minbucket = p_int(5, 50)
   ),
 
-  auto_tune(bl("surv.mboost", id = "mboost"),
-    familiy = p_fct(c("gehan", "cindex", "coxph")),
-    mstop = p_int(10, 5000), 
-    nu = p_dbl(0, 0.1), 
+  auto_tune(bl("surv.mboost", id = "MBO"),
+    family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
+    mstop = p_int(10, 5000),
+    nu = p_dbl(0, 0.1),
     baselearner = p_fct(c("bols", "btree"))
   ),
 
-  bl("surv.cv_coxboost", id = "coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000),
+  bl("surv.cv_coxboost", id = "CoxB", penalty = "optimCoxBoostPenalty", maxstepno = 5000),
 
   auto_tune(
-    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", id = "svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
-    svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")), 
-    svm.gamma = p_dbl(-3, 3, trafo = function(x) 10^x),
-    svm.mu = p_dbl(-3, 3, trafo = function(x) 10^x)
+    po("encode", method = "treatment") %>>% bl("surv.xgboost", id = "XGB"),
+    XGB.max_depth = p_int(1, 20),
+    XGB.subsample = p_dbl(0, 1),
+    XGB.colsample_bytree = p_dbl(0, 1),
+    XGB.nrounds = p_int(10, 5000),
+    XGB.eta = p_dbl(-5, 5, trafo = function(x) 2^x),
+    XGB.grow_policy = p_fct(c("depthwise", "lossguide"))
   ),
 
+  auto_tune(
+    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", id = "SSVM", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
+    SSVM.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
+    SSVM.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
+    SSVM.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
+    SSVM.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
+    .extra_trafo = function(x, param_set) {
+      x$SSVM.gamma.mu = c(x$SSVM.gamma, x$SSVM.mu)
+      x$SSVM.gamma = x$SSVM.mu = NULL
+      x
+    }
+  ),
 
   auto_tune(
-    bl("surv.xgboost", id = "xgboost"),
-    maxdepth = p_int(1, 20),
-    subsample = p_dbl(0, 1),
-    colsample_bytree = p_dbl(0, 1),
-    nrounds = p_int(10, 5000), 
-    eta = p_dbl(0, 0.1)
+    po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.coxtime", id = "CoxT", standardize_time = TRUE, epochs = 100),
+    CoxT.dropout = p_dbl(0, 1),
+    CoxT.weight_decay = p_dbl(0, 0.5),
+    CoxT.learning_rate = p_dbl(0, 1),
+    CoxT.num_nodes_i = p_int(1, 32),
+    CoxT.num_nodes_k = p_int(1, 4),
+    .extra_trafo = function(x, param_set) {
+      x$CoxT.num_nodes = x$CoxT.num_nodes_i^x$CoxT.num_nodes_k
+      x$CoxT.num_nodes_i = x$CoxT.num_nodes_k = NULL
+      x
+    }
   )
-
-
-  # FIXME neural networks
 )
 
 ###################################################################################################
 ### Create Registry + populate with experiments
 ###################################################################################################
-reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed, 
+reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
   packages = c("mlr3", "mlr3proba"))
 
 # custom grid design (with instantiated resamplings)
@@ -214,7 +238,7 @@ if (FALSE) {
 
   # some small id sets to toy around
   ids = findExperiments(
-    prob.pars = task_id %in% c("lung", "whas"), 
+    prob.pars = task_id %in% c("lung", "whas"),
     algo.pars = learner_id %in% c("class_semipar_coxph", "class_nonpar_kaplan", "ml_ranfor_ranger_c.tuned"),
     repls = 1:3
   )
