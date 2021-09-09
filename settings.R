@@ -14,6 +14,9 @@ min_obs = 30
 # tuning budget
 budget_constant = 3
 budget_multiplier = 0
+# budget_constant = 0
+# budget_multiplier = 50
+
 
 # number of inner (tuning) folds
 inner_folds = 3
