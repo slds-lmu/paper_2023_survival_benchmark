@@ -24,8 +24,12 @@ requireNamespace("mlr3extralearners")
 ###################################################################################################
 ### Create Registry
 ###################################################################################################
-reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
-  packages = c("mlr3", "mlr3proba"))
+if (dir.exists(reg_dir)) {
+  reg = loadRegistry(reg_dir, writeable = TRUE)
+} else {
+  reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
+    packages = c("mlr3", "mlr3proba"))
+}
 reg$cluster.functions = makeClusterFunctionsMulticore(4)
 
 
@@ -84,7 +88,7 @@ auto_tune = function(learner, ...) { # wrap into random search
 }
 
 
-for (measure in list(msr("surv.cindex"), msr("surv.graf", proper = TRUE))) {
+for (measure in list(msr("surv.cindex"), msr("surv.graf", proper = TRUE), msr("surv.logloss"), msr("surv.dcalib"))) {
   learners = list(
     KM = bl("surv.kaplan"),
 
