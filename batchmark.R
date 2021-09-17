@@ -43,6 +43,9 @@ tasks = resamplings = named_list(names)
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
+  if (sum(data[["status"]]) < 100) {
+    messagef("Skipping '%s', < 100 events", files[i])
+  }
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
