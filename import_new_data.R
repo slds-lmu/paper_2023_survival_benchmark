@@ -97,7 +97,7 @@ saveRDS(FTR.data, here::here("code/data_candidates/FTR.data.rds"))
 # Data were extracted from the DIVAT cohort. It corresponds to the relative
 # sample constituted by second transplant recipients (STR).
 
-# Tattente2cl + Waiting time between consecutive transplants, ok to include?
+# "Tattente2cl" = Waiting time between consecutive transplants, ok to include?
 
 STR.data <- mlr3misc::load_dataset("STR.data", "MRsurv") %>%
   rename(
