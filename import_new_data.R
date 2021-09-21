@@ -44,7 +44,6 @@ hdfail <- frailtySurv::hdfail %>%
 
 saveRDS(hdfail, here::here("code/data_candidates/hdfail.rds"))
 
-
 # JM::aids.id -------------------------------------------------------------
 # A randomized clinical trial in which both longitudinal and survival data were
 # collected to compare the efficacy and safety of two antiretroviral drugs in
@@ -56,49 +55,52 @@ aids.id <- JM::aids.id %>%
   select(
     -patient, # ID var
     -obstime,  # 0 for all in this version, first measurement,
-    -start, -stop, -event # not relevant here
+    -start, -stop, -event # not relevant here (per AB)
   )
 
 saveRDS(aids.id, here::here("code/data_candidates/aids.id.rds"))
 
-
 # joineR::heart.valve -----------------------------------------------------
+
+# Excluded because too few events after baseline filtering
 
 # Per AB: long format with most features collected at follow up.
 # Could be used if we only keep baseline covariates (which then are only few however).
 # For time-to-event and status variables use last obs. of each subject (num)
 
-# Making sure to arrange by num/time for filtering
-heart.valve <- joineR::heart.valve %>%
-  arrange(num, time)
-
-# time to event: last obs per subject
-heart.valve_tte <- heart.valve %>%
-  select(num, time, status) %>%
-  group_by(num) %>%
-  slice_tail(n = 1) %>%
-  ungroup()
-
-# Covariates: baseline, e.g. first per subject
-heart.valve_covars <- heart.valve %>%
-  select(-time, -status) %>%
-  group_by(num) %>%
-  slice_head(n = 1) %>%
-  ungroup()
-
-# Double check no subject num was lost for whatever reason
-all(unique(heart.valve_covars$num) == unique(heart.valve_tte$num))
-nrow(heart.valve_covars) == nrow(heart.valve_tte)
-
-# Join by num explicitly just in case
-heart.valve <- left_join(
-  heart.valve_tte,
-  heart.valve_covars,
-  by = "num") %>%
-  select(-num)
-
-saveRDS(heart.valve, here::here("code/data_candidates/heart.valve.rds"))
-
+# # Making sure to arrange by num/time for filtering
+# heart.valve <- joineR::heart.valve %>%
+#   arrange(num, time)
+#
+# # time to event: last obs per subject
+# heart.valve_tte <- heart.valve %>%
+#   select(num, time, status) %>%
+#   group_by(num) %>%
+#   slice_tail(n = 1) %>%
+#   ungroup()
+#
+# # Covariates: baseline, e.g. first per subject
+# heart.valve_covars <- heart.valve %>%
+#   select(-time, -status) %>%
+#   group_by(num) %>%
+#   slice_head(n = 1) %>%
+#   ungroup()
+#
+# # Double check no subject num was lost for whatever reason
+# all(unique(heart.valve_covars$num) == unique(heart.valve_tte$num))
+# nrow(heart.valve_covars) == nrow(heart.valve_tte)
+#
+# # Join by num explicitly just in case
+# heart.valve <- left_join(
+#   heart.valve_tte,
+#   heart.valve_covars,
+#   by = "num") %>%
+#   select(-num)
+#
+# # Sadly only 54 events afterwards
+# table(heart.valve)
+#
+# saveRDS(heart.valve, here::here("code/data_candidates/heart.valve.rds"))
 
 # joineR::liver -----------------------------------------------------------
 # Liver cirrhosis drug trial data
@@ -117,7 +119,6 @@ liver <- joineR::liver %>%
 
 saveRDS(liver, here::here("code/data_candidates/liver.rds"))
 
-
 # locfit::livmet ----------------------------------------------------------
 # Survival times for 622 patients diagnosed with Liver Metastases.
 # Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z in locfit() calls.
@@ -127,7 +128,6 @@ livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
   mutate(status = 1 - status)
 
 saveRDS(livmet, here::here("code/data_candidates/livmet.rds"))
-
 
 # MRsurv::FTR.data --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the reference
@@ -155,7 +155,6 @@ STR.data <- mlr3misc::load_dataset("STR.data", "MRsurv") %>%
 
 saveRDS(STR.data, here::here("code/data_candidates/STR.data.rds"))
 
-
 # parfm::insem ------------------------------------------------------------
 # Time to first insemination in dairy heifer cows without time varying covariates
 
@@ -174,17 +173,45 @@ reconstitution <- mlr3misc::load_dataset("reconstitution", "parfm") %>%
 
 saveRDS(reconstitution, here::here("code/data_candidates/reconstitution.rds"))
 
-
 # pec::cost ---------------------------------------------------------------
 # This data set contains a subset of the data from the Copenhagen stroke study
 
-# This seems too god to be true almost, no renaming needed
+# This seems too god to be true almost
 cost <- mlr3misc::load_dataset("cost", "pec")
 
 # Check to see if I missed a constant variable maybe?
 all(dim(cost) == dim(janitor::remove_constant(cost)))
 
 saveRDS(cost, here::here("code/data_candidates/cost.rds"))
+
+# quantreg::uis -----------------------------------------------------------
+# UIS Drug Treatment study data
+
+# Unsure whether LEN.T should stay in the dataset
+
+uis <- mlr3misc::load_dataset("uis", "quantreg") %>%
+  select(
+    -ID, # ID var
+    -Y # Y: log(TIME)
+  ) %>%
+  rename(
+    time = TIME,
+    status = CENSOR
+  )
+
+saveRDS(uis, here::here("code/data_candidates/uis.rds"))
+
+# relsurv::rdata ----------------------------------------------------------
+# "Survival data."
+# Need to check: Pohar M., Stare J. (2006) "Relative survival analysis in R."
+# Computer Methods and Programs in Biomedicine, 81: 272-278.
+
+# Unsure about year variable (date)
+
+rdata <- mlr3misc::load_dataset("rdata", "relsurv") %>%
+  rename(status = cens)
+
+saveRDS(rdata, here::here("code/data_candidates/rdata.rds"))
 
 # relsurv::colrec --------------------------------------------------------------
 # Survival of patients with colon and rectal cancer diagnosed in 1994-2000.
@@ -194,3 +221,33 @@ colrec <- relsurv::colrec %>%
 
 saveRDS(colrec, here::here("code/data_candidates/colrec.rds"))
 
+# simPH::CarpenterFdaData -------------------------------------------------
+# A data set from Carpenter (2002).
+# https://www.jstor.org/stable/3088394 Table 1
+
+# No clear doc for censoring variable but assuming normal coding
+# based on usage in simPH example code with {survival} etc.
+
+CarpenterFdaData <- mlr3misc::load_dataset("CarpenterFdaData", "simPH") %>%
+  rename(
+    time = acttime,
+    status = censor
+  ) %>%
+  select(
+    -caseid, # ID var
+    -X_st, # constant 1
+    -X_t0, # constant 0
+    -X_t # identical to acttime (time)
+  )
+
+saveRDS(CarpenterFdaData, here::here("code/data_candidates/CarpenterFdaData.rds"))
+
+# smcure::e1684 -----------------------------------------------------------
+# The melanoma data from the Eastern Cooperative Oncology Group (ECOG) phase
+# III clinical trial e1684 which is used for modeling semicure PH mixture
+# cure model (Kirkwood, et al., 1996)
+
+e1684 <- mlr3misc::load_dataset("e1684", "smcure") %>%
+  rename(time = FAILTIME, status = FAILCENS)
+
+saveRDS(e1684, here::here("code/data_candidates/e1684.rds"))
