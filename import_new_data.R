@@ -44,6 +44,22 @@ hdfail <- frailtySurv::hdfail %>%
 
 saveRDS(hdfail, here::here("code/data_candidates/hdfail.rds"))
 
+
+# KMsurv::std -------------------------------------------------------------
+# data from Section 1.12 in Klein and Moeschberger (1997)
+
+std <- mlr3misc::load_dataset("std", "KMsurv") %>%
+  rename(
+    status = rinfct
+  ) %>%
+  mutate(
+    condom = factor(condom, labels = c("always", "sometime", "never")),
+    iinfct = factor(iinfct, labels = c("gonorrhea", "chlamydia", "both"))
+  ) %>%
+  select(-obs) # Identifier
+
+saveRDS(std, "code/data_candidates/std.rds")
+
 # JM::aids.id -------------------------------------------------------------
 # A randomized clinical trial in which both longitudinal and survival data were
 # collected to compare the efficacy and safety of two antiretroviral drugs in
