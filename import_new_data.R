@@ -1,6 +1,14 @@
 # Double-checking and cleaning new datasets
 library(dplyr)
 
+save_data <- function(x, path = here::here("code/data_candidates/")) {
+  xname <- deparse(substitute(x))
+  path_file <- paste0(path, xname, ".rds")
+  print(path_file)
+
+  saveRDS(x, file = path_file)
+}
+
 # APtools::mayo -----------------------------------------------------------
 # Two marker values with event time and censoring status for the subjects
 # in Mayo PBC data
@@ -8,7 +16,7 @@ library(dplyr)
 mayo <- APtools::mayo %>%
   rename(status = censor)
 
-saveRDS(mayo, here::here("code/data_candidates/mayo.rds"))
+save_data(mayo)
 
 # eha::child --------------------------------------------------------------
 # Children born in Skellefteå, Sweden, 1850-1884, are followed fifteen years
@@ -22,7 +30,7 @@ child <- eha::child %>%
     time = exit, status = event
   )
 
-saveRDS(child, here::here("code/data_candidates/child.rds"))
+save_data(child)
 
 # frailtyHL::bladder0 -----------------------------------------------------
 # Bladder0 is a subset of 410 patients from a full data set with bladder cancer
@@ -33,7 +41,7 @@ saveRDS(child, here::here("code/data_candidates/child.rds"))
 bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") %>%
   rename(time = Surtime, status = Status)
 
-saveRDS(bladder0, here::here("code/data_candidates/bladder0.rds"))
+save_data(bladder0)
 
 # frailtySurv::hdfail ------------------------------------------------------
 # This dataset contains the observed follow-up times and SMART statistics of
@@ -42,7 +50,7 @@ saveRDS(bladder0, here::here("code/data_candidates/bladder0.rds"))
 hdfail <- frailtySurv::hdfail %>%
   select(-serial) # ID column
 
-saveRDS(hdfail, here::here("code/data_candidates/hdfail.rds"))
+save_data(hdfail)
 
 
 # KMsurv::std -------------------------------------------------------------
@@ -58,7 +66,7 @@ std <- mlr3misc::load_dataset("std", "KMsurv") %>%
   ) %>%
   select(-obs) # Identifier
 
-saveRDS(std, "code/data_candidates/std.rds")
+save_data(std)
 
 # JM::aids.id -------------------------------------------------------------
 # A randomized clinical trial in which both longitudinal and survival data were
@@ -74,7 +82,7 @@ aids.id <- JM::aids.id %>%
     -start, -stop, -event # not relevant here (per AB)
   )
 
-saveRDS(aids.id, here::here("code/data_candidates/aids.id.rds"))
+save_data(aids.id)
 
 # joineR::heart.valve -----------------------------------------------------
 
@@ -116,7 +124,7 @@ saveRDS(aids.id, here::here("code/data_candidates/aids.id.rds"))
 # # Sadly only 54 events afterwards
 # table(heart.valve)
 #
-# saveRDS(heart.valve, here::here("code/data_candidates/heart.valve.rds"))
+# save_data(heart.valve)
 
 # joineR::liver -----------------------------------------------------------
 # Liver cirrhosis drug trial data
@@ -133,7 +141,7 @@ liver <- joineR::liver %>%
   ) %>%
   rename(time = survival, status = cens)
 
-saveRDS(liver, here::here("code/data_candidates/liver.rds"))
+save_data(liver)
 
 # locfit::livmet ----------------------------------------------------------
 # Survival times for 622 patients diagnosed with Liver Metastases.
@@ -143,7 +151,7 @@ livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
   rename(time = t, status = z) %>%
   mutate(status = 1 - status)
 
-saveRDS(livmet, here::here("code/data_candidates/livmet.rds"))
+save_data(livmet)
 
 # MRsurv::FTR.data --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the reference
@@ -155,7 +163,7 @@ FTR.data <- mlr3misc::load_dataset("FTR.data", "MRsurv") %>%
     status = Evt
   )
 
-saveRDS(FTR.data, here::here("code/data_candidates/FTR.data.rds"))
+save_data(FTR.data)
 
 # MRsurv::STR.data --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the relative
@@ -169,7 +177,7 @@ STR.data <- mlr3misc::load_dataset("STR.data", "MRsurv") %>%
     status = Evt
   )
 
-saveRDS(STR.data, here::here("code/data_candidates/STR.data.rds"))
+save_data(STR.data)
 
 # parfm::insem ------------------------------------------------------------
 # Time to first insemination in dairy heifer cows without time varying covariates
@@ -178,7 +186,7 @@ insem <- mlr3misc::load_dataset("insem", "parfm") %>%
   rename(time = Time, status = Status) %>%
   select(-Cowid) # ID var
 
-saveRDS(insem, here::here("code/data_candidates/insem.rds"))
+save_data(insem)
 
 # parfm::reconstitution ---------------------------------------------------
 # Reconstitution of blood–milk barrier after reconstitution
@@ -187,7 +195,7 @@ reconstitution <- mlr3misc::load_dataset("reconstitution", "parfm") %>%
   rename(time = Time, status = Status) %>%
   select(-Cowid) # ID var
 
-saveRDS(reconstitution, here::here("code/data_candidates/reconstitution.rds"))
+save_data(reconstitution)
 
 # pec::cost ---------------------------------------------------------------
 # This data set contains a subset of the data from the Copenhagen stroke study
@@ -198,24 +206,25 @@ cost <- mlr3misc::load_dataset("cost", "pec")
 # Check to see if I missed a constant variable maybe?
 all(dim(cost) == dim(janitor::remove_constant(cost)))
 
-saveRDS(cost, here::here("code/data_candidates/cost.rds"))
+save_data(cost)
 
 # quantreg::uis -----------------------------------------------------------
 # UIS Drug Treatment study data
 
-# Unsure whether LEN.T should stay in the dataset
+# Exclude LEN.T and FRAC to avoid optimistic bias due to future information
 
 uis <- mlr3misc::load_dataset("uis", "quantreg") %>%
   select(
     -ID, # ID var
-    -Y # Y: log(TIME)
+    -Y,  # Y: log(TIME)
+    -LEN.T, -FRAC # Length of stay, compliance, not known at baseline
   ) %>%
   rename(
     time = TIME,
     status = CENSOR
   )
 
-saveRDS(uis, here::here("code/data_candidates/uis.rds"))
+save_data(uis)
 
 # relsurv::rdata ----------------------------------------------------------
 # "Survival data."
@@ -223,11 +232,12 @@ saveRDS(uis, here::here("code/data_candidates/uis.rds"))
 # Computer Methods and Programs in Biomedicine, 81: 272-278.
 
 # Unsure about year variable (date)
+# Unsure about age and agegrp variables due to redundancy?
 
 rdata <- mlr3misc::load_dataset("rdata", "relsurv") %>%
   rename(status = cens)
 
-saveRDS(rdata, here::here("code/data_candidates/rdata.rds"))
+save_data(rdata)
 
 # relsurv::colrec --------------------------------------------------------------
 # Survival of patients with colon and rectal cancer diagnosed in 1994-2000.
@@ -235,7 +245,7 @@ saveRDS(rdata, here::here("code/data_candidates/rdata.rds"))
 colrec <- relsurv::colrec %>%
   rename(status = stat)
 
-saveRDS(colrec, here::here("code/data_candidates/colrec.rds"))
+save_data(colrec)
 
 # simPH::CarpenterFdaData -------------------------------------------------
 # A data set from Carpenter (2002).
@@ -256,7 +266,7 @@ CarpenterFdaData <- mlr3misc::load_dataset("CarpenterFdaData", "simPH") %>%
     -X_t # identical to acttime (time)
   )
 
-saveRDS(CarpenterFdaData, here::here("code/data_candidates/CarpenterFdaData.rds"))
+save_data(CarpenterFdaData)
 
 # smcure::e1684 -----------------------------------------------------------
 # The melanoma data from the Eastern Cooperative Oncology Group (ECOG) phase
@@ -266,4 +276,4 @@ saveRDS(CarpenterFdaData, here::here("code/data_candidates/CarpenterFdaData.rds"
 e1684 <- mlr3misc::load_dataset("e1684", "smcure") %>%
   rename(time = FAILTIME, status = FAILCENS)
 
-saveRDS(e1684, here::here("code/data_candidates/e1684.rds"))
+save_data(e1684)
