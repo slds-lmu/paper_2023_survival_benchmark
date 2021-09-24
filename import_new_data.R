@@ -1,12 +1,18 @@
 # Double-checking and cleaning new datasets
 library(dplyr)
 
-save_data <- function(x, path = here::here("code/data_candidates/")) {
+save_data <- function(x, path = here::here("code/data/")) {
   xname <- deparse(substitute(x))
   path_file <- paste0(path, xname, ".rds")
-  print(path_file)
+  message("Saving ", xname, " at ", path_file)
 
-  saveRDS(x, file = path_file)
+  x_nomiss <- na.omit(x)
+
+  if (nrow(x) - nrow(x_nomiss) > 0) {
+    message("Dropping ", nrow(x) - nrow(x_nomiss), " rows due to missings")
+  }
+
+  saveRDS(x_nomiss, file = path_file)
 }
 
 # APtools::mayo -----------------------------------------------------------
@@ -39,7 +45,10 @@ save_data(child)
 # defined as time from randomization to the date of the first recurrence.
 
 bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") %>%
-  rename(time = Surtime, status = Status)
+  rename(time = Surtime, status = Status) %>%
+  mutate(
+    Center = factor(Center) # Group ID was integer
+  )
 
 save_data(bladder0)
 
@@ -145,11 +154,21 @@ save_data(liver)
 
 # locfit::livmet ----------------------------------------------------------
 # Survival times for 622 patients diagnosed with Liver Metastases.
-# Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z in locfit() calls.
+# "Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z
+# in locfit() calls."
+# https://ftp.uni-bayreuth.de/math/statlib/S/survcart
 
 livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
   rename(time = t, status = z) %>%
-  mutate(status = 1 - status)
+  mutate(
+    status = 1 - status,
+    # Categorical recoding to factor for tumor TNM
+    tnm = factor(tnm),
+    # (1, 2) -> (0, 1), binary variables
+    sex = sex - 1,
+    pt = pt - 1,
+    lap = lap - 1
+  )
 
 save_data(livmet)
 
@@ -184,6 +203,9 @@ save_data(STR.data)
 
 insem <- mlr3misc::load_dataset("insem", "parfm") %>%
   rename(time = Time, status = Status) %>%
+  mutate(
+    Herd = factor(Herd) # Categorical, was integer
+  ) %>%
   select(-Cowid) # ID var
 
 save_data(insem)
@@ -222,6 +244,9 @@ uis <- mlr3misc::load_dataset("uis", "quantreg") %>%
   rename(
     time = TIME,
     status = CENSOR
+  ) %>%
+  mutate(
+    HC = factor(HC), # Categorical, 4 levels
   )
 
 save_data(uis)
@@ -231,11 +256,18 @@ save_data(uis)
 # Need to check: Pohar M., Stare J. (2006) "Relative survival analysis in R."
 # Computer Methods and Programs in Biomedicine, 81: 272-278.
 
-# Unsure about year variable (date)
-# Unsure about age and agegrp variables due to redundancy?
+# year: recode to factor date
+# age + agegrp can both stay
 
 rdata <- mlr3misc::load_dataset("rdata", "relsurv") %>%
-  rename(status = cens)
+  rename(status = cens) %>%
+  mutate(
+    # Extract 2 digit year from date of diagnosis
+    year = stringr::str_extract(as.character(year), "\\d{2}$"),
+    year = factor(year),
+    # recode sex from 1,2 to 0,1 for consistency
+    sex = sex - 1
+  )
 
 save_data(rdata)
 
