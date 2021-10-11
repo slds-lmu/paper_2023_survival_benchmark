@@ -43,9 +43,7 @@ tasks = resamplings = named_list(names)
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
-  if (sum(data[["status"]]) < 100) {
-    messagef("Skipping '%s', < 100 events", files[i])
-  }
+
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
@@ -57,7 +55,6 @@ for (i in seq_along(files)) {
   resamplings[[i]] = resampling
   rm(data, task, folds, resampling)
 }
-
 
 
 ###################################################################################################
@@ -90,8 +87,17 @@ auto_tune = function(learner, ...) { # wrap into random search
   )
 }
 
+measures = list(
+  msr("surv.cindex", id = "harrell_c"),
+  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  msr("surv.graf", id = "graf", proper = TRUE),
+  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  msr("surv.logloss", id = "logloss"),
+  msr("surv.dcalib", id = "dcalib"),
+  msr("surv.calib_alpha", id = "calib")
+)
 
-for (measure in list(msr("surv.cindex"), msr("surv.graf", proper = TRUE), msr("surv.logloss"), msr("surv.dcalib"))) {
+for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan"),
 
@@ -302,8 +308,15 @@ for (measure in list(msr("surv.cindex"), msr("surv.graf", proper = TRUE), msr("s
 
 
 summarizeExperiments(by = c("task_id", "learner_id"))
-findTagged("surv.graf")
-findTagged("surv.harrell_c")
+
+
+###################################################################################################
+### Pretest
+###################################################################################################
+res = list(walltime = 4 * 3600, memory = 4096)
+ids = findExperiments(repls = 1)
+ids = ijoin(ids, findTagged("graf"))
+submitJobs(ids, resources = res)
 
 
 ###################################################################################################
