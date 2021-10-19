@@ -30,7 +30,7 @@ if (dir.exists(reg_dir)) {
   reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
     packages = c("mlr3", "mlr3proba"))
 }
-reg$cluster.functions = makeClusterFunctionsMulticore(4)
+# reg$cluster.functions = makeClusterFunctionsMulticore(4)
 
 
 ###################################################################################################
