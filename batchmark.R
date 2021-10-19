@@ -227,7 +227,7 @@ for (measure in measures) {
     ),
 
     DH = auto_tune(
-      bl("surv.deephit", optimizer = "adam"),
+      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deephit", optimizer = "adam"),
       nodes = p_int(1, 32),
       k = p_int(1, 4),
       dropout = p_dbl(0, 1),
@@ -241,7 +241,7 @@ for (measure in measures) {
     ),
 
     DS = auto_tune(
-      bl("surv.deepsurv", optimizer = "adam"),
+      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deepsurv", optimizer = "adam"),
       nodes = p_int(1, 32),
       k = p_int(1, 4),
       dropout = p_dbl(0, 1),
@@ -255,7 +255,7 @@ for (measure in measures) {
     ),
 
     LH = auto_tune(
-      bl("surv.loghaz", optimizer = "adam"),
+      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.loghaz", optimizer = "adam"),
       nodes = p_int(1, 32),
       k = p_int(1, 4),
       dropout = p_dbl(0, 1),
@@ -269,7 +269,7 @@ for (measure in measures) {
     ),
 
     PCH = auto_tune(
-      bl("surv.pchazard", optimizer = "adam"),
+      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.pchazard", optimizer = "adam"),
       nodes = p_int(1, 32),
       k = p_int(1, 4),
       dropout = p_dbl(0, 1),
