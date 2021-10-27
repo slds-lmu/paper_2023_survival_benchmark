@@ -230,63 +230,63 @@ for (measure in measures) {
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deephit", optimizer = "adam"),
       nodes = p_int(1, 32),
       k = p_int(1, 4),
-      dropout = p_dbl(0, 1),
-      weight_decay = p_dbl(0, 5),
-      learning_rate = p_dbl(0, 1),
+      surv.deephit.dropout = p_dbl(0, 1),
+      surv.deephit.weight_decay = p_dbl(0, 5),
+      surv.deephit.learning_rate = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$num_nodes = rep(x$nodes, x$k)
-        x$nodes = x$k = NULL
+        x$surv.deephit.num_nodes = rep(x$surv.deephit.nodes, x$surv.deephit.k)
+        x$surv.deephit.nodes = x$surv.deephit.k = NULL
         x
       }
     ),
 
     DS = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deepsurv", optimizer = "adam"),
-      nodes = p_int(1, 32),
-      k = p_int(1, 4),
-      dropout = p_dbl(0, 1),
-      weight_decay = p_dbl(0, 5),
-      learning_rate = p_dbl(0, 1),
+      surv.deepsurv.nodes = p_int(1, 32),
+      surv.deepsurv.k = p_int(1, 4),
+      surv.deepsurv.dropout = p_dbl(0, 1),
+      surv.deepsurv.weight_decay = p_dbl(0, 5),
+      surv.deepsurv.learning_rate = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$num_nodes = rep(x$nodes, x$k)
-        x$nodes = x$k = NULL
+        x$surv.deepsurv.num_nodes = rep(x$surv.deepsurv.nodes, x$surv.deepsurv.k)
+        x$surv.deepsurv.nodes = x$surv.deepsurv.k = NULL
         x
       }
     ),
 
     LH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.loghaz", optimizer = "adam"),
-      nodes = p_int(1, 32),
-      k = p_int(1, 4),
-      dropout = p_dbl(0, 1),
-      weight_decay = p_dbl(0, 5),
-      learning_rate = p_dbl(0, 1),
+      surv.loghaz.nodes = p_int(1, 32),
+      surv.loghaz.k = p_int(1, 4),
+      surv.loghaz.dropout = p_dbl(0, 1),
+      surv.loghaz.weight_decay = p_dbl(0, 5),
+      surv.loghaz.learning_rate = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$num_nodes = rep(x$nodes, x$k)
-        x$nodes = x$k = NULL
+        x$surv.loghaz.num_nodes = rep(x$surv.loghaz.nodes, x$surv.loghaz.k)
+        x$surv.loghaz.nodes = x$surv.loghaz.k = NULL
         x
       }
     ),
 
     PCH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.pchazard", optimizer = "adam"),
-      nodes = p_int(1, 32),
-      k = p_int(1, 4),
-      dropout = p_dbl(0, 1),
-      weight_decay = p_dbl(0, 5),
-      learning_rate = p_dbl(0, 1),
+      surv.pchazard.nodes = p_int(1, 32),
+      surv.pchazard.k = p_int(1, 4),
+      surv.pchazard.dropout = p_dbl(0, 1),
+      surv.pchazard.weight_decay = p_dbl(0, 5),
+      surv.pchazard.learning_rate = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$num_nodes = rep(x$nodes, x$k)
-        x$nodes = x$k = NULL
+        x$surv.pchazard.num_nodes = rep(x$surv.pchazard.nodes, x$surv.pchazard.k)
+        x$surv.pchazard.nodes = x$surv.pchazard.k = NULL
         x
       }
     ),
 
     DNN = auto_tune(
-      bl("surv.dnnsurv", optimizer = "adam", epochs = 100),
-      decay = p_dbl(0, 0.5),
-      lr = p_dbl(0, 1),
-      cuts = p_int(3, 50)
+      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.dnnsurv", optimizer = "adam", epochs = 100),
+      surv.dnnsurv.decay = p_dbl(0, 0.5),
+      surv.dnnsurv.lr = p_dbl(0, 1),
+      surv.dnnsurv.cuts = p_int(3, 50)
     )
   )
 
@@ -314,8 +314,10 @@ summarizeExperiments(by = c("task_id", "learner_id"))
 ### Pretest
 ###################################################################################################
 res = list(walltime = 4 * 3600, memory = 4096)
-ids = findExperiments(repls = 1)
-ids = ijoin(ids, findTagged("graf"))
+# ids = findExperiments(repls = 1)
+# ids = ijoin(ids, findTagged("graf"))
+
+ids = readRDS("error_ids.rds")
 submitJobs(ids, resources = res)
 
 

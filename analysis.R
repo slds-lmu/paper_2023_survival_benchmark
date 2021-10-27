@@ -7,7 +7,7 @@ source(file.path(root, "settings.R"))
 library("batchtools")
 library("mlr3batchmark")
 
-reg = loadRegistry("/scratch/registry", writeable = TRUE)
+reg = loadRegistry("registry", writeable = TRUE)
 
 ###################################################################################################
 ### Current State
@@ -16,6 +16,9 @@ print(getStatus())
 print(getErrorMessages())
 
 ids = grepLogs(findErrors(), pattern = "incorrect number")
+summarizeExperiments(ids, by = c("learner_id"))
+
+ids = grepLogs(findErrors(), pattern = "Distribution")
 summarizeExperiments(ids, by = c("learner_id"))
 
 ###################################################################################################
