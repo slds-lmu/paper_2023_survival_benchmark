@@ -21,6 +21,12 @@ summarizeExperiments(ids, by = c("learner_id"))
 ids = grepLogs(findErrors(), pattern = "Distribution")
 summarizeExperiments(ids, by = c("learner_id"))
 
+ids = findExpired()
+summarizeExperiments(ids, by = c("task_id"))
+
+ids = ijoin(findExpired(), findExperiments(prob.pars = task_id == "child"))
+showLog(ids[1])
+
 ###################################################################################################
 ### Reduce results
 ###################################################################################################

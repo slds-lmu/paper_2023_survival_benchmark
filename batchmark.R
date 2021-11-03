@@ -228,8 +228,8 @@ for (measure in measures) {
 
     DH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deephit", optimizer = "adam"),
-      nodes = p_int(1, 32),
-      k = p_int(1, 4),
+      surv.deephit.nodes = p_int(1, 32),
+      surv.deephit.k = p_int(1, 4),
       surv.deephit.dropout = p_dbl(0, 1),
       surv.deephit.weight_decay = p_dbl(0, 5),
       surv.deephit.learning_rate = p_dbl(0, 1),
@@ -314,10 +314,9 @@ summarizeExperiments(by = c("task_id", "learner_id"))
 ### Pretest
 ###################################################################################################
 res = list(walltime = 4 * 3600, memory = 4096)
-# ids = findExperiments(repls = 1)
-# ids = ijoin(ids, findTagged("graf"))
+ids = findExperiments(repls = 1)
+ids = ijoin(ids, findTagged("harrell_c"))
 
-ids = readRDS("error_ids.rds")
 submitJobs(ids, resources = res)
 
 
