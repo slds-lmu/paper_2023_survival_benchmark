@@ -61,12 +61,23 @@ for (i in seq_along(files)) {
 ###################################################################################################
 ### Create Learners and populate Registry
 ###################################################################################################
-bl = function(key, ...) { # get base learner with fallback + encapsulation
+bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
   learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
-  learner
+
+  g = ppl("distrcompositor", learner = learner)
+
+  if (.scale) {
+    g = po("scale") %>>% g
+  }
+
+  if (.encode) {
+    g = po("encode", method = "treatment") %>>% g
+  }
+
+  as_learner(po("fixfactors") %>>% po("collapsefactors", target_level_count = 5) %>>% g)
 }
 
 auto_tune = function(learner, ...) { # wrap into random search
@@ -110,7 +121,7 @@ for (measure in measures) {
 
     AF = auto_tune(
       bl("surv.akritas"),
-      lambda = p_dbl(0, 1)
+      surv.akritas.lambda = p_dbl(0, 1)
     )
 
     ,
@@ -121,7 +132,7 @@ for (measure in measures) {
 
 
     GLM = auto_tune(
-      po("encode", method = "treatment") %>>% bl("surv.cv_glmnet"),
+      bl("surv.cv_glmnet", .encode = TRUE),
       surv.cv_glmnet.alpha = p_dbl(0, 1)
     )
 
@@ -129,33 +140,33 @@ for (measure in measures) {
 
     Pen = auto_tune(
       bl("surv.penalized"),
-      lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
-      lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
+      surv.penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
+      surv.penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
     )
 
     ,
 
     Par = auto_tune(
       bl("surv.parametric", type = "aft"),
-      dist = p_fct(c("weibull", "lognormal", "loglogistic"))
+      surv.parametric.dist = p_fct(c("weibull", "lognormal", "loglogistic"))
     )
 
     ,
 
     Flex = auto_tune(
       bl("surv.flexible"),
-      k = p_int(1, 10)
+      surv.flexible.k = p_int(1, 10)
     )
 
     ,
 
     RFSRC = auto_tune(
       bl("surv.rfsrc", ntree = 5000),
-      splitrule = p_fct(c("bs.gradient", "logrank")),
-      mtry.ratio = p_dbl(0, 1),
-      nodesize = p_int(1, 50),
-      samptype = p_fct(c("swr", "swor")),
-      sampsize.ratio = p_dbl(0, 1)
+      surv.rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
+      surv.rfsrc.mtry.ratio = p_dbl(0, 1),
+      surv.rfsrc.nodesize = p_int(1, 50),
+      surv.rfsrc.samptype = p_fct(c("swr", "swor")),
+      surv.rfsrc.sampsize.ratio = p_dbl(0, 1)
     )
 
     ,
@@ -163,34 +174,34 @@ for (measure in measures) {
 
     RAN = auto_tune(
       bl("surv.ranger", num.trees = 5000),
-      splitrule = p_fct(c("C", "maxstat", "logrank")),
-      mtry.ratio = p_dbl(0, 1),
-      min.node.size = p_int(1, 50),
-      replace = p_lgl(),
-      sample.fraction = p_dbl(0, 1)
+      surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
+      surv.ranger.mtry.ratio = p_dbl(0, 1),
+      surv.ranger.min.node.size = p_int(1, 50),
+      surv.ranger.replace = p_lgl(),
+      surv.ranger.sample.fraction = p_dbl(0, 1)
     )
 
     ,
 
     CIF = auto_tune(
       bl("surv.cforest", ntree = 5000),
-      mtryratio = p_dbl(0, 1),
-      minsplit = p_int(1, 50),
-      mincriterion = p_dbl(0, 1),
-      replace = p_lgl(),
-      fraction = p_dbl(0, 1)
+      surv.cforest.mtryratio = p_dbl(0, 1),
+      surv.cforest.minsplit = p_int(1, 50),
+      surv.cforest.mincriterion = p_dbl(0, 1),
+      surv.cforest.replace = p_lgl(),
+      surv.cforest.fraction = p_dbl(0, 1)
     )
 
     ,
 
     ORSF = auto_tune(
       bl("surv.obliqueRSF", ntree = 5000),
-      mtry_ratio = p_dbl(0, 1),
-      use.cv = p_lgl(),
-      min_events_in_leaf_node = p_int(5, 50),
-      alpha = p_dbl(0, 1),
+      surv.obliqueRSF.mtry_ratio = p_dbl(0, 1),
+      surv.obliqueRSF.use.cv = p_lgl(),
+      surv.obliqueRSF.min_events_in_leaf_node = p_int(5, 50),
+      surv.obliqueRSF.alpha = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$min_obs_to_split_node = x$min_events_in_leaf_node + 5L
+        x$surv.obliqueRSF.min_obs_to_split_node = x$surv.obliqueRSF.min_events_in_leaf_node + 5L
         x
       }
     )
@@ -199,16 +210,16 @@ for (measure in measures) {
 
     RRT = auto_tune(
       bl("surv.rpart"),
-      minbucket = p_int(5, 50)
+      surv.rpart.minbucket = p_int(5, 50)
     )
 
     ,
 
     MBO = auto_tune(bl("surv.mboost"),
-      family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
-      mstop = p_int(10, 5000),
-      nu = p_dbl(0, 0.1),
-      baselearner = p_fct(c("bols", "btree"))
+      surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
+      surv.mboost.mstop = p_int(10, 5000),
+      surv.mboost.nu = p_dbl(0, 0.1),
+      surv.mboost.baselearner = p_fct(c("bols", "btree"))
     )
 
     ,
@@ -219,7 +230,7 @@ for (measure in measures) {
 
     XGB = auto_tune(
       # FIXME: tree_method and booster missing in overleaf
-      po("encode", method = "treatment") %>>% bl("surv.xgboost", tree_method = "hist", booster = "gbtree"),
+      bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRUE),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
@@ -231,7 +242,7 @@ for (measure in measures) {
     ,
 
     SSVM = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
+      bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
       surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
       surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
       surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
@@ -246,7 +257,7 @@ for (measure in measures) {
     ,
 
     CoxT = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.coxtime", standardize_time = TRUE, epochs = 100, optimizer = "adam"),
+      bl("surv.coxtime", standardize_time = TRUE, epochs = 100, optimizer = "adam", .encode = TRUE, .scale = TRUE),
       surv.coxtime.dropout = p_dbl(0, 1),
       surv.coxtime.weight_decay = p_dbl(0, 0.5),
       surv.coxtime.learning_rate = p_dbl(0, 1),
@@ -262,7 +273,7 @@ for (measure in measures) {
     ,
 
     DH = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deephit", optimizer = "adam"),
+      bl("surv.deephit", optimizer = "adam", .encode = TRUE, .scale = TRUE),
       surv.deephit.nodes = p_int(1, 32),
       surv.deephit.k = p_int(1, 4),
       surv.deephit.dropout = p_dbl(0, 1),
@@ -278,7 +289,7 @@ for (measure in measures) {
     ,
 
     DS = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deepsurv", optimizer = "adam"),
+      bl("surv.deepsurv", optimizer = "adam", .encode = TRUE, .scale = TRUE),
       surv.deepsurv.nodes = p_int(1, 32),
       surv.deepsurv.k = p_int(1, 4),
       surv.deepsurv.dropout = p_dbl(0, 1),
@@ -294,7 +305,7 @@ for (measure in measures) {
     ,
 
     LH = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.loghaz", optimizer = "adam"),
+      bl("surv.loghaz", optimizer = "adam", .encode = TRUE, .scale = TRUE),
       surv.loghaz.nodes = p_int(1, 32),
       surv.loghaz.k = p_int(1, 4),
       surv.loghaz.dropout = p_dbl(0, 1),
@@ -310,7 +321,7 @@ for (measure in measures) {
     ,
 
     PCH = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.pchazard", optimizer = "adam"),
+      bl("surv.pchazard", optimizer = "adam", .encode = TRUE, .scale = TRUE),
       surv.pchazard.nodes = p_int(1, 32),
       surv.pchazard.k = p_int(1, 4),
       surv.pchazard.dropout = p_dbl(0, 1),
@@ -326,7 +337,7 @@ for (measure in measures) {
     ,
 
     DNN = auto_tune(
-      po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.dnnsurv", optimizer = "adam", epochs = 100),
+      bl("surv.dnnsurv", optimizer = "adam", epochs = 100, .encode = TRUE, .scale = TRUE),
       surv.dnnsurv.decay = p_dbl(0, 0.5),
       surv.dnnsurv.lr = p_dbl(0, 1),
       surv.dnnsurv.cuts = p_int(3, 50)
