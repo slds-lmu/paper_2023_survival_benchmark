@@ -5,11 +5,12 @@ source(file.path(root, "settings.R"))
 ### Packages
 ###################################################################################################
 
-# requires devel version of bbotk and mlr3tuning
+devtools::install_github("mlr-org/mlr3")
 devtools::install_github("mlr-org/bbotk")
 devtools::install_github("mlr-org/mlr3tuning")
 devtools::install_github("mlr-org/mlr3batchmark")
-#devtools::install_github("mlr-org/mlr3extralearners")
+devtools::install_github("alan-turing-institute/distr6")
+devtools::install_github("mlr-org/mlr3proba")
 library("stringi")
 library("mlr3misc")
 library("mlr3")
@@ -89,48 +90,64 @@ auto_tune = function(learner, ...) { # wrap into random search
 
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.graf", id = "graf", proper = TRUE),
-  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  msr("surv.logloss", id = "logloss"),
-  msr("surv.dcalib", id = "dcalib"),
-  msr("surv.calib_alpha", id = "calib")
+  msr("surv.cindex", id = "uno_c", weight_meth = "G2")
+  # msr("surv.graf", id = "graf", proper = TRUE),
+  # msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  # msr("surv.logloss", id = "logloss"),
+  # msr("surv.dcalib", id = "dcalib"),
+  # msr("surv.calib_alpha", id = "calib")
 )
 
 for (measure in measures) {
   learners = list(
-    KM = bl("surv.kaplan"),
+    KM = bl("surv.kaplan")
 
-    NL = bl("surv.nelson"),
+    ,
+
+    NL = bl("surv.nelson")
+
+    ,
 
     AF = auto_tune(
       bl("surv.akritas"),
       lambda = p_dbl(0, 1)
-    ),
+    )
 
-    CPH = bl("surv.coxph"),
+    ,
+
+    CPH = bl("surv.coxph")
+
+    ,
 
 
     GLM = auto_tune(
       po("encode", method = "treatment") %>>% bl("surv.cv_glmnet"),
       surv.cv_glmnet.alpha = p_dbl(0, 1)
-    ),
+    )
+
+    ,
 
     Pen = auto_tune(
       bl("surv.penalized"),
       lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
       lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
-    ),
+    )
+
+    ,
 
     Par = auto_tune(
       bl("surv.parametric", type = "aft"),
       dist = p_fct(c("weibull", "lognormal", "loglogistic"))
-    ),
+    )
+
+    ,
 
     Flex = auto_tune(
       bl("surv.flexible"),
       k = p_int(1, 10)
-    ),
+    )
+
+    ,
 
     RFSRC = auto_tune(
       bl("surv.rfsrc", ntree = 5000),
@@ -139,7 +156,9 @@ for (measure in measures) {
       nodesize = p_int(1, 50),
       samptype = p_fct(c("swr", "swor")),
       sampsize.ratio = p_dbl(0, 1)
-    ),
+    )
+
+    ,
 
 
     RAN = auto_tune(
@@ -149,8 +168,9 @@ for (measure in measures) {
       min.node.size = p_int(1, 50),
       replace = p_lgl(),
       sample.fraction = p_dbl(0, 1)
-    ),
+    )
 
+    ,
 
     CIF = auto_tune(
       bl("surv.cforest", ntree = 5000),
@@ -159,8 +179,9 @@ for (measure in measures) {
       mincriterion = p_dbl(0, 1),
       replace = p_lgl(),
       fraction = p_dbl(0, 1)
-    ),
+    )
 
+    ,
 
     ORSF = auto_tune(
       bl("surv.obliqueRSF", ntree = 5000),
@@ -172,21 +193,29 @@ for (measure in measures) {
         x$min_obs_to_split_node = x$min_events_in_leaf_node + 5L
         x
       }
-    ),
+    )
+
+    ,
 
     RRT = auto_tune(
       bl("surv.rpart"),
       minbucket = p_int(5, 50)
-    ),
+    )
+
+    ,
 
     MBO = auto_tune(bl("surv.mboost"),
       family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       mstop = p_int(10, 5000),
       nu = p_dbl(0, 0.1),
       baselearner = p_fct(c("bols", "btree"))
-    ),
+    )
 
-    CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000),
+    ,
+
+    CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000)
+
+    ,
 
     XGB = auto_tune(
       # FIXME: tree_method and booster missing in overleaf
@@ -197,7 +226,9 @@ for (measure in measures) {
       surv.xgboost.nrounds = p_int(10, 5000),
       surv.xgboost.eta = p_dbl(0, 1),
       surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
-    ),
+    )
+
+    ,
 
     SSVM = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3"),
@@ -210,7 +241,9 @@ for (measure in measures) {
         x$surv.svm.gamma = x$surv.svm.mu = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     CoxT = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.coxtime", standardize_time = TRUE, epochs = 100, optimizer = "adam"),
@@ -224,7 +257,9 @@ for (measure in measures) {
         x$surv.coxtime.nodes = x$surv.coxtime.k = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     DH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deephit", optimizer = "adam"),
@@ -238,7 +273,9 @@ for (measure in measures) {
         x$surv.deephit.nodes = x$surv.deephit.k = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     DS = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.deepsurv", optimizer = "adam"),
@@ -252,7 +289,9 @@ for (measure in measures) {
         x$surv.deepsurv.nodes = x$surv.deepsurv.k = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     LH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.loghaz", optimizer = "adam"),
@@ -266,7 +305,9 @@ for (measure in measures) {
         x$surv.loghaz.nodes = x$surv.loghaz.k = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     PCH = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.pchazard", optimizer = "adam"),
@@ -280,7 +321,9 @@ for (measure in measures) {
         x$surv.pchazard.nodes = x$surv.pchazard.k = NULL
         x
       }
-    ),
+    )
+
+    ,
 
     DNN = auto_tune(
       po("scale") %>>% po("encode", method = "treatment") %>>% bl("surv.dnnsurv", optimizer = "adam", epochs = 100),
