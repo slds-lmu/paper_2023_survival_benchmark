@@ -5,7 +5,8 @@ source(file.path(root, "settings.R"))
 ### Packages
 ###################################################################################################
 
-devtools::install_github("mlr-org/mlr3")
+# FIXME: RS PR for fixed measure assertion, revert to master as soon as merged
+devtools::install_github("mlr-org/mlr3#737")
 devtools::install_github("mlr-org/bbotk")
 devtools::install_github("mlr-org/mlr3tuning")
 devtools::install_github("mlr-org/mlr3batchmark")
@@ -67,7 +68,8 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
-  g = ppl("distrcompositor", learner = learner)
+  # Added form as per RS
+  g = ppl("distrcompositor", learner = learner, form = 'ph')
 
   if (.scale) {
     g = po("scale") %>>% g
@@ -101,8 +103,8 @@ auto_tune = function(learner, ...) { # wrap into random search
 
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2")
-  # msr("surv.graf", id = "graf", proper = TRUE),
+  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  msr("surv.graf", id = "graf", proper = TRUE)
   # msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
   # msr("surv.logloss", id = "logloss"),
   # msr("surv.dcalib", id = "dcalib"),
@@ -171,7 +173,6 @@ for (measure in measures) {
 
     ,
 
-
     RAN = auto_tune(
       bl("surv.ranger", num.trees = 5000),
       surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
@@ -182,7 +183,7 @@ for (measure in measures) {
     )
 
     ,
-
+    
     CIF = auto_tune(
       bl("surv.cforest", ntree = 5000),
       surv.cforest.mtryratio = p_dbl(0, 1),
@@ -214,7 +215,7 @@ for (measure in measures) {
     )
 
     ,
-
+    
     MBO = auto_tune(bl("surv.mboost"),
       surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),
@@ -373,7 +374,6 @@ ids = ijoin(ids, findTagged("harrell_c"))
 
 submitJobs(ids, resources = res)
 
-
 ###################################################################################################
 ### Submit
 ###################################################################################################
@@ -385,7 +385,8 @@ if (FALSE) {
 
   # this would be a good first start on the cluster
   ids = findExperiments(repls = 1)
-  ids = ijoin(ids, findExperiments(prob.pars = task_id == "rats"))
+  # Was 'rats' task but that dataset has been excluded since
+  ids = ijoin(ids, findExperiments(prob.pars = task_id == "lung"))
   submitJobs(ids)
 
   summarizeExperiments(findErrors(), by = "learner_id")
