@@ -48,7 +48,8 @@ bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") %>%
   rename(time = Surtime, status = Status) %>%
   mutate(
     Center = factor(Center) # Group ID was integer
-  )
+  ) %>%
+  filter(time > 0)
 
 save_data(bladder0)
 
@@ -168,7 +169,8 @@ livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
     sex = sex - 1,
     pt = pt - 1,
     lap = lap - 1
-  )
+  ) %>%
+  filter(time > 0)
 
 save_data(livmet)
 
@@ -274,10 +276,11 @@ save_data(rdata)
 # relsurv::colrec --------------------------------------------------------------
 # Survival of patients with colon and rectal cancer diagnosed in 1994-2000.
 
-colrec <- relsurv::colrec %>%
-  rename(status = stat)
-
-save_data(colrec)
+# Removed due to date column by ML
+# colrec <- relsurv::colrec %>%
+#   rename(status = stat)
+#
+# save_data(colrec)
 
 # simPH::CarpenterFdaData -------------------------------------------------
 # A data set from Carpenter (2002).
