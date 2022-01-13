@@ -157,22 +157,24 @@ save_data(liver)
 # Survival times for 622 patients diagnosed with Liver Metastases.
 # "Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z
 # in locfit() calls."
+# -> so 0 = censored, no recoding needed. Reading is hard.
 # https://ftp.uni-bayreuth.de/math/statlib/S/survcart
+# Can't find source or real indication for dataset being real
 
-livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
-  rename(time = t, status = z) %>%
-  mutate(
-    status = 1 - status,
-    # Categorical recoding to factor for tumor TNM
-    tnm = factor(tnm),
-    # (1, 2) -> (0, 1), binary variables
-    sex = sex - 1,
-    pt = pt - 1,
-    lap = lap - 1
-  ) %>%
-  filter(time > 0)
-
-save_data(livmet)
+# livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
+#   rename(time = t, status = z) %>%
+#   mutate(
+#     # status = 1 - status,
+#     # Categorical recoding to factor for tumor TNM
+#     tnm = factor(tnm),
+#     # (1, 2) -> (0, 1), binary variables
+#     sex = sex - 1,
+#     pt = pt - 1,
+#     lap = lap - 1
+#   ) %>%
+#   filter(time > 0)
+#
+# save_data(livmet)
 
 # MRsurv::FTR.data --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the reference
