@@ -348,9 +348,8 @@ for (measure in measures) {
   imap(learners, function(l, id) l$id = id)
 
   # custom grid design (with instantiated resamplings)
-  grid$resampling = rep(resamplings, each = length(learners))
-
   grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
+  grid$resampling = rep(resamplings, each = length(learners))
   ids = batchmark(grid, store_models = FALSE)
   addJobTags(ids, measure$id)
 
