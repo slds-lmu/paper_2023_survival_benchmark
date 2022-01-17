@@ -6,7 +6,7 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 
 # FIXME: RS PR for fixed measure assertion, revert to master as soon as merged
-devtools::install_github("mlr-org/mlr3#737")
+devtools::install_github("mlr-org/mlr3pipelines#633")
 devtools::install_github("mlr-org/bbotk")
 devtools::install_github("mlr-org/mlr3tuning")
 devtools::install_github("mlr-org/mlr3batchmark")
@@ -104,11 +104,11 @@ auto_tune = function(learner, ...) { # wrap into random search
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
   msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.graf", id = "graf", proper = TRUE)
-  # msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  # msr("surv.logloss", id = "logloss"),
-  # msr("surv.dcalib", id = "dcalib"),
-  # msr("surv.calib_alpha", id = "calib")
+  msr("surv.graf", id = "graf", proper = TRUE),
+  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  msr("surv.logloss", id = "logloss"),
+  msr("surv.dcalib", id = "dcalib"),
+  msr("surv.calib_alpha", id = "calib")
 )
 
 for (measure in measures) {
@@ -183,7 +183,7 @@ for (measure in measures) {
     )
 
     ,
-    
+
     CIF = auto_tune(
       bl("surv.cforest", ntree = 5000),
       surv.cforest.mtryratio = p_dbl(0, 1),
@@ -215,7 +215,7 @@ for (measure in measures) {
     )
 
     ,
-    
+
     MBO = auto_tune(bl("surv.mboost"),
       surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),
@@ -348,9 +348,9 @@ for (measure in measures) {
   imap(learners, function(l, id) l$id = id)
 
   # custom grid design (with instantiated resamplings)
-  grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
   grid$resampling = rep(resamplings, each = length(learners))
 
+  grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
   ids = batchmark(grid, store_models = FALSE)
   addJobTags(ids, measure$id)
 
@@ -370,9 +370,9 @@ summarizeExperiments(by = c("task_id", "learner_id"))
 ###################################################################################################
 res = list(walltime = 4 * 3600, memory = 4096)
 ids = findExperiments(repls = 1)
-ids = ijoin(ids, findTagged("harrell_c"))
+ids = ijoin(ids, findTagged("graf"))
 
-submitJobs(ids, resources = res)
+# submitJobs(ids, resources = res)
 
 ###################################################################################################
 ### Submit

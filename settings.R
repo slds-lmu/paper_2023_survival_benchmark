@@ -5,7 +5,7 @@
 reg_dir = file.path(root, "registry")
 
 # number of outer (evaluation) folds
-outer_folds = 3
+outer_folds = 5
 
 # minimum number of observations per fold. If this requirement is not met,
 # outer_folds is decreased to the largest fold number where this is possible.
