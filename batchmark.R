@@ -225,7 +225,8 @@ for (measure in measures) {
 
     ,
 
-    CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000)
+    # FIXME: Add factor encoding to overleaf for CoxBoost
+    CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000, .encode = TRUE)
 
     ,
 
