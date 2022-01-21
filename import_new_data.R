@@ -47,9 +47,9 @@ save_data(child)
 bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") %>%
   rename(time = Surtime, status = Status) %>%
   mutate(
-    Center = factor(Center) # Group ID was integer
-  ) %>%
-  filter(time > 0)
+    Center = factor(Center), # Group ID was integer
+    time = ifelse(time == 0, 0.001, time)
+  )
 
 save_data(bladder0)
 
@@ -204,24 +204,32 @@ save_data(STR.data)
 
 # parfm::insem ------------------------------------------------------------
 # Time to first insemination in dairy heifer cows without time varying covariates
+# Nevermind, simulated data:
+# "These data are downloaded from http://www.vetstat.ugent.be/research/frailty/datasets/.
+# They are simulated data, with exactly the same structure as the real data used in the book,
+# that could not be made publicly available."
 
-insem <- mlr3misc::load_dataset("insem", "parfm") %>%
-  rename(time = Time, status = Status) %>%
-  mutate(
-    Herd = factor(Herd) # Categorical, was integer
-  ) %>%
-  select(-Cowid) # ID var
-
-save_data(insem)
+# insem <- mlr3misc::load_dataset("insem", "parfm") %>%
+#   rename(time = Time, status = Status) %>%
+#   mutate(
+#     Herd = factor(Herd) # Categorical, was integer
+#   ) %>%
+#   select(-Cowid) # ID var
+#
+# save_data(insem)
 
 # parfm::reconstitution ---------------------------------------------------
 # Reconstitution of blood–milk barrier after reconstitution
+# Nevermind, simulated data:
+# "These data are downloaded from http://www.vetstat.ugent.be/research/frailty/datasets/.
+# They are simulated data, with exactly the same structure as the real data used in the book,
+# that could not be made publicly available."
 
-reconstitution <- mlr3misc::load_dataset("reconstitution", "parfm") %>%
-  rename(time = Time, status = Status) %>%
-  select(-Cowid) # ID var
-
-save_data(reconstitution)
+# reconstitution <- mlr3misc::load_dataset("reconstitution", "parfm") %>%
+#   rename(time = Time, status = Status) %>%
+#   select(-Cowid) # ID var
+#
+# save_data(reconstitution)
 
 # pec::cost ---------------------------------------------------------------
 # This data set contains a subset of the data from the Copenhagen stroke study
