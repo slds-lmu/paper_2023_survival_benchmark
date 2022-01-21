@@ -12,6 +12,11 @@ devtools::install_github("mlr-org/mlr3tuning")
 devtools::install_github("mlr-org/mlr3batchmark")
 devtools::install_github("alan-turing-institute/distr6")
 devtools::install_github("mlr-org/mlr3proba")
+devtools::install_github("mlr-org/mlr3extralearners") # not on CRAN
+
+# Packages for specific learners
+devtools::install_github("binderh/CoxBoost") # Not on CRAN anymore
+
 library("stringi")
 library("mlr3misc")
 library("mlr3")
@@ -22,6 +27,7 @@ library("mlr3tuning")
 library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
+
 
 ###################################################################################################
 ### Create Registry
@@ -101,14 +107,16 @@ auto_tune = function(learner, ...) { # wrap into random search
   )
 }
 
+# Tuning measures are a subset of all measures, remaining measures are used
+# for evaluation (see overleaf Table 1)
 measures = list(
-  msr("surv.cindex", id = "harrell_c"),
+  # msr("surv.cindex", id = "harrell_c"),
   msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
   msr("surv.graf", id = "graf", proper = TRUE),
-  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  msr("surv.logloss", id = "logloss"),
-  msr("surv.dcalib", id = "dcalib"),
-  msr("surv.calib_alpha", id = "calib")
+  #msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  #msr("surv.logloss", id = "logloss"),
+  #msr("surv.calib_alpha", id = "calib"),
+  msr("surv.dcalib", id = "dcalib")
 )
 
 for (measure in measures) {
