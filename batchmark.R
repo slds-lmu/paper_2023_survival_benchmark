@@ -7,12 +7,10 @@ source(file.path(root, "settings.R"))
 
 # FIXME: RS PR for fixed measure assertion, revert to master as soon as merged
 devtools::install_github("mlr-org/mlr3pipelines#633")
-devtools::install_github("mlr-org/bbotk")
-devtools::install_github("mlr-org/mlr3tuning")
+
+# Not on CRAN
 devtools::install_github("mlr-org/mlr3batchmark")
-devtools::install_github("alan-turing-institute/distr6")
-devtools::install_github("mlr-org/mlr3proba")
-devtools::install_github("mlr-org/mlr3extralearners") # not on CRAN
+devtools::install_github("mlr-org/mlr3extralearners")
 
 # Packages for specific learners
 devtools::install_github("binderh/CoxBoost") # Not on CRAN anymore
