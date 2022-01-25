@@ -233,13 +233,11 @@ for (measure in measures) {
 
     ,
 
-    # FIXME: Add factor encoding to overleaf for CoxBoost
     CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000, .encode = TRUE)
 
     ,
 
     XGB = auto_tune(
-      # FIXME: tree_method and booster missing in overleaf
       bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRUE),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
