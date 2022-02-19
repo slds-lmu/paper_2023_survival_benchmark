@@ -5,8 +5,8 @@ source(file.path(root, "settings.R"))
 ### Packages
 ###################################################################################################
 
-# FIXME: RS PR for fixed measure assertion, revert to master as soon as merged
-devtools::install_github("mlr-org/mlr3pipelines#633")
+# FIXME: Required PR#633 merged, switch to CRAN once updated.
+devtools::install_github("mlr-org/mlr3pipelines")
 
 # Not on CRAN
 devtools::install_github("mlr-org/mlr3batchmark")
