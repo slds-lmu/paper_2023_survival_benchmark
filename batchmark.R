@@ -8,6 +8,10 @@ source(file.path(root, "settings.R"))
 # FIXME: Required PR#633 merged, switch to CRAN once updated.
 devtools::install_github("mlr-org/mlr3pipelines")
 
+# Temporary, switch to CRAN once published
+devtools::install_github("mlr-org/mlr3proba")
+devtools::install_github("RaphaelS1/survivalmodels")
+
 # Not on CRAN
 devtools::install_github("mlr-org/mlr3batchmark")
 devtools::install_github("mlr-org/mlr3extralearners")
@@ -69,7 +73,6 @@ for (i in seq_along(files)) {
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
-  learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # Added form as per RS
@@ -83,7 +86,12 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     g = po("encode", method = "treatment") %>>% g
   }
 
-  as_learner(po("fixfactors") %>>% po("collapsefactors", target_level_count = 5) %>>% g)
+  glrn <- as_learner(po("fixfactors") %>>% po("collapsefactors", target_level_count = 5) %>>% g)
+  # Add fallback after distrcompositor to avoid warning
+  # "The fallback learner 'distr' and the base learner 'crank' have different predict types"
+  glrn$fallback = fallback
+  
+  glrn
 }
 
 auto_tune = function(learner, ...) { # wrap into random search
