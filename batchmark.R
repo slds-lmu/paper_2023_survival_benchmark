@@ -73,8 +73,9 @@ for (i in seq_along(files)) {
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
-
+  
   # Added form as per RS
   g = ppl("distrcompositor", learner = learner, form = 'ph')
 
@@ -86,12 +87,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     g = po("encode", method = "treatment") %>>% g
   }
 
-  glrn <- as_learner(po("fixfactors") %>>% po("collapsefactors", target_level_count = 5) %>>% g)
-  # Add fallback after distrcompositor to avoid warning
-  # "The fallback learner 'distr' and the base learner 'crank' have different predict types"
-  glrn$fallback = fallback
-  
-  glrn
+  as_learner(po("fixfactors") %>>% po("collapsefactors", target_level_count = 5) %>>% g)
 }
 
 auto_tune = function(learner, ...) { # wrap into random search
