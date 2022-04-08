@@ -15,15 +15,6 @@ save_data <- function(x, path = here::here("code/data/")) {
   saveRDS(x_nomiss, file = path_file)
 }
 
-# APtools::mayo -----------------------------------------------------------
-# Two marker values with event time and censoring status for the subjects
-# in Mayo PBC data
-
-mayo <- APtools::mayo %>%
-  rename(status = censor)
-
-save_data(mayo)
-
 # eha::child --------------------------------------------------------------
 # Children born in Skellefteå, Sweden, 1850-1884, are followed fifteen years
 # or until death or out-migration
