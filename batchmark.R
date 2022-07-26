@@ -2,13 +2,10 @@ root = here::here()
 source(file.path(root, "settings.R"))
 
 ###################################################################################################
-### Packages
+### Packages ----
 ###################################################################################################
 
-# FIXME: Required PR#633 merged, switch to CRAN once updated.
-devtools::install_github("mlr-org/mlr3pipelines")
-
-# Temporary, switch to CRAN once published
+# Not on CRAN anymore
 devtools::install_github("mlr-org/mlr3proba")
 devtools::install_github("RaphaelS1/survivalmodels")
 
@@ -31,9 +28,7 @@ library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
 
-###################################################################################################
-### Create Registry
-###################################################################################################
+# Create Registry ---------------------------------------------------------
 if (dir.exists(reg_dir)) {
   reg = loadRegistry(reg_dir, writeable = TRUE)
 } else {
@@ -43,9 +38,9 @@ if (dir.exists(reg_dir)) {
 # reg$cluster.functions = makeClusterFunctionsMulticore(4)
 
 
-###################################################################################################
-### Create Tasks and corresponding instantiated Resamplings
-###################################################################################################
+
+
+# Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
 files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
 names = stri_sub(basename(files), 1, -5)
@@ -67,9 +62,7 @@ for (i in seq_along(files)) {
 }
 
 
-###################################################################################################
-### Create Learners and populate Registry
-###################################################################################################
+# Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
