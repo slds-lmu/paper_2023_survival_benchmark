@@ -375,7 +375,7 @@ summarizeExperiments(by = c("task_id", "learner_id"))
 ###################################################################################################
 res = list(walltime = 4 * 3600, memory = 4096)
 ids = findExperiments(repls = 1)
-ids = ijoin(ids, findTagged("graf"))
+ids = ijoin(ids, findTagged("rcll"))
 
 # submitJobs(ids, resources = res)
 
