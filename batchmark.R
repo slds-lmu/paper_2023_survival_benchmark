@@ -6,15 +6,15 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 
 # Not on CRAN anymore
-devtools::install_github("mlr-org/mlr3proba")
-devtools::install_github("RaphaelS1/survivalmodels")
+remotes::install_github("mlr-org/mlr3proba")
+remotes::install_github("RaphaelS1/survivalmodels")
 
 # Not on CRAN
-devtools::install_github("mlr-org/mlr3batchmark")
-devtools::install_github("mlr-org/mlr3extralearners")
+remotes::install_github("mlr-org/mlr3batchmark")
+remotes::install_github("mlr-org/mlr3extralearners")
 
 # Packages for specific learners
-devtools::install_github("binderh/CoxBoost") # Not on CRAN anymore
+remotes::install_github("binderh/CoxBoost") # Not on CRAN anymore
 
 library("stringi")
 library("mlr3misc")
@@ -35,10 +35,6 @@ if (dir.exists(reg_dir)) {
   reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
     packages = c("mlr3", "mlr3proba"))
 }
-# reg$cluster.functions = makeClusterFunctionsMulticore(4)
-
-
-
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
