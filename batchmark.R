@@ -112,11 +112,14 @@ auto_tune = function(learner, ...) { # wrap into random search
 measures = list(
   # msr("surv.cindex", id = "harrell_c"),
   msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.graf", id = "graf", proper = TRUE),
+  # Added as graf alternative for now as per RS
+  msr("surv.rcll", id = "rcll"),
+  #msr("surv.graf", id = "graf", proper = TRUE),
+  msr("surv.dcalib", id = "dcalib")
+  
   #msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
   #msr("surv.logloss", id = "logloss"),
-  #msr("surv.calib_alpha", id = "calib"),
-  msr("surv.dcalib", id = "dcalib")
+  #msr("surv.calib_alpha", id = "calib")
 )
 
 for (measure in measures) {
