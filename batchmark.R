@@ -203,10 +203,10 @@ for (measure in measures) {
     ,
 
     ORSF = auto_tune(
-      bl("surv.aorsf", ntree = 5000),
+      bl("surv.aorsf", n_tree = 5000, control_type = "net"),
       surv.aorsf.mtry_ratio = p_dbl(0, 1),
       surv.aorsf.leaf_min_events = p_int(5, 50),
-      control_type = "net",
+      #surv.aorsf.control_type = "net",
       surv.aorsf.control_net_alpha = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
         x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
