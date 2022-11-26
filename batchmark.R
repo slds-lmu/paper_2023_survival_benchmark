@@ -203,13 +203,13 @@ for (measure in measures) {
     ,
 
     ORSF = auto_tune(
-      bl("surv.obliqueRSF", ntree = 5000),
-      surv.obliqueRSF.mtry_ratio = p_dbl(0, 1),
-      surv.obliqueRSF.use.cv = p_lgl(),
-      surv.obliqueRSF.min_events_in_leaf_node = p_int(5, 50),
-      surv.obliqueRSF.alpha = p_dbl(0, 1),
+      bl("surv.aorsf", ntree = 5000),
+      surv.aorsf.mtry_ratio = p_dbl(0, 1),
+      surv.aorsf.leaf_min_events = p_int(5, 50),
+      control_type = "net",
+      surv.aorsf.control_net_alpha = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
-        x$surv.obliqueRSF.min_obs_to_split_node = x$surv.obliqueRSF.min_events_in_leaf_node + 5L
+        x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
         x
       }
     )
