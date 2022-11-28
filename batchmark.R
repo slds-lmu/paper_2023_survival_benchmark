@@ -62,14 +62,14 @@ for (i in seq_along(files)) {
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
-  
+
   # As per RS to fix #38
   fallback$predict_type = "crank"
   learner$predict_type = "crank"
-  
+
   learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
-  
+
   # Added form as per RS
   g = ppl("distrcompositor", learner = learner, form = 'ph')
 
@@ -112,7 +112,7 @@ measures = list(
   msr("surv.rcll", id = "rcll"),
   #msr("surv.graf", id = "graf", proper = TRUE),
   msr("surv.dcalib", id = "dcalib")
-  
+
   #msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
   #msr("surv.logloss", id = "logloss"),
   #msr("surv.calib_alpha", id = "calib")
@@ -203,11 +203,10 @@ for (measure in measures) {
     ,
 
     ORSF = auto_tune(
-      bl("surv.aorsf", n_tree = 5000, control_type = "net"),
+      bl("surv.aorsf", n_tree = 5000, control_type = "fast"),
       surv.aorsf.mtry_ratio = p_dbl(0, 1),
       surv.aorsf.leaf_min_events = p_int(5, 50),
-      #surv.aorsf.control_type = "net",
-      surv.aorsf.control_net_alpha = p_dbl(0, 1),
+      # surv.aorsf.control_net_alpha = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
         x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
         x
