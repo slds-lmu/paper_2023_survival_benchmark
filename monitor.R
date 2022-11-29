@@ -12,15 +12,19 @@ source(file.path(root, "settings.R"))
 loadRegistry(reg_dir, writeable = FALSE)
 
 # Per-param groupings
-params <- c("learner_id", "measure", "task_id")
+args <- commandArgs(TRUE)
+
+if (length(args) == 0) {
+  params <- c("learner_id", "measure")
+} else {
+  params <- args
+}
+
+alljobs <- mlr3misc::unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
+data.table::setnames(alljobs, "tags", "measure")
 
 count_by <- function(ids, params) {
-  dt <- unwrap(getJobTable(ids))
-  # Clunkily add measure to job list. Stored in tags, tag column 
-  dt <- ljoin(dt, getJobTags(ids))
-  dt[, measure := tags]
-  setnames(dt, "tags", "measure")
-  
+  dt <- ijoin(ids, alljobs)
   if (nrow(dt) > 0) {
     dt[, .(count = .N), by = params][]
   }
@@ -31,10 +35,6 @@ cli::cli_h1("Status")
 getStatus()
 
 cat("\n")
-
-# Running -----------------------------------------------------------------
-cli::cli_h1("Running")
-count_by(findRunning(), params = params)
 
 # Done --------------------------------------------------------------------
 cli::cli_h1("Done")
@@ -48,20 +48,25 @@ count_by(findExpired(), params = params)
 
 cat("\n")
 
+# Running -----------------------------------------------------------------
+cli::cli_h1("Running")
+count_by(findRunning(), params = params)
+
+cat("\n")
+
 # Error'd -----------------------------------------------------------------
 cli::cli_h1("Errors")
 
 if (nrow(findErrors()) > 0) {
   print(count_by(findErrors(), params = params))
-  
+
   cat("\n")
+
   dterrors <- unwrap(getJobTable(findErrors()))
-  # Clunkily add measure to job list. Stored in tags, tag column 
-  dterrors <- ljoin(dterrors, getJobTags(findErrors()))
-  dterrors[, measure := tags]
-  setnames(dterrors, "tags", "measure")
+  data.table::setnames(dterrors, "tags", "measure")
+
   dterrors[, .(job.id, learner_id, task_id, measure, error)] |>
     glue::glue_data(
-      "- Learner `{learner_id}` on task `{task_id}` with measure `{measure}`: `{error}`\n\n"
+      "- Learner `{learner_id}` on task `{task_id}` with measure `{measure}`:\n `{error}`\n\n"
     )
 }
