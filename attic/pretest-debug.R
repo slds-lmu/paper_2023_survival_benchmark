@@ -7,4 +7,5 @@ rr = resample(
   resampling = resamplings$mgus
 )
 
-rr
+debuglrn = learners$GLM$clone()
+debuglrn$train(tasks$mgus, row_ids = resamplings$mgus$train_set(4))
