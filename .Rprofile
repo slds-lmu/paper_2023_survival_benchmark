@@ -1,3 +1,4 @@
+source("renv/activate.R")
 # Trying to ensure learners don't use more resources than they should
 Sys.setenv(OMP_NUM_THREADS = "1")
 Sys.setenv(OPENBLAS_NUM_THREADS = "1")
