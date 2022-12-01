@@ -5,16 +5,18 @@ source(file.path(root, "settings.R"))
 ### Packages ----
 ###################################################################################################
 
+# Dependencies managed via renv. Manually update as necessary via renv::update()
+renv::restore()
 # Not on CRAN anymore
-remotes::install_github("mlr-org/mlr3proba")
-remotes::install_github("RaphaelS1/survivalmodels")
-
-# Not on CRAN
-remotes::install_github("mlr-org/mlr3batchmark")
-remotes::install_github("mlr-org/mlr3extralearners")
-
-# Packages for specific learners
-remotes::install_github("binderh/CoxBoost") # Not on CRAN anymore
+# remotes::install_github("mlr-org/mlr3proba")
+# remotes::install_github("RaphaelS1/survivalmodels")
+#
+# # Not on CRAN
+# remotes::install_github("mlr-org/mlr3batchmark")
+# remotes::install_github("mlr-org/mlr3extralearners")
+#
+# # Packages for specific learners
+# remotes::install_github("binderh/CoxBoost") # Not on CRAN anymore
 
 library("stringi")
 library("mlr3misc")
