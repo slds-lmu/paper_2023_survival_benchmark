@@ -1760,14 +1760,6 @@
         "askpass"
       ]
     },
-    "pak": {
-      "Package": "pak",
-      "Version": "0.3.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "e46787265cec1026a5f15c7b6d617f16",
-      "Requirements": []
-    },
     "palmerpenguins": {
       "Package": "palmerpenguins",
       "Version": "0.1.1",
