@@ -23,25 +23,17 @@ data.table::setnames(alljobs, "tags", "measure")
 alljobs[, .(count = .N), by = task_id]
 alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 
-alljobs[repl == 1 & task_id == "wtd"] |>
-  submitJobs(resources = res)
-
+small_tasks <- c("veteran", "lung", "mgus", "wbc1", "e1684")
+stable_learners <- c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")
+dl_learners <-  c("CoxT", "DH", "DS", "LH", "PCH", "DNN")
 
 # ezpz jobs probably? -----------------------------------------------------
 
-alljobs[task_id %in% c("veteran", "lung", "mgus", "wbc1", "e1684") & learner_id %in% c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF", "RRT")] |>
-  submitJobs(res = res)
-
-alljobs[task_id %in% c("veteran", "lung", "mgus", "wbc1") & learner_id %in% c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")] |>
-  submitJobs(res = res)
-
-alljobs[task_id %in% c("lung") & learner_id %in% c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")] |>
+alljobs[task_id %in% small_tasks & learner_id %in% stable_learners] |>
   submitJobs(res = res)
 
 # DL learners -----------------------------------------------------------------------------------------------------
 
-lrns_dl <- c("CoxT", "DH", "DS", "LH", "PCH", "DNN")
-dl_jobs <- alljobs[learner_id %in% lrns_dl]
 
-dl_jobs[task_id == "lung" & measure == "rcll"] |>
+alljobs[task_id %in% small_tasks & learner_id %in% dl_learners] |>
   submitJobs(resources = res)
