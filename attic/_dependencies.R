@@ -27,10 +27,20 @@ if (FALSE) {
   library(pseudo)
   library(tensorflow)
 
-  # Non-CRAN pks:
-  # renv::install("mlr-org/mlr3batchmark")
-  # renv::install("mlr-org/mlr3proba")
-  # renv::install("mlr-org/mlr3extralearners")
-  # renv::install("binderh/CoxBoost")
-  # renv::install("RaphaelS1/survivalmodels")
+  # Non-CRAN pkgs for manual installation/updating
+  renv::install("mlr-org/mlr3batchmark")
+  renv::install("mlr-org/mlr3proba")
+  renv::install("mlr-org/mlr3extralearners")
+  renv::install("binderh/CoxBoost")
+  renv::install("RaphaelS1/survivalmodels")
+
+  reticulate::conda_create(envname = "proba-bench", environment = "environment.yml")
+  reticulate::use_condaenv("proba-bench", required = TRUE)
+  survivalmodels::install_pycox()
+  survivalmodels::install_keras(install_tensorflow = TRUE)
+  survivalmodels::install_torch()
 }
+
+# Why is python.
+reticulate::py_config()
+
