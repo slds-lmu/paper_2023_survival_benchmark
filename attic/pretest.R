@@ -20,8 +20,8 @@ res = list(walltime = 4 * 3600, memory = 4096)
 alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 
-# alljobs[, .(count = .N), by = learner_id]
 alljobs[, .(count = .N), by = task_id]
+alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 
 alljobs[repl == 1 & task_id == "wtd"] |>
   submitJobs(resources = res)
@@ -34,3 +34,14 @@ alljobs[task_id %in% c("veteran", "lung", "mgus", "wbc1", "e1684") & learner_id 
 
 alljobs[task_id %in% c("veteran", "lung", "mgus", "wbc1") & learner_id %in% c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")] |>
   submitJobs(res = res)
+
+alljobs[task_id %in% c("lung") & learner_id %in% c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")] |>
+  submitJobs(res = res)
+
+# DL learners -----------------------------------------------------------------------------------------------------
+
+lrns_dl <- c("CoxT", "DH", "DS", "LH", "PCH", "DNN")
+dl_jobs <- alljobs[learner_id %in% lrns_dl]
+
+dl_jobs[task_id == "lung" & measure == "rcll"] |>
+  submitJobs(resources = res)
