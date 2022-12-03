@@ -374,10 +374,10 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "0.7.0",
+      "Version": "0.7.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "808ef313066059f5d4ec376b24741860",
+      "Hash": "75f298a8d5f90fb98e0c6009a8644355",
       "Requirements": [
         "R6",
         "checkmate",
@@ -426,10 +426,10 @@
     },
     "boot": {
       "Package": "boot",
-      "Version": "1.3-28",
+      "Version": "1.3-28.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "0baa960e3b49c6176a4f42addcbacc59",
+      "Hash": "9a052fbcbe97a98ceb18dbfd30ebd96e",
       "Requirements": []
     },
     "brew": {
@@ -1097,10 +1097,10 @@
     },
     "glmnet": {
       "Package": "glmnet",
-      "Version": "4.1-4",
+      "Version": "4.1-6",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "416617ecd799fe4e352c1fdc2c9e4559",
+      "Hash": "1366be00d5883779604df7e5e0811c32",
       "Requirements": [
         "Matrix",
         "Rcpp",
@@ -1409,10 +1409,10 @@
     },
     "jpeg": {
       "Package": "jpeg",
-      "Version": "0.1-9",
+      "Version": "0.1-10",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "441ee36360a57b363f4fa3df0c364630",
+      "Hash": "031a0b683d001a7519202f0628fc0358",
       "Requirements": []
     },
     "jquerylib": {
@@ -1770,16 +1770,16 @@
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
-      "Version": "0.5.49-000",
+      "Version": "0.6.0-9000",
       "Source": "GitHub",
       "RemoteType": "github",
-      "Remotes": "alan-turing-institute/distr6, binderh/CoxBoost, mlr-org/mlr3proba,\n    RaphaelS1/survivalmodels, xoopR/param6, xoopR/set6",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "mlr3extralearners",
       "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "HEAD",
-      "RemoteSha": "20272f119b7451675759408539b8d15e99a88dee",
-      "Hash": "f87b5e917780a233b819c70fde170fa5",
+      "RemoteSha": "5c7780e2c8074a530668ce8194bcf4ae8917099e",
+      "RemoteHost": "api.github.com",
+      "Remotes": "alan-turing-institute/distr6, binderh/CoxBoost, mlr-org/mlr3proba,\n    RaphaelS1/survivalmodels, xoopR/param6, xoopR/set6",
+      "Hash": "3a6caec703a7b58cb9da201974a118de",
       "Requirements": [
         "R6",
         "checkmate",
@@ -2261,10 +2261,10 @@
     },
     "png": {
       "Package": "png",
-      "Version": "0.1-7",
+      "Version": "0.1-8",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "03b7076c234cb3331288919983326c55",
+      "Hash": "bd54ba8a0a5faded999a7aab6e46b374",
       "Requirements": []
     },
     "polspline": {
@@ -2561,10 +2561,10 @@
     },
     "riskRegression": {
       "Package": "riskRegression",
-      "Version": "2022.09.23",
+      "Version": "2022.11.28",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "20c204effa7c1685251a18ba4e4d71d7",
+      "Hash": "68811848ac590fb031740da3e7684697",
       "Requirements": [
         "Publish",
         "Rcpp",
@@ -2837,14 +2837,18 @@
     },
     "stringr": {
       "Package": "stringr",
-      "Version": "1.4.1",
+      "Version": "1.5.0",
       "Source": "Repository",
-      "Repository": "RSPM",
-      "Hash": "a66ad12140cd34d4f9dfcc19e84fc2a5",
+      "Repository": "CRAN",
+      "Hash": "671a4d384ae9d32fc47a14e98bfa3dc8",
       "Requirements": [
+        "cli",
         "glue",
+        "lifecycle",
         "magrittr",
-        "stringi"
+        "rlang",
+        "stringi",
+        "vctrs"
       ]
     },
     "survival": {
