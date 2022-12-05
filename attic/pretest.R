@@ -20,8 +20,8 @@ res = list(walltime = 4 * 3600, memory = 4096)
 alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 
-alljobs[, .(count = .N), by = task_id]
-alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
+# alljobs[, .(count = .N), by = task_id]
+# alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 
 small_tasks <- c("veteran", "lung", "mgus", "wbc1", "e1684")
 stable_learners <- c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")
@@ -29,11 +29,14 @@ dl_learners <-  c("CoxT", "DH", "DS", "LH", "PCH", "DNN")
 
 # ezpz jobs probably? -----------------------------------------------------
 
-alljobs[task_id %in% small_tasks & learner_id %in% stable_learners] |>
-  submitJobs(res = res)
+# alljobs[task_id %in% small_tasks & learner_id %in% stable_learners & grepl("rcll", measure)] |>
+#   submitJobs(res = res)
+#
+# # DL learners -----------------------------------------------------------------------------------------------------
+#
+# alljobs[task_id %in% small_tasks & learner_id %in% dl_learners & grepl("rcll", measure)] |>
+#   submitJobs(resources = res)
 
-# DL learners -----------------------------------------------------------------------------------------------------
-
-
-alljobs[task_id %in% small_tasks & learner_id %in% dl_learners] |>
+alljobs[grepl("rcll", measure)] |>
+  findNotSubmitted() |>
   submitJobs(resources = res)

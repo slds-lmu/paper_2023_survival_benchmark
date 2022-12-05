@@ -31,26 +31,25 @@ showLog(ids[1])
 ###################################################################################################
 ### Reduce results
 ###################################################################################################
-# measures = msrs(c("surv.cindex", "surv.rcll"))
-measures = list(
-  # Tuning measures
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.rcll", id = "rcll"),
-  msr("surv.dcalib", id = "dcalib"),
+# Store eval measures for easier retrieval
+measures_eval = list(
+  harrell_c = msr("surv.cindex", id = "harrell_c"),
+  uno_c = msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  # Added as graf alternative for now as per RS
+  rcll = msr("surv.rcll", id = "rcll"),
+  # msr("surv.graf", id = "graf", proper = TRUE),
+  dcalib = msr("surv.dcalib", id = "dcalib"),
 
-  # Additional evaluation measures
-  msr("surv.cindex", id = "harrell_c"),
-  msr("surv.graf", id = "graf", proper = TRUE),
-  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  msr("surv.logloss", id = "logloss"),
-  msr("surv.calib_alpha", id = "calib")
+  intlogloss = msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  logloss = msr("surv.logloss", id = "logloss"),
+  calib = msr("surv.calib_alpha", id = "calib")
 )
 
 bmr = reduceResultsBatchmark()
 saveRDS(bmr, "tmp/bmr.rds")
 
 #profvis::profvis({
-aggr = bmr$aggregate(measures = measures, conditions = TRUE)
+aggr = bmr$aggregate(measures = measures_eval[c("harrell_c", "rcll")], conditions = TRUE)
 #})
 saveRDS(aggr, "tmp/aggr.rds")
 resamplings_with_error = aggr[errors > 0, nr]
