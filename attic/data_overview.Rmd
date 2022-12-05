@@ -1,0 +1,204 @@
+---
+title: "New Dataset Checkup"
+author: "Lukas"
+date: "9/21/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+  )
+```
+
+```{r}
+library(dplyr)
+library(kableExtra)
+
+# All datasets currently in code/data with pkg::dataset notation, using
+# pkg := pycox for the pycox datasets
+datasets <- c(
+  #"APtools::mayo",
+  "dynpred::ALL",
+  "dynpred::ova",
+  "dynpred::wbc1",
+  "eha::child", 
+  "frailtyHL::bladder0",
+  "frailtySurv::hdfail", 
+  "JM::aids.id", 
+  "joineR::liver", 
+  "KMsurv::channing",
+  "KMsurv::kidtran",
+  "KMsurv::std", 
+  # "locfit::livmet",
+  "mlr3proba::grace",
+  "mlr3proba::whas",
+  "MASS::aids2",
+  "MRsurv::FTR.data", 
+  "MRsurv::STR.data", 
+  "pammtools::patient",
+  "pammtools::tumor",
+  "pec::cost", 
+  "pycox::gbsg",
+  "pycox::metabric",
+  "pycox::support",
+  "quantreg::uis", 
+  "relsurv::rdata", 
+  # "relsurv::colrec", 
+  "survival::mgus",
+  "survival::nafld1",
+  "survival::veteran",
+  "survival::nwtco",
+  "survival::flchain",
+  "survival::lung",
+  "simPH::CarpenterFdaData", 
+  "smcure::e1684"
+)
+
+length(datasets)
+
+datasets <- tibble(pkgdata = datasets) |>
+  tidyr::separate(pkgdata, c("pkg", "dataset"), sep = "::")
+
+# Do files in code/data and files in above table match up?
+setdiff(
+  datasets$dataset,
+  fs::dir_ls(here::here("code/data")) |> fs::path_file() |> fs::path_ext_remove()
+)
+
+is.binary <- function(x) {
+  tryCatch(length(unique(na.omit(x))) == 2,
+           error = function(e) FALSE, silent = TRUE)
+}
+
+xdat_summary <- fs::dir_ls(here::here("code/data")) |>
+  purrr::map_df(~{
+    dat <- readRDS(.x)
+    
+    dat_preds <- dat |> select(-c(time, status))
+    
+    tibble(
+      dataset = fs::path_file(.x) |> fs::path_ext_remove(),
+      N = nrow(dat),
+      # Censoring percentage
+      C_perc = round((sum(dat$status == 0) / N) * 100, 0),
+      # Number of events
+      n_events = sum(dat$status == 1),
+      # Number of predictors (so ncol - 2), number of predictors of certain types
+      p = ncol(dat_preds),
+      p_binary = sum(purrr::map_int(dat_preds, is.binary)),
+      p_factor = sum(purrr::map_int(dat_preds, ~{is.factor(.x) & !is.binary(.x)})),
+      p_continuous = sum(purrr::map_int(dat_preds, ~{is.numeric(.x)  & !is.binary(.x)})),
+      # CV folds, defaults to 5 unless N too small
+      folds = ifelse(N < 150, floor(N / 30), 5)
+    )
+})
+
+# sanity overview
+datasets <- left_join(datasets, xdat_summary, by = "dataset") 
+saveRDS(datasets, here::here("attic", "datasets.rds"))
+
+datasets |>
+  arrange(dataset) |>
+  kable(caption = "Datasets included in benchmark") |>
+  kable_styling()
+```
+
+
+## Table contents for overleaf
+
+```{r, eval = FALSE}
+ol_tbl <- left_join(datasets, xdat_summary, by = "dataset") |>
+  mutate(
+    n_cont = p_continuous,
+    n_disc = p_binary + p_factor
+  ) |>
+  select(
+    dataset, C_perc, n_cont, n_disc, N, p, n_events, pkg, folds
+  ) |>
+  arrange(dataset)
+
+# Print them for easier copypasting into overleaf
+ol_tbl <- ol_tbl |>
+  tidyr::unite(numbers, dataset:folds, sep = " & ")
+
+for (row in seq_len(nrow(ol_tbl))) {
+  cat(ol_tbl$numbers[row])
+  cat("\n")
+}
+```
+
+## Citations
+
+```{r, eval = FALSE}
+purrr::walk(unique(datasets$pkg), ~{
+  if (.x == "pycox") return(NULL)
+  cat(glue::glue("Package {.x}:\n\n"))
+  knitr::write_bib(.x, prefix = "pkg")
+})
+```
+
+## Comparing with SurvSet
+
+```{r, eval = FALSE}
+survset_path <- "~/repos/github/ErikinBC/SurvSet/SurvSet/_datagen/output/"
+
+survset_list <- fs::dir_ls(survset_path, glob = "*.csv") |>
+  purrr::map(~{
+    dat <- readr::read_csv(.x, show_col_types = FALSE)
+    dat$status <- dat$event
+    dat$event <- NULL
+    
+    dat
+  })
+
+names(survset_list) <- fs::dir_ls(survset_path, glob = "*.csv") |>
+  fs::path_file() |>
+  fs::path_ext_remove()
+
+survset_datasets <- fs::dir_ls(survset_path, glob = "*.csv") |>
+  purrr::map_df(~{
+    dat <- readr::read_csv(.x, show_col_types = FALSE)
+    dat$status <- dat$event
+    dat$event <- NULL
+    
+    dat_preds <- dat |> select(-any_of(c("time", "time2", "status", "pid")))
+    
+    tibble(
+      dataset = fs::path_file(.x) |> fs::path_ext_remove(),
+      N = nrow(dat),
+      time_varying = length(unique(dat$pid)) < N,
+      has_time2 = "time2" %in% names(dat),
+      has_cr = length(unique(dat$status)) > 2,
+      # Censoring percentage
+      C_perc = round((sum(dat$status == 0) / N) * 100, 0),
+      # Number of events
+      n_events = sum(dat$status == 1),
+      # Number of predictors (so ncol - 2), number of predictors of certain types
+      p = ncol(dat_preds),
+      p_binary = sum(purrr::map_int(dat_preds, is.binary)),
+      p_factor = sum(purrr::map_int(dat_preds, ~{is.factor(.x) & !is.binary(.x)})),
+      p_continuous = sum(purrr::map_int(dat_preds, ~{is.numeric(.x)  & !is.binary(.x)})),
+      # CV folds, defaults to 5 unless N too small
+      folds = ifelse(N < 150, floor(N / 30), 5)
+    )
+  })
+
+survset_datasets |>
+  dplyr::filter(
+    C_perc > 0, 
+    n_events >= 100, 
+    p < N,
+    !time_varying,
+    !has_time2,
+    !has_cr,
+    ) |> 
+  dplyr::select(-dplyr::any_of(c("time_varying", "has_time2", "has_cr"))) |>
+  kable(caption = "Possibly suitable datasets in SurvSet") |>
+  kable_styling()
+```
+
