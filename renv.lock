@@ -271,6 +271,16 @@
       "Hash": "4f57884290cc75ab22f4af9e9d4ca862",
       "Requirements": []
     },
+    "actuar": {
+      "Package": "actuar",
+      "Version": "3.3-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "1b8ba60fc8ae8501793f26628f142926",
+      "Requirements": [
+        "expint"
+      ]
+    },
     "aorsf": {
       "Package": "aorsf",
       "Version": "0.0.4",
@@ -887,6 +897,14 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6b6c0f8467cd4ce0b500cabbc1bd1763",
+      "Requirements": []
+    },
+    "expint": {
+      "Package": "expint",
+      "Version": "0.1-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "57208be351e926869d7121aca0c80a9b",
       "Requirements": []
     },
     "fansi": {

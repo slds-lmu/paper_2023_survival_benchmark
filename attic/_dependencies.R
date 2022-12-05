@@ -26,6 +26,7 @@ if (FALSE) {
   library(keras)
   library(pseudo)
   library(tensorflow)
+  library(actuar) # For surv.parametric
 
   # Non-CRAN pkgs for manual installation/updating
   renv::install("mlr-org/mlr3batchmark")

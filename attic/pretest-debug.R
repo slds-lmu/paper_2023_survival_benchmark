@@ -16,6 +16,16 @@ measures_eval = list(
 )
 
 
+# Par / CarpenterFdaData / rcll -------------------------------------------
+# https://github.com/RaphaelS1/proba_benchmark/issues/47
+rr = resample(
+  task = tasks$CarpenterFdaData,
+  learner = learners$Par,
+  resampling = resamplings$CarpenterFdaData
+)
+ # Seems to run and eval fine?
+rr$score(measures = measures_eval[c("harrell_c", "rcll")])
+
 # glmnet on mgus ----------------------------------------------------------
 rr = resample(
   task = tasks$mgus,
