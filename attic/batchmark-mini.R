@@ -1,3 +1,9 @@
+# Modified version of `batchmark.R` with changes for debugging:
+# - No batchtools registry is created
+# - Fallback learner is disabled in an attempt to surface any issues we might miss
+# - AutoTuners have set store_models = TRUE to investigate models if need be
+# - Tuning measure is set in global variable `measure` below
+
 root = here::here()
 source(file.path(root, "settings.R"))
 
@@ -17,6 +23,18 @@ library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
+
+# Choose tuning measure ---------------------------------------------------
+measures_tune = list(
+  uno_c = msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  # Added as graf alternative for now as per RS
+  rcll = msr("surv.rcll", id = "rcll"),
+  # msr("surv.graf", id = "graf", proper = TRUE),
+  dcalib = msr("surv.dcalib", id = "dcalib")
+)
+
+# Choose one measure from the tuning measures above
+measure = measures_tune[["rcll"]]
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
@@ -43,14 +61,14 @@ for (i in seq_along(files)) {
 # Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  #fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
   # As per RS to fix #38
-  fallback$predict_type = "crank"
+  #fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
-  learner$fallback = fallback
-  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  #learner$fallback = fallback
+  #learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # Added form as per RS
   g = ppl("distrcompositor", learner = learner, form = 'ph')
@@ -81,28 +99,9 @@ auto_tune = function(learner, ...) { # wrap into random search
     tuner = tnr("random_search"),
     store_tuning_instance = TRUE,
     store_benchmark_result = FALSE,
-    store_models = FALSE
+    store_models = TRUE # Preserve models for debugging
   )
 }
-
-# Tuning measures are a subset of all measures, remaining measures are used
-# for evaluation (see overleaf Table 1)
-measures = list(
-  # msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  # Added as graf alternative for now as per RS
-  msr("surv.rcll", id = "rcll"),
-  #msr("surv.graf", id = "graf", proper = TRUE),
-  msr("surv.dcalib", id = "dcalib")
-
-  #msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  #msr("surv.logloss", id = "logloss"),
-  #msr("surv.calib_alpha", id = "calib")
-)
-
-# Chosse one measure from the tuning measures above
-measure = msr("surv.cindex", id = "uno_c", weight_meth = "G2")
-# AutoTuners will use global var 'measure' as tuning measure
 
 learners = list(
   KM = bl("surv.kaplan")
