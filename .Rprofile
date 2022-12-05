@@ -5,6 +5,7 @@ source("renv/activate.R")
 if (Sys.info()[["machine"]] != "arm64") {
   reticulate::use_condaenv("proba-bench", required = TRUE)
 }
+print(reticulate::py_config())
 
 # Trying to ensure learners don't use more resources than they should
 Sys.setenv(OMP_NUM_THREADS = "1")
