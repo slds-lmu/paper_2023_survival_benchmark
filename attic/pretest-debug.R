@@ -117,6 +117,9 @@ rr = resample(
 
 rr$score(measures = measures_eval[c("harrell_c", "rcll")])
 
+
+# LH / lung ---------------------------------------------------------------
+
 rr = resample(
   task = tasks$lung,
   learner = learners$LH,
@@ -124,4 +127,30 @@ rr = resample(
 )
 
 # C around 0.5, rcll > 25
+rr$score(measures = measures_eval[c("harrell_c", "rcll")])
+
+
+# SVM / CarpenterFdaData --------------------------------------------------
+
+rr = resample(
+  task = tasks$CarpenterFdaData,
+  learner = learners$SSVM,
+  resampling = resamplings$CarpenterFdaData
+)
+# Error in quadprog::solve.QP(C, -d, t(H), f, meq = meq) :
+# constraints are inconsistent, no solution!
+#  This happened PipeOp surv.svm's $train()
+
+
+# SVM / ALL ---------------------------------------------------------------
+# pretest job shows harrell's C 0.5 but rcll 7.432
+
+rr$score(measures = measures_eval[c("harrell_c", "rcll")])
+
+rr = resample(
+  task = tasks$ALL,
+  learner = learners$SSVM,
+  resampling = resamplings$ALL
+)
+
 rr$score(measures = measures_eval[c("harrell_c", "rcll")])

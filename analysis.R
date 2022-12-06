@@ -57,7 +57,7 @@ resamplings_with_error = aggr[errors > 0, nr]
 mlr3viz::autoplot(bmr)
 # bmr$resample_result(resamplings_with_error[1])$errors
 
-ggplot(aggr, aes(x = learner_id, y = surv.cindex)) +
+ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
   facet_wrap(vars(task_id)) +
   geom_boxplot() +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
@@ -105,10 +105,23 @@ lrn_tab$Type = factor(lrn_tab$Type, levels = unique(lrn_tab$Type))
 
 aggr = ljoin(aggr, lrn_tab)
 
+aggr[, .(count = .N), by = task_id]
+
 aggr |>
-  subset(task_id == "lung") |>
-  ggplot(aes(x = learner_id, y = surv.cindex)) +
+  #subset(task_id == "channing") |>
+  ggplot(aes(x = learner_id, y = harrell_c)) +
   facet_grid(cols = vars(Type), rows = vars(task_id), scales = "free") +
   geom_boxplot() +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   theme_minimal(base_size = 14)
+
+aggr |>
+  #subset(task_id == "channing") |>
+  ggplot(aes(x = learner_id, y = harrell_c)) +
+  coord_flip() +
+  facet_grid(rows = vars(Type), cols = vars(task_id), scales = "free") +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  theme_minimal(base_size = 14)
+
+aggr[harrell_c <= 0.5, ]
