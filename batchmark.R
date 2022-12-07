@@ -54,14 +54,14 @@ for (i in seq_along(files)) {
 # Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  # fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
   # As per RS to fix #38
-  fallback$predict_type = "crank"
+  # fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
-  learner$fallback = fallback
-  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  # learner$fallback = fallback
+  # learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # Added form as per RS
   g = ppl("distrcompositor", learner = learner, form = 'ph')
