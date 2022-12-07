@@ -68,12 +68,17 @@ if (nrow(findErrors()) > 0) {
   dterrors <- dterrors[, .(job.id, learner_id, task_id, measure, error)]
 
   cli::cli_h2("Unique error messages")
-  dterrors[, .(count = .N), by = error] |>
+  errorcount <- dterrors[, .(count = .N), by = error]
+
+  errorcount |>
     glue::glue_data(
       "- {count}x: `{error}`\n\n"
-    )
+    ) |>
+    cat()
+
   cat("\n")
 
+  # cli::cli_h2("Error messages by learner, task, and measure")
   # errorlist <- dterrors[, .(count = .N), by = .(learner_id, task_id, measure, error)]
   # data.table::setorder(errorlist, learner_id, task_id, measure)
   #
