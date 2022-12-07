@@ -23,7 +23,7 @@ rr = resample(
   learner = learners$Par,
   resampling = resamplings$CarpenterFdaData
 )
- # Seems to run and eval fine?
+# Seems to run and eval fine?
 rr$score(measures = measures_eval[c("harrell_c", "rcll")])
 
 # glmnet on mgus ----------------------------------------------------------
@@ -81,10 +81,11 @@ wbc1_test = as.matrix(tasks$wbc1$data())[resamplings$wbc1$test_set(1), 3:4]
 predict(glmn$model, newx = wbc1_test, s = "lambda.min")
 
 
-# ORSF / wbc1 -------------------------------------------------------------
+# ORSF / multiple tasks -------------------------------------------------------------
 # Error: mtry = 1 should be >= 2
 # This happened PipeOp surv.aorsf's $train()
 
+# Affects tasks: wbc1, ALL, CarpenterFdaData, aids.id, aids2, channing
 # Makes sense that a p = 2 dataset won't do well here.
 # Likely masked by fallback learner?
 
@@ -154,3 +155,13 @@ rr = resample(
 )
 
 rr$score(measures = measures_eval[c("harrell_c", "rcll")])
+
+
+# Pycox censoring at start time error -------------------------------------
+# Affects ALL, CarpenterFdaData, aids.id
+
+learners$PCH$train(tasks$ALL, row_ids = resamplings$ALL$train_set(1))
+
+learners$PCH$train(tasks$CarpenterFdaData, row_ids = resamplings$CarpenterFdaData$train_set(1))
+
+learners$PCH$train(tasks$aids.id, row_ids = resamplings$aids.id$train_set(1))
