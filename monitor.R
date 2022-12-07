@@ -65,8 +65,20 @@ if (nrow(findErrors()) > 0) {
   dterrors <- unwrap(getJobTable(findErrors()))
   data.table::setnames(dterrors, "tags", "measure")
 
-  dterrors[, .(job.id, learner_id, task_id, measure, error)] |>
+  dterrors <- dterrors[, .(job.id, learner_id, task_id, measure, error)]
+
+  cli::cli_h2("Unique error messages")
+  dterrors[, .(count = .N), by = error] |>
     glue::glue_data(
-      "- Learner `{learner_id}` on task `{task_id}` with measure `{measure}`:\n `{error}`\n\n"
+      "- {count}x: `{error}`\n\n"
     )
+  cat("\n")
+
+  # errorlist <- dterrors[, .(count = .N), by = .(learner_id, task_id, measure, error)]
+  # data.table::setorder(errorlist, learner_id, task_id, measure)
+  #
+  # errorlist |>
+  #   glue::glue_data(
+  #     "- Learner `{learner_id}` on task `{task_id}` with measure `{measure}` ({count} times):\n `{error}`\n\n"
+  #   )
 }
