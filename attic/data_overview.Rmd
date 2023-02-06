@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 ```{r}
 library(dplyr)
 library(kableExtra)
+library(data.table)
 
 # All datasets currently in code/data with pkg::dataset notation, using
 # pkg := pycox for the pycox datasets
@@ -103,10 +104,36 @@ datasets <- left_join(datasets, xdat_summary, by = "dataset")
 saveRDS(datasets, here::here("attic", "datasets.rds"))
 
 datasets |>
-  arrange(dataset) |>
+  arrange(tolower(dataset)) |>
   kable(caption = "Datasets included in benchmark") |>
   kable_styling()
 ```
+
+## Datasets with rare factor levels
+
+```{r}
+xdat_summary <- as.data.table(xdat_summary)
+xdat_summary[p_factor > 0, ]
+
+files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
+names = stri_sub(basename(files), 1, -5)
+tasks = named_list(names)
+
+for (i in seq_along(files)) {
+  data = readRDS(files[i])
+  task = as_task_surv(data, target = "time", event = "status", id = names[i])
+  task$set_col_roles("status", add_to = "stratum")
+  tasks[[i]] = task
+  rm(data, task)
+}
+
+tasks <- tasks[names(tasks) %in% xdat_summary[p_factor > 0, ]$dataset]
+
+lapply(tasks, function(t) {
+  
+})
+```
+
 
 
 ## Table contents for overleaf
