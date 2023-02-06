@@ -276,7 +276,8 @@ CarpenterFdaData <- mlr3misc::load_dataset("CarpenterFdaData", "simPH") %>%
     -caseid, # ID var
     -X_st, # constant 1
     -X_t0, # constant 0
-    -X_t # identical to acttime (time)
+    -X_t, # identical to acttime (time).
+    -X_d # identical to censor (status)
   )
 
 save_data(CarpenterFdaData)
