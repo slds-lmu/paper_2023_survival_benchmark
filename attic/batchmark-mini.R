@@ -10,7 +10,7 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 ### Packages ----
 ###################################################################################################
-renv::restore(prompt = FALSE)
+# renv::restore(prompt = FALSE)
 
 library("stringi")
 library("mlr3misc")
@@ -26,7 +26,7 @@ requireNamespace("mlr3extralearners")
 
 # Choose tuning measure ---------------------------------------------------
 measures_tune = list(
-  uno_c = msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  harrell_c = msr("surv.cindex", id = "harrell_c"),
   # Added as graf alternative for now as per RS
   rcll = msr("surv.rcll", id = "rcll"),
   # msr("surv.graf", id = "graf", proper = TRUE),
@@ -34,7 +34,7 @@ measures_tune = list(
 )
 
 # Choose one measure from the tuning measures above
-measure = measures_tune[["rcll"]]
+measure = measures_tune[["harrell_c"]]
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
@@ -47,6 +47,17 @@ for (i in seq_along(files)) {
 
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
+
+  # DEBUG: Stratification was discussed, checking ad-hoc
+  # if (names[i] == "bladder0") {
+  #   task$set_col_roles("Center", add_to = "stratum")
+  # }
+  # if (names[i] == "hdfail") {
+  #   task$set_col_roles("model", add_to = "stratum")
+  # }
+  # if (names[i] == "aids2") {
+  #   task$set_col_roles("T.categ", add_to = "stratum")
+  # }
 
   folds = min(floor(task$nrow / min_obs), outer_folds)
   resampling = rsmp("cv", folds = folds)$instantiate(task)
@@ -61,6 +72,7 @@ for (i in seq_along(files)) {
 # Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
+  # DEBUG: Disable fallback to catch potentially fixable errors
   #fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
   # As per RS to fix #38

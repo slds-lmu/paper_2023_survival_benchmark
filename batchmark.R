@@ -54,14 +54,14 @@ for (i in seq_along(files)) {
 # Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
-  # fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
   # As per RS to fix #38
-  # fallback$predict_type = "crank"
+  fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
-  # learner$fallback = fallback
-  # learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  learner$fallback = fallback
+  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # Added form as per RS
   g = ppl("distrcompositor", learner = learner, form = 'ph')
@@ -99,16 +99,13 @@ auto_tune = function(learner, ...) { # wrap into random search
 # Tuning measures are a subset of all measures, remaining measures are used
 # for evaluation (see overleaf Table 1)
 measures = list(
-  # msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  msr("surv.cindex", id = "harrell_c"),
   # Added as graf alternative for now as per RS
   msr("surv.rcll", id = "rcll"),
   #msr("surv.graf", id = "graf", proper = TRUE),
   msr("surv.dcalib", id = "dcalib")
 
-  #msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  #msr("surv.logloss", id = "logloss"),
-  #msr("surv.calib_alpha", id = "calib")
+  # msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
 )
 
 for (measure in measures) {
