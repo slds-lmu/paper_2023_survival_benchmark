@@ -3,45 +3,92 @@
 # Assembled by running batchmark.R to create `learners` list, then
 # lapply(mlr3::extract_pkgs(learners), function(x) cat("library(", x, ")\n", sep = ""))
 if (FALSE) {
-  library(survival)
-  library(distr6)
-  library(mlr3extralearners)
-  library(pracma)
-  library(survivalmodels)
-  library(glmnet)
-  library(penalized)
-  library(flexsurv)
-  library(randomForestSRC)
-  library(ranger)
-  library(partykit)
-  library(sandwich)
-  library(coin)
-  library(aorsf)
-  library(rpart)
-  library(mboost)
-  library(CoxBoost)
-  library(xgboost)
-  library(survivalsvm)
-  library(reticulate)
-  library(keras)
-  library(pseudo)
-  library(tensorflow)
-  library(actuar) # For surv.parametric
+  renv::install("survival", prompt = FALSE)
+  renv::install("pracma", prompt = FALSE)
+  renv::install("glmnet", prompt = FALSE)
+  renv::install("penalized", prompt = FALSE)
+  renv::install("flexsurv", prompt = FALSE)
+  renv::install("randomForestSRC", prompt = FALSE)
+  renv::install("ranger", prompt = FALSE)
+  renv::install("partykit", prompt = FALSE)
+  renv::install("sandwich", prompt = FALSE)
+  renv::install("coin", prompt = FALSE)
+  renv::install("aorsf", prompt = FALSE)
+  renv::install("rpart", prompt = FALSE)
+  renv::install("mboost", prompt = FALSE)
+  renv::install("xgboost", prompt = FALSE)
+  renv::install("survivalsvm", prompt = FALSE)
+  renv::install("reticulate", prompt = FALSE)
+  renv::install("keras", prompt = FALSE)
+  renv::install("pseudo", prompt = FALSE)
+  renv::install("tensorflow", prompt = FALSE)
+  renv::install("actuar", prompt = FALSE) # For surv.parametric
+
+  renv::install("mlr3batchmark", prompt = FALSE) # on CRAN now with v0.1.0
+  # renv::install("mlr-org/mlr3batchmark")
 
   # Non-CRAN pkgs for manual installation/updating
-  renv::install("mlr-org/mlr3batchmark")
-  renv::install("mlr-org/mlr3proba")
-  renv::install("mlr-org/mlr3extralearners")
-  renv::install("binderh/CoxBoost")
-  renv::install("RaphaelS1/survivalmodels")
+  renv::install("mlr-org/mlr3proba", prompt = FALSE)
+  renv::install("mlr-org/mlr3extralearners", prompt = FALSE)
+  renv::install("binderh/CoxBoost", prompt = FALSE)
+  renv::install("RaphaelS1/distr6", prompt = FALSE)
+  renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 
+  # Setting up python envs is hell
+  # reticulate::conda_remove("proba-bench")
   reticulate::conda_create(envname = "proba-bench", environment = "environment.yml")
+  reticulate::conda_create(envname = "proba-bench")
+
   reticulate::use_condaenv("proba-bench", required = TRUE)
-  survivalmodels::install_pycox()
-  survivalmodels::install_keras(install_tensorflow = TRUE)
-  survivalmodels::install_torch()
+
+  survivalmodels::install_pycox(method = "conda", install_torch = TRUE)
+  #survivalmodels::install_keras(install_tensorflow = TRUE)
+  # installs correct version maybe? ^ installed 2.13, keras installs 2.11
+  keras::install_keras(method = "conda", version = "default", pip_ignore_installed = TRUE)
+  reticulate::conda_export("proba-benchmark", file = "environment.yml")
 }
+
+# Had an issue where cuda complained about ptxas being too old, ($ which ptxas) suggests all my cuda's are > 11.3 or something
+# but it said upgrading to 11.1 might help, which is concerning.
+# conda install cuda -c nvidia
+# according to
+# https://github.com/google/jax/discussions/10327
 
 # Why is python.
 reticulate::py_config()
 
+pypkgs <- reticulate::py_list_packages()
+pypkgs[grep("tensorfl|keras|pycox|pytorch", pypkgs$package), ]
+
+
+# For quick local installation outside of renv
+# using pak because its fast and does github
+if (FALSE) {
+  pak::pak("survival")
+  pak::pak("pracma")
+  pak::pak("glmnet")
+  pak::pak("penalized")
+  pak::pak("flexsurv")
+  pak::pak("randomForestSRC")
+  pak::pak("ranger")
+  pak::pak("partykit")
+  pak::pak("sandwich")
+  pak::pak("coin")
+  pak::pak("aorsf")
+  pak::pak("rpart")
+  pak::pak("mboost")
+  pak::pak("xgboost")
+  pak::pak("survivalsvm")
+  pak::pak("reticulate")
+  pak::pak("keras")
+  pak::pak("pseudo")
+  pak::pak("tensorflow")
+  pak::pak("actuar") # For surv.parametric
+  pak::pak("mlr3batchmark") # on CRAN now with v0.1.0
+
+  pak::pak("RaphaelS1/distr6")
+  pak::pak("mlr-org/mlr3proba")
+  pak::pak("mlr-org/mlr3extralearners")
+  pak::pak("binderh/CoxBoost")
+  pak::pak("RaphaelS1/survivalmodels")
+}

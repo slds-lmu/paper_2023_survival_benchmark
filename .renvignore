@@ -1,1 +1,6 @@
+# Don't make renv pick up dependencies from old code in code/
+# Specify this here because normally putting things in .gitignore has the same effect, but we don't want to gitignore this
 code/*.R
+registry/*
+registry-*
+attic/*

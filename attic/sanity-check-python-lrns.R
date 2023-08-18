@@ -5,35 +5,43 @@
 source(here::here("attic/batchmark-mini.R"), echo = FALSE)
 
 # surv.dnnsurv: R-keras, not available on arm64 without conda, but conda with renv is hard sorry
+# appears to work
 learners[["DNN"]]$train(tasks$mgus)
+learners[["DNN"]]$predict(tasks$mgus)
 learners[["DNN"]]$errors
 learners[["DNN"]]$warnings
 
 # surv.deepsurv: R-keras
+# FIXME: ImportError: Numba needs NumPy 1.24 or less
 learners[["DS"]]$train(tasks$mgus)
+learners[["DS"]]$predict(tasks$mgus)
 learners[["DS"]]$errors
 learners[["DS"]]$warnings
 
 # surv.coxtime: pycox
-# Can likely be ignored?
-# ./renv/python/virtualenvs/renv-python-3.10/lib/python3.10/site-packages/pycox/models/data.py:38:
-# FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
-# for ix, t in keys.iteritems():
+# FIXME:  ImportError: Numba needs NumPy 1.24 or less
 learners[["CoxT"]]$train(tasks$mgus)
+learners[["CoxT"]]$predict(tasks$mgus)
 learners[["CoxT"]]$errors
 learners[["CoxT"]]$warnings
 
 # surv.pchazard: PyTorch
+# FIXME: ImportError: Numba needs NumPy 1.24 or less
 learners[["PCH"]]$train(tasks$mgus)
+learners[["PCH"]]$predict(tasks$mgus)
 learners[["PCH"]]$errors
 learners[["PCH"]]$warnings
 
 # surv.deephit: PyTorch
+# FIXME: ImportError: Numba needs NumPy 1.24 or less
 learners[["DH"]]$train(tasks$mgus)
+learners[["DH"]]$predict(tasks$mgus)
 learners[["DH"]]$errors
 learners[["DH"]]$warnings
 
 # surv.loghaz: PyTorch
+# FIXME: ImportError: Numba needs NumPy 1.24 or less
 learners[["LH"]]$train(tasks$mgus)
+learners[["LH"]]$predict(tasks$mgus)
 learners[["LH"]]$errors
 learners[["LH"]]$warnings
