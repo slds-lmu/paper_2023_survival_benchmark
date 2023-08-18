@@ -1,7 +1,6 @@
-# Dummy dep list --------------------------------------------------------------------------------------------------
-# Only for renv to pick up on the implicit learner dependencies
-# Assembled by running batchmark.R to create `learners` list, then
-# lapply(mlr3::extract_pkgs(learners), function(x) cat("library(", x, ")\n", sep = ""))
+# Dependency list --------------------------------------------------------------------------------------------------
+# Assembled semi-manually, with direct install commands for renv as the
+# automatic pick up of dependencies was unreliable
 if (FALSE) {
   renv::install("survival", prompt = FALSE)
   renv::install("pracma", prompt = FALSE)
@@ -34,21 +33,33 @@ if (FALSE) {
   renv::install("RaphaelS1/distr6", prompt = FALSE)
   renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 
-  # Setting up python envs is hell
+  # Setting up python envs is hell ----
+  # delete the old one if needed
   # reticulate::conda_remove("proba-bench")
-  reticulate::conda_create(envname = "proba-bench", environment = "environment.yml")
+
+  # Create from an existing environment.yaml
+  # reticulate::conda_create(envname = "proba-bench", environment = "environment.yml")
+
+  # Or a fresh one
   reticulate::conda_create(envname = "proba-bench")
 
+  # make sure to use it
   reticulate::use_condaenv("proba-bench", required = TRUE)
 
+  # Trying to install learner deps
   survivalmodels::install_pycox(method = "conda", install_torch = TRUE)
+
+  # using keras install method because survivalmodels installed mismatching versions I think
   #survivalmodels::install_keras(install_tensorflow = TRUE)
   # installs correct version maybe? ^ installed 2.13, keras installs 2.11
   keras::install_keras(method = "conda", version = "default", pip_ignore_installed = TRUE)
-  reticulate::conda_export("proba-benchmark", file = "environment.yml")
+
+  # Save to environment.yml to restore on different machines
+  reticulate::conda_export("proba-bench", file = "environment.yml")
 }
 
-# Had an issue where cuda complained about ptxas being too old, ($ which ptxas) suggests all my cuda's are > 11.3 or something
+# Had an issue where cuda complained about ptxas being too old, ($ which ptxas)
+# suggests all my cuda's are > 11.3 or something
 # but it said upgrading to 11.1 might help, which is concerning.
 # conda install cuda -c nvidia
 # according to
@@ -58,10 +69,10 @@ if (FALSE) {
 reticulate::py_config()
 
 pypkgs <- reticulate::py_list_packages()
-pypkgs[grep("tensorfl|keras|pycox|pytorch", pypkgs$package), ]
+pypkgs[grep("tensorfl|keras|pycox|pytorch|numpy", pypkgs$package), ]
 
 
-# For quick local installation outside of renv
+# For quick local installation outside of renv -------------------------------
 # using pak because its fast and does github
 if (FALSE) {
   pak::pak("survival")
