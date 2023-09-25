@@ -15,26 +15,11 @@ measures_eval = list(
   calib = msr("surv.calib_alpha", id = "calib")
 )
 
-
-# Par / CarpenterFdaData / rcll -------------------------------------------
-# https://github.com/RaphaelS1/proba_benchmark/issues/47
 rr = resample(
-  task = tasks$CarpenterFdaData,
+  task = tasks$aids2,
   learner = learners$Par,
-  resampling = resamplings$CarpenterFdaData
+  resampling = resamplings$aids2,
 )
-# Seems to run and eval fine?
-rr$score(measures = measures_eval[c("harrell_c", "rcll")])
-
-# glmnet on mgus ----------------------------------------------------------
-rr = resample(
-  task = tasks$mgus,
-  learner = learners$GLM,
-  resampling = resamplings$mgus
-)
-
-# harrell_c seems plausible? > 0.6 at least. rcll > 30 though.
-rr$score(measures = measures_eval[c("harrell_c", "rcll")])
 
 
 # glmnet / wbc1 -----------------------------------------------------------
@@ -81,21 +66,6 @@ wbc1_test = as.matrix(tasks$wbc1$data())[resamplings$wbc1$test_set(1), 3:4]
 predict(glmn$model, newx = wbc1_test, s = "lambda.min")
 
 
-# ORSF / multiple tasks -------------------------------------------------------------
-# Error: mtry = 1 should be >= 2
-# This happened PipeOp surv.aorsf's $train()
-
-# Affects tasks: wbc1, ALL, CarpenterFdaData, aids.id, aids2, channing
-# Makes sense that a p = 2 dataset won't do well here.
-# Likely masked by fallback learner?
-
-rr = resample(
-  task = tasks$wbc1,
-  learner = learners$ORSF,
-  resampling = resamplings$wbc1
-)
-
-
 # LH / lung ---------------------------------------------------------------
 
 rr = resample(
@@ -131,30 +101,6 @@ rr = resample(
 rr$score(measures = measures_eval[c("harrell_c", "rcll")])
 
 
-# SVM / CarpenterFdaData --------------------------------------------------
-
-rr = resample(
-  task = tasks$CarpenterFdaData,
-  learner = learners$SSVM,
-  resampling = resamplings$CarpenterFdaData
-)
-# Error in quadprog::solve.QP(C, -d, t(H), f, meq = meq) :
-# constraints are inconsistent, no solution!
-#  This happened PipeOp surv.svm's $train()
-
-
-# SVM / ALL ---------------------------------------------------------------
-# pretest job shows harrell's C 0.5 but rcll 7.432
-
-rr$score(measures = measures_eval[c("harrell_c", "rcll")])
-
-rr = resample(
-  task = tasks$ALL,
-  learner = learners$SSVM,
-  resampling = resamplings$ALL
-)
-
-rr$score(measures = measures_eval[c("harrell_c", "rcll")])
 
 
 # Pycox censoring at start time error -------------------------------------
@@ -165,3 +111,12 @@ learners$PCH$train(tasks$ALL, row_ids = resamplings$ALL$train_set(1))
 learners$PCH$train(tasks$CarpenterFdaData, row_ids = resamplings$CarpenterFdaData$train_set(1))
 
 learners$PCH$train(tasks$aids.id, row_ids = resamplings$aids.id$train_set(1))
+
+learners$PCH$train(tasks$e1684, row_ids = resamplings$e1684$train_set(1))
+learners$PCH$train(tasks$liver, row_ids = resamplings$liver$train_set(1))
+
+learners$PCH$reset
+
+learners$PCH$train(tasks$aids2, row_ids = resamplings$aids2$train_set(1))
+
+
