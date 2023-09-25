@@ -23,6 +23,10 @@ if (FALSE) {
   renv::install("tensorflow", prompt = FALSE)
   renv::install("actuar", prompt = FALSE) # For surv.parametric
 
+  renv::install("mlr3learners", prompt = FALSE)
+  renv::install("mlr3pipelines", prompt = FALSE)
+  renv::install("mlr3tuning", prompt = FALSE)
+
   renv::install("mlr3batchmark", prompt = FALSE) # on CRAN now with v0.1.0
   # renv::install("mlr-org/mlr3batchmark")
 
