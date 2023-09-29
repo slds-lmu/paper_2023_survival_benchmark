@@ -2,8 +2,11 @@ source("renv/activate.R")
 
 # Manual python/conda activation
 # Disabled on arm due to conda issues for now
+
+# Disabled globally for now for debugging purposes
+
 if (Sys.info()[["machine"]] != "arm64") {
-  reticulate::use_condaenv("proba-bench", required = TRUE)
+  reticulate::use_condaenv("proba-bench3.10", required = TRUE)
 }
 print(reticulate::py_config())
 
