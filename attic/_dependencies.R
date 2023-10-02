@@ -45,21 +45,26 @@ if (FALSE) {
   # reticulate::conda_create(envname = "proba-bench", environment = "environment.yml")
 
   # Or a fresh one
-  reticulate::conda_create(envname = "proba-bench")
+  # reticulate::conda_create(envname = "proba-bench")
 
   # make sure to use it
-  reticulate::use_condaenv("proba-bench", required = TRUE)
+  reticulate::use_condaenv("proba-bench3.10", required = TRUE)
 
   # Trying to install learner deps
-  survivalmodels::install_pycox(method = "conda", install_torch = TRUE)
+  #survivalmodels::install_pycox(method = "conda", install_torch = TRUE)
 
   # using keras install method because survivalmodels installed mismatching versions I think
   #survivalmodels::install_keras(install_tensorflow = TRUE)
   # installs correct version maybe? ^ installed 2.13, keras installs 2.11
-  keras::install_keras(method = "conda", version = "default", pip_ignore_installed = TRUE)
+  #keras::install_keras(method = "conda", version = "default", pip_ignore_installed = TRUE)
+
+  # Installed manually in shell:
+  # conda install mamba; mamba install pytorch pycox tensorflow keras
 
   # Save to environment.yml to restore on different machines
-  reticulate::conda_export("proba-bench", file = "environment.yml")
+  # This failed in R for some reason, done in shell as well
+  # conda env export > environment3.10.yml
+  # reticulate::conda_export("proba-bench3.10", file = "environment3.10.yml")
 }
 
 # Had an issue where cuda complained about ptxas being too old, ($ which ptxas)
