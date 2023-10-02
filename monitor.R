@@ -1,89 +1,54 @@
 #! /usr/bin/env Rscript
-# monitor current batchmark status
-# (Script salvaged from other project, will need further adapting)
+# monitor current status
+#
 
 library(batchtools)
-library(data.table)
 
-root = here::here()
-source(file.path(root, "settings.R"))
+reg_dir <- here::here("registry")
+reg <- suppressMessages(loadRegistry(reg_dir, writeable = FALSE, make.default = FALSE))
 
-# Never load writeable while stuff is running
-loadRegistry(reg_dir, writeable = FALSE)
+job_vars <- c("job.id", "time.running", "task_id", "learner_id")
 
-# Per-param groupings
-args <- commandArgs(TRUE)
-
-if (length(args) == 0) {
-  params <- c("learner_id", "measure")
-} else {
-  params <- args
-}
-
-alljobs <- mlr3misc::unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
-data.table::setnames(alljobs, "tags", "measure")
-
-count_by <- function(ids, params) {
-  dt <- ijoin(ids, alljobs)
-  if (nrow(dt) > 0) {
-    dt[, .(count = .N), by = params][]
-  }
-}
-
-# Status ----------------------------------------------------------------------------------------------------------
-cli::cli_h1("Status")
-getStatus()
-
+cli::cli_h1("Current Status: {reg_dir}")
+print(getStatus(reg = reg))
 cat("\n")
 
+# Running -----------------------------------------------------------------
+tbl_running <- unwrap(getJobTable(findRunning(reg = reg), reg = reg))
+if (nrow(tbl_running) > 0) {
+  cli::cli_h2("Running: {reg_dir}")
+  tbl_running[, ..job_vars]
+  print(tbl_running[, .(count = .N), by = "learner_id"])
+}
+
 # Done --------------------------------------------------------------------
-cli::cli_h1("Done")
-count_by(findDone(), params = params)
+tbl_done <- unwrap(getJobTable(findDone(reg = reg), reg = reg))
+if (nrow(tbl_done) > 0) {
+  cli::cli_h2("Done: {reg_dir}")
+  tbl_done <- tbl_done[, ..job_vars]
+  print(tbl_done[, .(count = .N), by = "learner_id"])
+}
 
 cat("\n")
 
 # Expired -----------
-cli::cli_h1("Expired")
-count_by(findExpired(), params = params)
-
-cat("\n")
-
-# Running -----------------------------------------------------------------
-cli::cli_h1("Running")
-count_by(findRunning(), params = params)
+tbl_expired <- unwrap(getJobTable(findExpired(reg = reg), reg = reg))
+if (nrow(tbl_expired) > 0) {
+  cli::cli_h2("Expired: {reg_dir}")
+  tbl_expired <- tbl_expired[, ..job_vars]
+  print(tbl_expired[, .(count = .N), by = "learner_id"])
+}
 
 cat("\n")
 
 # Error'd -----------------------------------------------------------------
-cli::cli_h1("Errors")
+tbl_errors <- unwrap(getJobTable(findErrors(reg = reg), reg = reg))
+if (nrow(tbl_errors) > 0) {
+  cli::cli_h2("Errors: {reg_dir}")
+  tbl_errors <- tbl_errors[, ..job_vars]
+  print(tbl_errors[, .(count = .N), by = "learner_id"])
 
-if (nrow(findErrors()) > 0) {
-  print(count_by(findErrors(), params = params))
+  print(getErrorMessages(findErrors(reg = reg), reg = reg)[, "message"][, .(count = .N, message = stringr::str_squish(message)), by = "message"])
 
-  cat("\n")
-
-  dterrors <- unwrap(getJobTable(findErrors()))
-  data.table::setnames(dterrors, "tags", "measure")
-
-  dterrors <- dterrors[, .(job.id, learner_id, task_id, measure, error)]
-
-  cli::cli_h2("Unique error messages")
-  errorcount <- dterrors[, .(count = .N), by = error]
-
-  errorcount |>
-    glue::glue_data(
-      "- {count}x: `{error}`\n\n"
-    ) |>
-    cat()
-
-  cat("\n")
-
-  # cli::cli_h2("Error messages by learner, task, and measure")
-  # errorlist <- dterrors[, .(count = .N), by = .(learner_id, task_id, measure, error)]
-  # data.table::setorder(errorlist, learner_id, task_id, measure)
-  #
-  # errorlist |>
-  #   glue::glue_data(
-  #     "- Learner `{learner_id}` on task `{task_id}` with measure `{measure}` ({count} times):\n `{error}`\n\n"
-  #   )
 }
+

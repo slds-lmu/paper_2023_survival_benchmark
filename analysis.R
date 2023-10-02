@@ -10,6 +10,9 @@ library(ggplot2)
 
 reg = loadRegistry("registry", writeable = TRUE)
 
+alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
+data.table::setnames(alljobs, "tags", "measure")
+
 ###################################################################################################
 ### Current State
 ###################################################################################################
@@ -24,6 +27,9 @@ summarizeExperiments(ids, by = c("learner_id"))
 
 ids = findExpired()
 summarizeExperiments(ids, by = c("task_id"))
+summarizeExperiments(ids, by = c("learner_id"))
+
+showLog(ids[1])
 
 ids = ijoin(findExpired(), findExperiments(prob.pars = task_id == "child"))
 showLog(ids[1])
