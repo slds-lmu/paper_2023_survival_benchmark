@@ -77,8 +77,8 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   po("fixfactors") %>>%
     # po("collapsefactors", no_collapse_above_prevalence = 0.01) # not sure which is more appropriate
     po("collapsefactors", target_level_count = 5) %>>%
-    g %>>%
-    po("removeconstants") |>
+    po("removeconstants") %>>%
+    g |>
     as_learner()
 }
 
