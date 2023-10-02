@@ -1,6 +1,5 @@
 source(here::here("settings_debug.R"))
 
-library("stringi")
 library("mlr3misc")
 library("mlr3")
 library("mlr3proba")
@@ -11,14 +10,19 @@ library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
+# Assumes batchmark.R is run beforehand
 reg = loadRegistry(reg_dir, writeable = TRUE)
-res = list(walltime = 4 * 3600, memory = 4096)
 
 # All jobs ----------------------------------------------------------------
+
+alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
+data.table::setnames(alljobs, "tags", "measure")
+
 alljobs[, .(count = .N), by = task_id]
 alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 
 # Factor "missing" issue --------------------------------------------------
+# Happens independently of dummy encoding yes/no
 
 # Error : Task 'bladder0' has missing values in column(s) 'Center', but learner 'surv.akritas' does not support this This happened PipeOp surv.akritas's $predict()
 # Error : Task 'hdfail' has missing values in column(s) 'model', but learner 'surv.akritas' does not support this This happened PipeOp surv.akritas's $predict()
@@ -34,11 +38,12 @@ alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 problem_tasks <- c("bladder0", "hdfail", "whas", "aids2")
 problem_learners <- c("AK","CPH", "GLM", "Par", "Flex", "CoxB")
 
+problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)]
+nrow(problem_jobs)
 
-problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)] |>
+problem_jobs <- ijoin(problem_jobs, findExperiments(repls = 1))
+nrow(problem_jobs)
 
-problem_jobs[findExperiments(repl = 1)]
-
-alljobs[grepl("rcll", measure)] |>
+problem_jobs |>
   findNotSubmitted() |>
-  submitJobs(resources = res)
+  submitJobs(resources = resources)
