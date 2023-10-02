@@ -1,5 +1,4 @@
-root = here::here()
-source(file.path(root, "settings.R"))
+source(here::here("settings_debug.R"))
 
 library("stringi")
 library("mlr3misc")
@@ -16,26 +15,29 @@ reg = loadRegistry(reg_dir, writeable = TRUE)
 res = list(walltime = 4 * 3600, memory = 4096)
 
 # All jobs ----------------------------------------------------------------
+alljobs[, .(count = .N), by = task_id]
+alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 
-alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
-data.table::setnames(alljobs, "tags", "measure")
+# Factor "missing" issue --------------------------------------------------
 
-# alljobs[, .(count = .N), by = task_id]
-# alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
+# Error : Task 'bladder0' has missing values in column(s) 'Center', but learner 'surv.akritas' does not support this This happened PipeOp surv.akritas's $predict()
+# Error : Task 'hdfail' has missing values in column(s) 'model', but learner 'surv.akritas' does not support this This happened PipeOp surv.akritas's $predict()
+# Error : Task 'hdfail' has missing values in column(s) 'model', but learner 'surv.coxph' does not support this This happened PipeOp surv.coxph's $predict()
+# Error : Task 'whas' has missing values in column(s) 'mitype', but learner 'surv.akritas' does not support this This happened PipeOp surv.akritas's $predict()
+# Error : Task 'aids2' has missing values in column(s) 'T.categ', but learner 'surv.parametric' does not support this This happened PipeOp surv.parametric's $predict()
+# Error : Task 'aids2' has missing values in column(s) 'T.categ', but learner 'surv.flexible' does not support this This happened PipeOp surv.flexible's $predict()
+# Error : Task 'bladder0' has missing values in column(s) 'Center.336', 'Center.525', 'Center.533', 'Center.710', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
+# Error : Task 'bladder0' has missing values in column(s) 'Center.525', 'Center.533', 'Center.710', 'Center.903', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
+# Error : Task 'bladder0' has missing values in column(s) 'Center', but learner 'surv.ranger' does not support this This happened PipeOp surv.ranger's $predict()
+# Error : Task 'hdfail' has missing values in column(s) 'model.Hitachi.HDS5C3030ALA630', 'model.Hitachi.HDS722020ALA330', 'model.ST3000DM001', 'model.ST4000DM000', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
 
-small_tasks <- c("veteran", "lung", "mgus", "wbc1", "e1684")
-stable_learners <- c("KM", "NL", "CPH", "GLM", "RFSRC", "RAN", "ORSF")
-dl_learners <-  c("CoxT", "DH", "DS", "LH", "PCH", "DNN")
+problem_tasks <- c("bladder0", "hdfail", "whas", "aids2")
+problem_learners <- c("AK","CPH", "GLM", "Par", "Flex", "CoxB")
 
-# ezpz jobs probably? -----------------------------------------------------
 
-# alljobs[task_id %in% small_tasks & learner_id %in% stable_learners & grepl("rcll", measure)] |>
-#   submitJobs(res = res)
-#
-# # DL learners -----------------------------------------------------------------------------------------------------
-#
-# alljobs[task_id %in% small_tasks & learner_id %in% dl_learners & grepl("rcll", measure)] |>
-#   submitJobs(resources = res)
+problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)] |>
+
+problem_jobs[findExperiments(repl = 1)]
 
 alljobs[grepl("rcll", measure)] |>
   findNotSubmitted() |>
