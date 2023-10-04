@@ -36,7 +36,7 @@ alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 # Error : Task 'hdfail' has missing values in column(s) 'model.Hitachi.HDS5C3030ALA630', 'model.Hitachi.HDS722020ALA330', 'model.ST3000DM001', 'model.ST4000DM000', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
 
 problem_tasks <- c("bladder0", "hdfail", "whas", "aids2")
-problem_learners <- c("AK","CPH", "GLM", "Par", "Flex", "CoxB")
+problem_learners <- c("AF","CPH", "GLM", "Par", "Flex", "CoxB", "RAN")
 
 problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)]
 nrow(problem_jobs)

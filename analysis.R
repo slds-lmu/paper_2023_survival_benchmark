@@ -1,5 +1,5 @@
 root = here::here()
-source(file.path(root, "settings.R"))
+source(file.path(root, "settings_debug.R"))
 
 ###################################################################################################
 ### Packages
@@ -8,16 +8,16 @@ library("batchtools")
 library("mlr3batchmark")
 library(ggplot2)
 
-reg = loadRegistry("registry", writeable = TRUE)
+reg = loadRegistry(reg_dir, writeable = TRUE)
 
-alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
+alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 
 ###################################################################################################
 ### Current State
 ###################################################################################################
 print(getStatus())
-print(getErrorMessages())
+print(unique(getErrorMessages()))
 
 ids = grepLogs(findErrors(), pattern = "incorrect number")
 summarizeExperiments(ids, by = c("learner_id"))

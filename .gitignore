@@ -1,5 +1,6 @@
 registry/*
 registry-*
+registry_*
 tmp/*
 # attic/
 
@@ -46,3 +47,4 @@ vignettes/*.pdf
 .DS_Store
 
 registry/
+batchtools.conf.R
