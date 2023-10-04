@@ -53,7 +53,8 @@ for (i in seq_along(files)) {
 # Create Learners and populate Registry -----------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE, method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
+                 method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
   # As per RS to fix #38
   fallback$predict_type = "crank"
@@ -62,23 +63,35 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$fallback = fallback
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
-  # Added form as per RS
-  g = ppl("distrcompositor", learner = learner, form = 'ph')
+  # 1. fixfactors ensures factor levels are the same during train and predict
+  # (does not affect learners with .encode = TRUE where treatment encoding is done)
+  # 2. collapsefactors (in whichever version) reduces the number of factor levels
+  # notable cases: hdfail, bladder0, whas, aids.id with a) many b) rare factor levels
+  # Proposed change LB: Switch to no_collapse_above_prevalence (see also attic/data_check_factors.Rmd)
+  # 3. removeconstants: should constant features be introduced, they're dropped.
+  preproc = po("fixfactors") %>>%
+    po("collapsefactors", no_collapse_above_prevalence = 0.05)
+    # po("collapsefactors", target_level_count = 5) %>>%
+    po("removeconstants")
 
-  # scaling only used for SSVM + deep learners
-  if (.scale) {
-    g = po("scale") %>>% g
-  }
-
+  # treatment encoding only for selected learners that don't support handling factors
+  # Note: encoding is done for glmnet but not for coxph. Both are internally a
+  # cox model, but glmnet does not do the treatment encoding automatically
   if (.encode) {
-    g = po("encode", method = "treatment") %>>% g
+    preproc = preproc %>>%
+      po("encode", method = "treatment")
   }
 
-  po("fixfactors") %>>%
-    # po("collapsefactors", no_collapse_above_prevalence = 0.01) # not sure which is more appropriate
-    po("collapsefactors", target_level_count = 5) %>>%
-    po("removeconstants") %>>%
-    g |>
+  # scaling only used for SSVM + deep learners (only SSVM if DL removed)
+  if (.scale) {
+    preproc = preproc %>>%
+      po("scale")
+  }
+
+  # Stack preprocessing on top of learner + distr stuff. 'form' as per RS
+  preproc %>>%
+    ppl("distrcompositor", learner = learner, form = "ph") |>
+    # Need to convert to GraphLearner
     as_learner()
 }
 
