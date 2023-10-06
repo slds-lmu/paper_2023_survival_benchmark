@@ -1,6 +1,5 @@
 root = here::here()
-#source(file.path(root, "settings.R"))
-source(file.path(root, "settings_debug.R"))
+source(file.path(root, "settings.R"))
 
 # Packages ----------------------------------------------------------------
 
@@ -19,11 +18,28 @@ library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
+#' Store nstantiated resamplings as mlr3 resampling objects
+#' and as portable CSV files to `here::here("resamplings"`)
+#'
+#' @param resampling Object of class `Resampling`, has to be instantiated.
+#' @param task_name String to use as file name.
+save_resampling = function(resampling, task_name) {
+  if (!dir.exists(here::here("resamplings"))) dir.create(here::here("resamplings"))
+  stopifnot(resampling$is_instantiated)
+
+  file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
+  file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
+
+  saveRDS(resampling, file_rds)
+  write.csv(resampling$instance, file_csv, row.names = FALSE)
+}
 
 # Create Registry ---------------------------------------------------------
 if (dir.exists(reg_dir)) {
+  message("Loading registry with writable = TRUE")
   reg = loadRegistry(reg_dir, writeable = TRUE)
 } else {
+  message("Creating new registry")
   reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
     packages = c("mlr3", "mlr3proba"))
 }
@@ -44,13 +60,14 @@ for (i in seq_along(files)) {
   resampling = rsmp("cv", folds = folds)$instantiate(task)
   stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
 
+  save_resampling(resampling, names[i])
+
   tasks[[i]] = task
   resamplings[[i]] = resampling
   rm(data, task, folds, resampling)
 }
 
-
-# Create Learners and populate Registry -----------------------------------
+# Create Learners and populate Registry -----------------------------------# Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
@@ -64,15 +81,23 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # 1. fixfactors ensures factor levels are the same during train and predict
-  # (does not affect learners with .encode = TRUE where treatment encoding is done)
-  # 2. collapsefactors (in whichever version) reduces the number of factor levels
+  # 2. collapsefactors reduces the number of factor levels
   # notable cases: hdfail, bladder0, whas, aids.id with a) many b) rare factor levels
-  # Proposed change LB: Switch to no_collapse_above_prevalence (see also attic/data_check_factors.Rmd)
-  # 3. removeconstants: should constant features be introduced, they're dropped.
+  # Proposed change LB:
+  # - Switch to no_collapse_above_prevalence = 0.05 to collapse levels up to 5% prevalence
+  # - Keep target_level_count = 5 to not reduce to fewer than 5 levels total
+  # (see also attic/data_check_factors.Rmd)
   preproc = po("fixfactors") %>>%
-    po("collapsefactors", no_collapse_above_prevalence = 0.05)
-    # po("collapsefactors", target_level_count = 5) %>>%
-    po("removeconstants")
+    po("collapsefactors",
+       no_collapse_above_prevalence = 0.05,
+       target_level_count = 5)
+
+  # scaling only used for SSVM if DL removed
+  # Done before treatment encoding
+  if (.scale) {
+    preproc = preproc %>>%
+      po("scale")
+  }
 
   # treatment encoding only for selected learners that don't support handling factors
   # Note: encoding is done for glmnet but not for coxph. Both are internally a
@@ -82,14 +107,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
       po("encode", method = "treatment")
   }
 
-  # scaling only used for SSVM + deep learners (only SSVM if DL removed)
-  if (.scale) {
-    preproc = preproc %>>%
-      po("scale")
-  }
-
+  # removeconstants: should constant features be introduced, they're dropped.
+  #  - Done after treatment encoding
   # Stack preprocessing on top of learner + distr stuff. 'form' as per RS
   preproc %>>%
+    po("removeconstants") %>>%
     ppl("distrcompositor", learner = learner, form = "ph") |>
     # Need to convert to GraphLearner
     as_learner()
@@ -105,7 +127,9 @@ auto_tune = function(learner, ...) { # wrap into random search
     learner = learner,
     search_space = search_space,
     resampling = rsmp("cv", folds = inner_folds),
-    measure = measure, # Measure will be set via global variable in loop
+    # Measure will be set via global variable in loop
+    measure = measure,
+    # budget set in settings.R: n_evals + k * dim_search_space
     terminator = trm("evals", n_evals = budget_constant, k = budget_multiplier),
     tuner = tnr("random_search"),
     store_tuning_instance = TRUE,
@@ -114,18 +138,23 @@ auto_tune = function(learner, ...) { # wrap into random search
   )
 }
 
+# Set tuning measures -----------------------------------------------------
 # Tuning measures are a subset of all measures, remaining measures are used
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  # Added as graf alternative for now as per RS
-  msr("surv.rcll", id = "rcll"),
-  #msr("surv.graf", id = "graf", proper = TRUE),
-  msr("surv.dcalib", id = "dcalib")
+  msr("surv.dcalib", id = "dcalib"),
 
-  # msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  # Added as graf alternative for now as per RS
+  msr("surv.rcll", id = "rcll")
+
+  # If graf, then both
+  # msr("surv.graf", id = "graf_proper", proper = TRUE),
+  # msr("surv.graf", id = "graf_improper", proper = FALSE)
 )
 
+
+# Asssemle learners -------------------------------------------------------
 for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan")
@@ -271,94 +300,7 @@ for (measure in measures) {
       }
     )
 
-#    ,
-#
-#    CoxT = auto_tune(
-#      bl("surv.coxtime", standardize_time = TRUE, epochs = 100, optimizer = "adam", .encode = TRUE, .scale = TRUE),
-#      surv.coxtime.dropout = p_dbl(0, 1),
-#      surv.coxtime.weight_decay = p_dbl(0, 0.5),
-#      surv.coxtime.learning_rate = p_dbl(0, 1),
-#      surv.coxtime.nodes = p_int(1, 32),
-#      surv.coxtime.k = p_int(1, 4),
-#      .extra_trafo = function(x, param_set) {
-#        x$surv.coxtime.num_nodes = rep(x$surv.coxtime.nodes, x$surv.coxtime.k)
-#        x$surv.coxtime.nodes = x$surv.coxtime.k = NULL
-#        x
-#      }
-#    )
-#
-#    ,
-#
-#     DH = auto_tune(
-#       bl("surv.deephit", optimizer = "adam", .encode = TRUE, .scale = TRUE),
-#       surv.deephit.nodes = p_int(1, 32),
-#       surv.deephit.k = p_int(1, 4),
-#       surv.deephit.dropout = p_dbl(0, 1),
-#       surv.deephit.weight_decay = p_dbl(0, 5),
-#       surv.deephit.learning_rate = p_dbl(0, 1),
-#       .extra_trafo = function(x, param_set) {
-#         x$surv.deephit.num_nodes = rep(x$surv.deephit.nodes, x$surv.deephit.k)
-#         x$surv.deephit.nodes = x$surv.deephit.k = NULL
-#         x
-#       }
-#     )
-#
-#     ,
-#
-#     DS = auto_tune(
-#       bl("surv.deepsurv", optimizer = "adam", .encode = TRUE, .scale = TRUE),
-#       surv.deepsurv.nodes = p_int(1, 32),
-#       surv.deepsurv.k = p_int(1, 4),
-#       surv.deepsurv.dropout = p_dbl(0, 1),
-#       surv.deepsurv.weight_decay = p_dbl(0, 5),
-#       surv.deepsurv.learning_rate = p_dbl(0, 1),
-#       .extra_trafo = function(x, param_set) {
-#         x$surv.deepsurv.num_nodes = rep(x$surv.deepsurv.nodes, x$surv.deepsurv.k)
-#         x$surv.deepsurv.nodes = x$surv.deepsurv.k = NULL
-#         x
-#       }
-#     )
-#
-#     ,
-#
-#     LH = auto_tune(
-#       bl("surv.loghaz", optimizer = "adam", .encode = TRUE, .scale = TRUE),
-#       surv.loghaz.nodes = p_int(1, 32),
-#       surv.loghaz.k = p_int(1, 4),
-#       surv.loghaz.dropout = p_dbl(0, 1),
-#       surv.loghaz.weight_decay = p_dbl(0, 5),
-#       surv.loghaz.learning_rate = p_dbl(0, 1),
-#       .extra_trafo = function(x, param_set) {
-#         x$surv.loghaz.num_nodes = rep(x$surv.loghaz.nodes, x$surv.loghaz.k)
-#         x$surv.loghaz.nodes = x$surv.loghaz.k = NULL
-#         x
-#       }
-#     )
-#
-#     ,
-#
-#     PCH = auto_tune(
-#       bl("surv.pchazard", optimizer = "adam", .encode = TRUE, .scale = TRUE),
-#       surv.pchazard.nodes = p_int(1, 32),
-#       surv.pchazard.k = p_int(1, 4),
-#       surv.pchazard.dropout = p_dbl(0, 1),
-#       surv.pchazard.weight_decay = p_dbl(0, 5),
-#       surv.pchazard.learning_rate = p_dbl(0, 1),
-#       .extra_trafo = function(x, param_set) {
-#         x$surv.pchazard.num_nodes = rep(x$surv.pchazard.nodes, x$surv.pchazard.k)
-#         x$surv.pchazard.nodes = x$surv.pchazard.k = NULL
-#         x
-#       }
-#     )
-#
-#     ,
-#
-#     DNN = auto_tune(
-#       bl("surv.dnnsurv", optimizer = "adam", epochs = 100, .encode = TRUE, .scale = TRUE),
-#       surv.dnnsurv.decay = p_dbl(0, 0.5),
-#       surv.dnnsurv.lr = p_dbl(0, 1),
-#       surv.dnnsurv.cuts = p_int(3, 50)
-#     )
+
   )
 
   imap(learners, function(l, id) l$id = id)
@@ -383,12 +325,14 @@ alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, t
 data.table::setnames(alljobs, "tags", "measure")
 
 # Pretest -----------------------------------------------------------------
-if (FALSE) {
+if (TRUE) {
   res = list(walltime = 4 * 3600, memory = 4096)
   ids = findExperiments(repls = 1)
-  ids = ijoin(ids, findTagged("rcll"))
 
-  submitJobs(ids, resources = res)
+  # alljobs[, .(count = .N), by = task_id]
+  # alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
+
+  submitJobs(shuffle(ids$job.id), resources = res)
 }
 
 

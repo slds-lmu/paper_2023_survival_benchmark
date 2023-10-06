@@ -18,9 +18,9 @@ if (FALSE) {
   renv::install("xgboost", prompt = FALSE)
   renv::install("survivalsvm", prompt = FALSE)
   renv::install("reticulate", prompt = FALSE)
-  renv::install("keras", prompt = FALSE)
+  #renv::install("keras", prompt = FALSE)
   renv::install("pseudo", prompt = FALSE)
-  renv::install("tensorflow", prompt = FALSE)
+  #renv::install("tensorflow", prompt = FALSE)
   renv::install("actuar", prompt = FALSE) # For surv.parametric
 
   renv::install("mlr3learners", prompt = FALSE)
@@ -48,7 +48,7 @@ if (FALSE) {
   # reticulate::conda_create(envname = "proba-bench")
 
   # make sure to use it
-  reticulate::use_condaenv("proba-bench3.10", required = TRUE)
+  #reticulate::use_condaenv("proba-bench3.10", required = TRUE)
 
   # Trying to install learner deps
   #survivalmodels::install_pycox(method = "conda", install_torch = TRUE)
@@ -75,10 +75,10 @@ if (FALSE) {
 # https://github.com/google/jax/discussions/10327
 
 # Why is python.
-reticulate::py_config()
+#reticulate::py_config()
 
-pypkgs <- reticulate::py_list_packages()
-pypkgs[grep("tensorfl|keras|pycox|pytorch|numpy", pypkgs$package), ]
+#pypkgs <- reticulate::py_list_packages()
+#pypkgs[grep("tensorfl|keras|pycox|pytorch|numpy", pypkgs$package), ]
 
 
 # For quick local installation outside of renv -------------------------------
@@ -100,9 +100,9 @@ if (FALSE) {
   pak::pak("xgboost")
   pak::pak("survivalsvm")
   pak::pak("reticulate")
-  pak::pak("keras")
+  #pak::pak("keras")
+  #pak::pak("tensorflow")
   pak::pak("pseudo")
-  pak::pak("tensorflow")
   pak::pak("actuar") # For surv.parametric
   pak::pak("mlr3batchmark") # on CRAN now with v0.1.0
 

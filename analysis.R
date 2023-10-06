@@ -1,5 +1,5 @@
 root = here::here()
-source(file.path(root, "settings_debug.R"))
+source(file.path(root, "settings.R"))
 
 ###################################################################################################
 ### Packages
@@ -60,7 +60,7 @@ aggr = bmr$aggregate(measures = measures_eval[c("harrell_c", "rcll")], condition
 saveRDS(aggr, "tmp/aggr.rds")
 resamplings_with_error = aggr[errors > 0, nr]
 
-mlr3viz::autoplot(bmr)
+mlr3viz::autoplot(bmr, measure = measures_eval$rcll)
 # bmr$resample_result(resamplings_with_error[1])$errors
 
 ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
@@ -69,7 +69,7 @@ ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   theme_minimal(base_size = 14)
 
-scores = bmr$score(msrs(c("surv.rcll")))
+scores = bmr$score(measures_eval$rcll)
 
 ggplot(scores, aes(x = learner_id, y = surv.rcll)) +
   facet_wrap(vars(task_id)) +

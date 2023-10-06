@@ -1,4 +1,4 @@
-source(here::here("settings_debug.R"))
+source(here::here("settings.R"))
 
 library("mlr3misc")
 library("mlr3")
@@ -34,16 +34,17 @@ alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
 # Error : Task 'bladder0' has missing values in column(s) 'Center.525', 'Center.533', 'Center.710', 'Center.903', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
 # Error : Task 'bladder0' has missing values in column(s) 'Center', but learner 'surv.ranger' does not support this This happened PipeOp surv.ranger's $predict()
 # Error : Task 'hdfail' has missing values in column(s) 'model.Hitachi.HDS5C3030ALA630', 'model.Hitachi.HDS722020ALA330', 'model.ST3000DM001', 'model.ST4000DM000', but learner 'surv.cv_glmnet' does not support this This happened PipeOp surv.cv_glmnet's $predict()
+if (FALSE) {
+  problem_tasks <- c("bladder0", "hdfail", "whas", "aids2")
+  problem_learners <- c("AF","CPH", "GLM", "Par", "Flex", "CoxB", "RAN")
 
-problem_tasks <- c("bladder0", "hdfail", "whas", "aids2")
-problem_learners <- c("AF","CPH", "GLM", "Par", "Flex", "CoxB", "RAN")
+  problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)]
+  nrow(problem_jobs)
 
-problem_jobs <- alljobs[task_id %in% problem_tasks & learner_id %in% problem_learners & grepl("rcll", measure)]
-nrow(problem_jobs)
+  problem_jobs <- ijoin(problem_jobs, findExperiments(repls = 1))
+  nrow(problem_jobs)
 
-problem_jobs <- ijoin(problem_jobs, findExperiments(repls = 1))
-nrow(problem_jobs)
-
-problem_jobs |>
-  findNotSubmitted() |>
-  submitJobs(resources = resources)
+  problem_jobs |>
+    findNotSubmitted() |>
+    submitJobs(resources = resources)
+}
