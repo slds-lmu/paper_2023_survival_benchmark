@@ -11,12 +11,7 @@ reg = loadRegistry(reg_dir, writeable = FALSE)
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id, time.queued, time.running)]
 alljobs = alljobs[job.id < 6837, ]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(time.running, units = "secs"))]
-tasktab = data.table::rbindlist(lapply(tasks, \(x) {
-  data.table::data.table(
-    task_id = x$id, n = x$nrow, p = x$ncol, dim = x$nrow * x$ncol
-  )
-}))[, dimrank := data.table::frank(dim, ties.method = "first")]
-
+tasktab = readRDS(here::here("tasktab.rds"))
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 
 # Estimate runtime only on selected variables (avoid time.queued, repl)
@@ -29,7 +24,7 @@ bt_est
 alljobs |>
   dplyr::group_by(repl) |>
   dplyr::summarize(
-    total = n(),
+    total = dplyr::n(),
     done = sum(!is.na(time.running)),
     perc = round(100 * done/total, 2)
   )

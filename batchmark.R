@@ -7,7 +7,6 @@ source(file.path(root, "settings.R"))
 # See also attic/_dependencies.R
 renv::restore(prompt = FALSE)
 
-library("stringi")
 library("mlr3misc")
 library("mlr3")
 library("mlr3proba")
@@ -47,8 +46,8 @@ if (dir.exists(reg_dir)) {
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
 files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
-names = stri_sub(basename(files), 1, -5)
-tasks = resamplings = named_list(names)
+names = stringi::stri_sub(basename(files), 1, -5)
+tasks = resamplings = mlr3misc::named_list(names)
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
@@ -329,6 +328,7 @@ tasktab = data.table::rbindlist(lapply(tasks, \(x) {
     task_id = x$id, n = x$nrow, p = x$ncol, dim = x$nrow * x$ncol
   )
 }))[, dimrank := data.table::frank(dim, ties.method = "first")]
+saveRDS(tasktab, file = here::here("tasktab.rds"))
 
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 
