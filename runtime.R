@@ -16,10 +16,9 @@ alljobs = ljoin(alljobs, tasktab, by = "task_id")
 
 # Estimate runtime only on selected variables (avoid time.queued, repl)
 bt_est = alljobs |>
-  na.omit() |>
   dplyr::select(job.id, task_id, n, p, tags, learner_id) |>
   batchtools::estimateRuntimes()
-bt_est
+print(bt_est)
 
 alljobs |>
   dplyr::group_by(repl) |>
@@ -27,7 +26,8 @@ alljobs |>
     total = dplyr::n(),
     done = sum(!is.na(time.running)),
     perc = round(100 * done/total, 2)
-  )
+  ) |>
+  print()
 
 if (interactive()) {
   ggplot(alljobs, aes(
@@ -44,7 +44,4 @@ if (interactive()) {
                          round(100 * sum(!is.na(alljobs$time.running.hms))/nrow(alljobs), 1))
     ) +
     theme_minimal()
-
-
-
 }
