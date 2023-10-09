@@ -29,3 +29,31 @@ options(
   datatable.print.keys = TRUE,
   batchtools.progress = FALSE
 )
+
+# Make renv pick up learner dependencies
+if (FALSE) {
+  library("survival")
+  library("pracma")
+  library("glmnet")
+  library("penalized")
+  library("flexsurv")
+  library("randomForestSRC")
+  library("ranger")
+  library("partykit")
+  library("sandwich")
+  library("coin")
+  library("aorsf")
+  library("rpart")
+  library("mboost")
+  library("xgboost")
+  library("survivalsvm")
+  library("pseudo")
+  library("actuar") # For surv.parametric
+  library("mlr3batchmark") # on CRAN now with v0.1.0
+
+  library("distr6")
+  library("mlr3proba")
+  library("mlr3extralearners")
+  library("CoxBoost")
+  library("survivalmodels")
+}
