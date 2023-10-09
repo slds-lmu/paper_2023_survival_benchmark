@@ -96,7 +96,9 @@ alltbl <- rbindlist(lapply(names(tasks), function(task) {
   if (sum(fact_vars) == 0) return(data.table())
   
   res <- rbindlist(lapply(names(fact_vars[fact_vars]), function(var) {
-    fctbl <- xdat[, .(nl = .N), by = c(var, "status")]
+    fctbl <- xdat[, .(nl = .N), by = c(var, "status")] |>
+      tidyr::complete(.data[[var]], status, fill = list(nl = 0))
+    data.table::setDT(fctbl)
     fctbl <- fctbl[, prop := round(100 * nl/n, 2)]
     setorder(fctbl, nl)[]
     fctbl <- melt(fctbl, measure.vars = var)
@@ -104,6 +106,7 @@ alltbl <- rbindlist(lapply(names(tasks), function(task) {
   }))
   res[, task := task]
   setcolorder(res, c("task", "variable", "status", "value", "nl", "prop"))
+
 }))
 
 alltbl |>

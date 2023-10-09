@@ -318,14 +318,23 @@ for (measure in measures) {
   addJobTags(ids, measure$id)
 }
 
-
 summarizeExperiments(by = c("task_id", "learner_id"))
 
+# Aggregate job table for selective submission
 alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 
+tasktab = data.table::rbindlist(lapply(tasks, \(x) {
+  data.table::data.table(
+    task_id = x$id, n = x$nrow, p = x$ncol, dim = x$nrow * x$ncol
+  )
+}))[, dimrank := data.table::frank(dim, ties.method = "first")]
+
+alljobs = ljoin(alljobs, tasktab, by = "task_id")
+
+
 # Pretest -----------------------------------------------------------------
-if (TRUE) {
+if (FALSE) {
   res = list(walltime = 4 * 3600, memory = 4096)
   ids = findExperiments(repls = 1)
 
@@ -339,14 +348,8 @@ if (TRUE) {
 # Submit ------------------------------------------------------------------
 
 if (FALSE) {
-  tab = unnest(getJobTable(), c("prob.pars", "algo.pars"))
-  unique(tab$task_id)
-  unique(tab$learner_id)
-
-  # this would be a good first start on the cluster
   ids = findExperiments(repls = 1)
-  # Was 'rats' task but that dataset has been excluded since
-  ids = ijoin(ids, findExperiments(prob.pars = task_id == "lung"))
+
   submitJobs(ids)
 
   summarizeExperiments(findErrors(), by = "learner_id")
