@@ -321,7 +321,7 @@ for (measure in measures) {
 summarizeExperiments(by = c("task_id", "learner_id"))
 
 # Aggregate job table for selective submission
-alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
+alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 
 tasktab = data.table::rbindlist(lapply(tasks, \(x) {

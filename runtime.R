@@ -8,7 +8,7 @@ library(ggplot2)
 reg = loadRegistry(reg_dir, writeable = FALSE)
 
 
-alljobs = unnest(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id, time.queued, time.running)]
+alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id, time.queued, time.running)]
 alljobs = alljobs[job.id < 6837, ]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(time.running, units = "secs"))]
 tasktab = data.table::rbindlist(lapply(tasks, \(x) {
