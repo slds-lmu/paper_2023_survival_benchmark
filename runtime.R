@@ -44,4 +44,19 @@ if (interactive()) {
                          round(100 * sum(!is.na(alljobs$time.running.hms))/nrow(alljobs), 1))
     ) +
     theme_minimal()
+
+  ggplot(alljobs, aes(
+    y = reorder(task_id, uniq_t_rank),
+    x = time.running.hms),
+    fill = learner_id
+  ) +
+    geom_boxplot() +
+    geom_vline(xintercept = hms::hms(hours = 12) * 1:2) +
+    scale_x_time(breaks = (3600 * 6) * 1:12) +
+    labs(
+      title = "Job Runtime",
+      subtitle = sprintf("based on %i / %i jobs (%s%%)", sum(!is.na(alljobs$time.running.hms)), nrow(alljobs),
+                         round(100 * sum(!is.na(alljobs$time.running.hms))/nrow(alljobs), 1))
+    ) +
+    theme_minimal()
 }

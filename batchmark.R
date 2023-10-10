@@ -66,6 +66,21 @@ for (i in seq_along(files)) {
   rm(data, task, folds, resampling)
 }
 
+# Save overview of tasks with some metadata which comes in handy later
+tasktab = data.table::rbindlist(lapply(tasks, \(x) {
+  data.table::data.table(
+    task_id = x$id,
+    n = x$nrow,
+    p = x$ncol,
+    dim = x$nrow * x$ncol,
+    n_uniq_t = length(unique(x$data(cols = "time")[[1]]))
+  )
+}))
+tasktab[, dimrank := data.table::frank(dim)]
+tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
+
+saveRDS(tasktab, file = here::here("tasktab.rds"))
+
 # Create Learners and populate Registry -----------------------------------# Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
@@ -319,29 +334,24 @@ for (measure in measures) {
 
 summarizeExperiments(by = c("task_id", "learner_id"))
 
-# Aggregate job table for selective submission
+# Aggregate job table for selective submission, order jobs by tasks and taks
+# by number of unique time points (ranked) (higher == more memory needed)
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
-
-tasktab = data.table::rbindlist(lapply(tasks, \(x) {
-  data.table::data.table(
-    task_id = x$id, n = x$nrow, p = x$ncol, dim = x$nrow * x$ncol
-  )
-}))[, dimrank := data.table::frank(dim, ties.method = "first")]
-saveRDS(tasktab, file = here::here("tasktab.rds"))
-
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
+data.table::setorder(alljobs, uniq_t_rank)
 
 
 # Pretest -----------------------------------------------------------------
 if (FALSE) {
   res = list(walltime = 4 * 3600, memory = 4096)
-  ids = findExperiments(repls = 1)
+  #ids = findExperiments(repls = 1)
 
   # alljobs[, .(count = .N), by = task_id]
   # alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
-
-  submitJobs(shuffle(ids$job.id), resources = res)
+  alljobs |>
+    dplyr::filter(uniq_t_rank <= 5) |>
+    submitJobs(resources = res)
 }
 
 
