@@ -744,11 +744,11 @@
       "Version": "1.8.0",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "RaphaelS1",
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
       "RemoteSha": "abdb22ce127214f897fcc4b22bc35ffa4ce0c958",
-      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
@@ -1639,11 +1639,11 @@
       "Version": "0.7.0-9000",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
       "RemoteSha": "0b3c766b025de30c1a1cafa026608269df557f13",
-      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/distr6, binderh/CoxBoost, mlr-org/mlr3proba, RaphaelS1/survivalmodels, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1726,11 +1726,11 @@
       "Version": "0.5.2",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
       "RemoteSha": "7d3259fa8086fbbde6745b2dc6cfd8452c76f16d",
-      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -2317,13 +2317,13 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "1.0.3",
+      "Version": "0.17.0",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "utils"
       ],
-      "Hash": "41b847654f567341725473431dd0d5ab"
+      "Hash": "ce3065fc1a0b64a859f55ac3998d6927"
     },
     "reshape2": {
       "Package": "reshape2",
@@ -2536,11 +2536,11 @@
       "Version": "0.2.6",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "xoopR",
       "RemoteRepo": "set6",
       "RemoteRef": "main",
       "RemoteSha": "a901255c26614a0ece317dc849621420f9393d42",
-      "RemoteHost": "api.github.com",
       "Requirements": [
         "R6",
         "Rcpp",
