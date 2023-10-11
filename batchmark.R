@@ -95,13 +95,16 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$encapsulate = c(train = "evaluate", predict = "evaluate")
 
   # 1. fixfactors ensures factor levels are the same during train and predict
-  # 2. collapsefactors reduces the number of factor levels
+  # - might introduce missings, hence
+  # 2. imputesample to impute them, analogously to robustify pipeline
+  # 3. collapsefactors reduces the number of factor levels
   # notable cases: hdfail, bladder0, whas, aids.id with a) many b) rare factor levels
   # Proposed change LB:
   # - Switch to no_collapse_above_prevalence = 0.05 to collapse levels up to 5% prevalence
   # - Keep target_level_count = 5 to not reduce to fewer than 5 levels total
   # (see also attic/data_check_factors.Rmd)
   preproc = po("fixfactors") %>>%
+    po("imputesample", affect_columns = selector_type("factor")) %>>%
     po("collapsefactors",
        no_collapse_above_prevalence = 0.05,
        target_level_count = 5)
@@ -346,6 +349,11 @@ data.table::setorder(alljobs, uniq_t_rank)
 if (FALSE) {
   res = list(walltime = 4 * 3600, memory = 4096)
   #ids = findExperiments(repls = 1)
+
+  alljobs |>
+    dplyr::filter(repl == 1 & measure == "rcll") |>
+    dplyr::filter(task_id %in% c("bladder0", "hdfail"), learner_id %in% c("GLM", "CPH")) |>
+    submitJobs()
 
   # alljobs[, .(count = .N), by = task_id]
   # alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
