@@ -744,11 +744,11 @@
       "Version": "1.8.0",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "RaphaelS1",
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
       "RemoteSha": "abdb22ce127214f897fcc4b22bc35ffa4ce0c958",
+      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
@@ -1636,15 +1636,15 @@
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
-      "Version": "0.7.0-9000",
+      "Version": "0.7.1",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "0b3c766b025de30c1a1cafa026608269df557f13",
-      "Remotes": "xoopR/distr6, binderh/CoxBoost, mlr-org/mlr3proba, RaphaelS1/survivalmodels, xoopR/param6, xoopR/set6",
+      "RemoteSha": "7451e407b616a4a618da3f855b5723058b9f09af",
+      "RemoteHost": "api.github.com",
+      "Remotes": "xoopR/distr6, binderh/CoxBoost, mlr-org/mlr3proba,\n    RaphaelS1/survivalmodels, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
         "R6",
@@ -1655,7 +1655,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "30774f5ca64291b7593282fa4996e3c3"
+      "Hash": "d35862cacbc82b5f07649b894e604747"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
@@ -1726,11 +1726,11 @@
       "Version": "0.5.2",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
       "RemoteSha": "7d3259fa8086fbbde6745b2dc6cfd8452c76f16d",
+      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -2536,11 +2536,11 @@
       "Version": "0.2.6",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "xoopR",
       "RemoteRepo": "set6",
       "RemoteRef": "main",
       "RemoteSha": "a901255c26614a0ece317dc849621420f9393d42",
+      "RemoteHost": "api.github.com",
       "Requirements": [
         "R6",
         "Rcpp",
@@ -2699,6 +2699,17 @@
         "vctrs"
       ],
       "Hash": "a84e2cc86d07289b3b6f5069df7a004c"
+    },
+    "tictoc": {
+      "Package": "tictoc",
+      "Version": "1.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods"
+      ],
+      "Hash": "2c6c63f3f4f103d41cb2aae1ab1c7ce1"
     },
     "tidyr": {
       "Package": "tidyr",
