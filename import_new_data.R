@@ -1,4 +1,5 @@
 # Double-checking and cleaning new datasets
+# See also https://github.com/RaphaelS1/proba_benchmark/issues/28 for discussion on individual datasets
 library(dplyr)
 
 save_data <- function(x, path = here::here("code/data/")) {
@@ -255,10 +256,17 @@ save_data(rdata)
 # Survival of patients with colon and rectal cancer diagnosed in 1994-2000.
 
 # Removed due to date column by ML
-# colrec <- relsurv::colrec %>%
-#   rename(status = stat)
-#
-# save_data(colrec)
+# Re-added with converted date col and further preprocessing
+colrec <- relsurv::colrec |>
+  mutate(
+    # Convert date variable to numeric
+    diag = as.numeric(diag),
+    stage = ifelse(stage == 99, NA_real_, stage),
+    sex = factor(sex, levels = 1:2, labels = c("male", "female"))
+  ) |>
+  rename(status = stat)
+
+save_data(colrec)
 
 # simPH::CarpenterFdaData -------------------------------------------------
 # A data set from Carpenter (2002).
