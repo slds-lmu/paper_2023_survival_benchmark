@@ -1,3 +1,6 @@
+# Circumvent srcref issue https://github.com/rstudio/renv/issues/1713
+options("install.opts" = "--without-keep.source")
+
 source("renv/activate.R")
 
 # Trying to ensure learners don't use more resources than they should
@@ -39,8 +42,8 @@ if (FALSE) {
   library("survivalsvm")
   library("pseudo")
   library("actuar") # For surv.parametric
-  library("mlr3batchmark") # on CRAN now with v0.1.0
 
+  library("mlr3batchmark") # on CRAN now with v0.1.0
   library("distr6")
   library("mlr3proba")
   library("mlr3extralearners")
