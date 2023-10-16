@@ -39,8 +39,8 @@ datasets <- c(
   "mlr3proba::grace",
   "mlr3proba::whas",
   "MASS::aids2",
-  "MRsurv::FTR.data", 
-  "MRsurv::STR.data", 
+  "RISCA::dataFTR", 
+  "RISCA::dataSTR", 
   "pammtools::patient",
   "pammtools::tumor",
   "pec::cost", 
@@ -49,7 +49,7 @@ datasets <- c(
   "pycox::support",
   "quantreg::uis", 
   "relsurv::rdata", 
-  # "relsurv::colrec", 
+  "relsurv::colrec", 
   "survival::mgus",
   "survival::nafld1",
   "survival::veteran",
@@ -105,9 +105,11 @@ datasets <- left_join(datasets, xdat_summary, by = "dataset")
 saveRDS(datasets, here::here("attic", "datasets.rds"))
 
 datasets |>
-  arrange(tolower(dataset)) |>
+  # arrange(tolower(dataset)) |>
+  arrange(desc(n_uniq_t)) |>
   kable(caption = "Datasets included in benchmark") |>
-  kable_styling()
+  kable_styling() |>
+  column_spec(2, bold = TRUE)
 ```
 
 

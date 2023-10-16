@@ -4,8 +4,9 @@ library(dplyr)
 
 save_data <- function(x, path = here::here("code/data/")) {
   xname <- deparse(substitute(x))
-  path_file <- paste0(path, xname, ".rds")
-  message("Saving ", xname, " at ", path_file)
+  path_file_rds <- paste0(path, xname, ".rds")
+  path_file_csv <- paste0(path, xname, ".csv")
+  message("Saving ", xname, " at ", path_file_rds, " and ", path_file_csv)
 
   x_nomiss <- na.omit(x)
 
@@ -13,14 +14,21 @@ save_data <- function(x, path = here::here("code/data/")) {
     message("Dropping ", nrow(x) - nrow(x_nomiss), " rows due to missings")
   }
 
-  saveRDS(x_nomiss, file = path_file)
+  time_zeros <- which(x_nomiss$time == 0)
+  if (length(time_zeros) > 0) {
+    message("Dropping ", length(time_zeros), " rows due to time = 0")
+    x_nomiss <- x_nomiss[-time_zeros, ]
+  }
+
+  saveRDS(x_nomiss, file = path_file_rds)
+  write.csv(x_nomiss, file = path_file_csv, row.names = FALSE)
 }
 
 # eha::child --------------------------------------------------------------
 # Children born in Skellefteå, Sweden, 1850-1884, are followed fifteen years
 # or until death or out-migration
 
-child <- eha::child %>%
+child <- eha::child |>
   select(
     -enter, # = 0 for all obs
     -id, -m.id, # ID vars
@@ -36,11 +44,11 @@ save_data(child)
 # Time to event is the duration of the disease free interval (DFI), which is
 # defined as time from randomization to the date of the first recurrence.
 
-bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") %>%
-  rename(time = Surtime, status = Status) %>%
+bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") |>
+  rename(time = Surtime, status = Status) |>
   mutate(
-    Center = factor(Center), # Group ID was integer
-    time = ifelse(time == 0, 0.001, time)
+    Center = factor(Center) # Group ID was integer
+    # time = ifelse(time == 0, 0.001, time)
   )
 
 save_data(bladder0)
@@ -52,6 +60,10 @@ save_data(bladder0)
 hdfail <- frailtySurv::hdfail |>
   select(-serial) # ID column
 
+range(hdfail$time)
+length(unique(hdfail$time))
+summary(hdfail$time)
+
 # Coarsened version to reduce number of unqiue time points
 # Preserve values 0 < t < 1 because we don't want time = 0 issues
 # and there's few enough values in that range that it should not matter too much
@@ -60,20 +72,24 @@ hdfail <- hdfail |>
     time = ifelse(time > 1, floor(time), time)
   )
 
+range(hdfail$time)
+length(unique(hdfail$time))
+summary(hdfail$time)
+
 save_data(hdfail)
 
 
 # KMsurv::std -------------------------------------------------------------
 # data from Section 1.12 in Klein and Moeschberger (1997)
 
-std <- mlr3misc::load_dataset("std", "KMsurv") %>%
+std <- mlr3misc::load_dataset("std", "KMsurv") |>
   rename(
     status = rinfct
-  ) %>%
+  ) |>
   mutate(
     condom = factor(condom, labels = c("always", "sometime", "never")),
     iinfct = factor(iinfct, labels = c("gonorrhea", "chlamydia", "both"))
-  ) %>%
+  ) |>
   select(-obs) # Identifier
 
 save_data(std)
@@ -84,8 +100,8 @@ save_data(std)
 # treating patients who had failed or were intolerant of zidovudine (AZT) therapy.
 
 # First measurements of JM::aids, therefore obstime == 0 here
-aids.id <- JM::aids.id %>%
-  rename(time = Time, status = death) %>%
+aids.id <- JM::aids.id |>
+  rename(time = Time, status = death) |>
   select(
     -patient, # ID var
     -obstime,  # 0 for all in this version, first measurement,
@@ -103,21 +119,21 @@ save_data(aids.id)
 # For time-to-event and status variables use last obs. of each subject (num)
 
 # # Making sure to arrange by num/time for filtering
-# heart.valve <- joineR::heart.valve %>%
+# heart.valve <- joineR::heart.valve |>
 #   arrange(num, time)
 #
 # # time to event: last obs per subject
-# heart.valve_tte <- heart.valve %>%
-#   select(num, time, status) %>%
-#   group_by(num) %>%
-#   slice_tail(n = 1) %>%
+# heart.valve_tte <- heart.valve |>
+#   select(num, time, status) |>
+#   group_by(num) |>
+#   slice_tail(n = 1) |>
 #   ungroup()
 #
 # # Covariates: baseline, e.g. first per subject
-# heart.valve_covars <- heart.valve %>%
-#   select(-time, -status) %>%
-#   group_by(num) %>%
-#   slice_head(n = 1) %>%
+# heart.valve_covars <- heart.valve |>
+#   select(-time, -status) |>
+#   group_by(num) |>
+#   slice_head(n = 1) |>
 #   ungroup()
 #
 # # Double check no subject num was lost for whatever reason
@@ -128,7 +144,7 @@ save_data(aids.id)
 # heart.valve <- left_join(
 #   heart.valve_tte,
 #   heart.valve_covars,
-#   by = "num") %>%
+#   by = "num") |>
 #   select(-num)
 #
 # # Sadly only 54 events afterwards
@@ -143,12 +159,12 @@ save_data(aids.id)
 # Column survival is our event time, column time is the time at which liver
 # function was measured (feature prothrombin). Keep the value at time = 0.
 
-liver <- joineR::liver %>%
-  filter(time == 0) %>%
+liver <- joineR::liver |>
+  filter(time == 0) |>
   select(
     -id,  # ID var
     -time # Now irrelevant after filtering
-  ) %>%
+  ) |>
   rename(time = survival, status = cens)
 
 save_data(liver)
@@ -161,8 +177,8 @@ save_data(liver)
 # https://ftp.uni-bayreuth.de/math/statlib/S/survcart
 # Can't find source or real indication for dataset being real
 
-# livmet <- mlr3misc::load_dataset("livmet", "locfit") %>%
-#   rename(time = t, status = z) %>%
+# livmet <- mlr3misc::load_dataset("livmet", "locfit") |>
+#   rename(time = t, status = z) |>
 #   mutate(
 #     # status = 1 - status,
 #     # Categorical recoding to factor for tumor TNM
@@ -171,7 +187,7 @@ save_data(liver)
 #     sex = sex - 1,
 #     pt = pt - 1,
 #     lap = lap - 1
-#   ) %>%
+#   ) |>
 #   filter(time > 0)
 #
 # save_data(livmet)
@@ -180,13 +196,13 @@ save_data(liver)
 # Data were extracted from the DIVAT cohort. It corresponds to the reference
 # sample constituted by first transplant recipients (FTR).
 
-FTR.data <- mlr3misc::load_dataset("FTR.data", "MRsurv") %>%
+dataFTR <- mlr3misc::load_dataset("dataFTR", "RISCA") |>
   rename(
     time = Tps.Evt,
     status = Evt
   )
 
-save_data(FTR.data)
+save_data(dataFTR)
 
 # MRsurv::STR.data --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the relative
@@ -194,13 +210,13 @@ save_data(FTR.data)
 
 # "Tattente2cl" = Waiting time between consecutive transplants, ok to include?
 
-STR.data <- mlr3misc::load_dataset("STR.data", "MRsurv") %>%
+dataSTR <- mlr3misc::load_dataset("dataSTR", "RISCA") |>
   rename(
     time = Tps.Evt,
     status = Evt
   )
 
-save_data(STR.data)
+save_data(dataSTR)
 
 # pec::cost ---------------------------------------------------------------
 # This data set contains a subset of the data from the Copenhagen stroke study
@@ -218,16 +234,16 @@ save_data(cost)
 
 # Exclude LEN.T and FRAC to avoid optimistic bias due to future information
 
-uis <- mlr3misc::load_dataset("uis", "quantreg") %>%
+uis <- mlr3misc::load_dataset("uis", "quantreg") |>
   select(
     -ID, # ID var
     -Y,  # Y: log(TIME)
     -LEN.T, -FRAC # Length of stay, compliance, not known at baseline
-  ) %>%
+  ) |>
   rename(
     time = TIME,
     status = CENSOR
-  ) %>%
+  ) |>
   mutate(
     HC = factor(HC), # Categorical, 4 levels
   )
@@ -245,8 +261,8 @@ save_data(uis)
 # Required to print year column in DDmonYY format for year extraction
 library(relsurv)
 
-rdata <- mlr3misc::load_dataset("rdata", "relsurv") %>%
-  rename(status = cens) %>%
+rdata <- mlr3misc::load_dataset("rdata", "relsurv") |>
+  rename(status = cens) |>
   mutate(
     # Extract 2 digit year from date of diagnosis
     year = stringr::str_extract(as.character(year), "\\d{2}$"),
@@ -283,11 +299,11 @@ save_data(colrec)
 # No clear doc for censoring variable but assuming normal coding
 # based on usage in simPH example code with {survival} etc.
 
-CarpenterFdaData <- mlr3misc::load_dataset("CarpenterFdaData", "simPH") %>%
+CarpenterFdaData <- mlr3misc::load_dataset("CarpenterFdaData", "simPH") |>
   rename(
     time = acttime,
     status = censor
-  ) %>%
+  ) |>
   select(
     -caseid, # ID var
     -X_st, # constant 1
@@ -303,7 +319,7 @@ save_data(CarpenterFdaData)
 # III clinical trial e1684 which is used for modeling semicure PH mixture
 # cure model (Kirkwood, et al., 1996)
 
-e1684 <- mlr3misc::load_dataset("e1684", "smcure") %>%
+e1684 <- mlr3misc::load_dataset("e1684", "smcure") |>
   rename(time = FAILTIME, status = FAILCENS)
 
 save_data(e1684)
