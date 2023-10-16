@@ -30,14 +30,14 @@ requireNamespace("mlr3extralearners")
 set.seed(seed)
 
 # From Raphael's preprocessing code
-aids2 <- MASS::Aids2 %>%
-  mutate(time = as.numeric(death - diag),
-         sexF = if_else(sex == "F", 1L, 0L),
-         status = if_else(status == "D", 1L, 0L),
-         age = as.numeric(age)) %>%
-  select(-diag, -death, -sex) %>%
-  tidyr::drop_na() %>%
-  filter(time > 0)
+aids2 <- MASS::Aids2 |>
+  dplyr::mutate(time = as.numeric(death - diag),
+         sexF = dplyr::if_else(sex == "F", 1L, 0L),
+         status = dplyr:: if_else(status == "D", 1L, 0L),
+         age = as.numeric(age)) |>
+  dplyr::select(-diag, -death, -sex) |>
+  tidyr::drop_na() |>
+  dplyr::filter(time > 0)
 
 
 # Stripped back batchmark code
@@ -90,7 +90,9 @@ rr <- resample(
 task$set_col_roles("T.categ", add_to = "stratum")
 
 # pl <- po("fixfactors") %>>% po("collapsefactors", target_level_count = 5)
-pl <- po("fixfactors") %>>% po("collapsefactors", no_collapse_above_prevalence = 0.01)
+pl <- po("fixfactors") %>>% po("collapsefactors", no_collapse_above_prevalence = 0.05, target_level_count = 5)
+pl <- po("fixfactors") %>>% po("collapsefactors", no_collapse_above_prevalence = 0.05)
+
 tt2 <- pl$train(task)
 
 sort(table(tt2$collapsefactors.output$data(cols = "T.categ")))
@@ -108,8 +110,33 @@ table(dd$status, dd$T.categ)
 task$strata
 
 
-## seperate issue: fixed in gh version
-library(mlr3)
-tt <- tsk("iris")
-tt$set_col_roles("Species", add_to = "stratum")
-tt
+
+
+# bladder0 ----
+bladder0 <- mlr3misc::load_dataset("bladder0", "frailtyHL") |>
+  dplyr::rename(time = Surtime, status = Status) |>
+  dplyr::mutate(
+    Center = factor(Center), # Group ID was integer
+    time = ifelse(time == 0, 0.001, time)
+  )
+
+task = as_task_surv(bladder0, target = "time", event = "status", id = "bladder0")
+task$set_col_roles("status", add_to = "stratum")
+resampling = rsmp("cv", folds = 5)$instantiate(task)
+
+
+pl <- po("fixfactors") %>>% po("collapsefactors", no_collapse_above_prevalence = 0.05, target_level_count = 5)
+
+sort(table(pl$train(task$filter(resampling$train_set(1)))$collapsefactors.output$data(cols = "Center")))
+sort(table(pl$train(task$filter(resampling$train_set(2)))$collapsefactors.output$data(cols = "Center")))
+sort(table(pl$train(task$filter(resampling$train_set(3)))$collapsefactors.output$data(cols = "Center")))
+
+
+pl <- po("fixfactors") %>>% po("collapsefactors", no_collapse_above_prevalence = 0.05)
+
+sort(table(pl$train(task$filter(resampling$train_set(1)))$collapsefactors.output$data(cols = "Center")))
+sort(table(pl$train(task$filter(resampling$train_set(2)))$collapsefactors.output$data(cols = "Center")))
+sort(table(pl$train(task$filter(resampling$train_set(3)))$collapsefactors.output$data(cols = "Center")))
+
+
+lrn("surv.ranger")$train(task)
