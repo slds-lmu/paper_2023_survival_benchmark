@@ -1,5 +1,5 @@
 root = here::here()
-source(file.path(root, "settings.R"))
+source(file.path(root, "settings_runtime_est.R"))
 
 # Packages ----------------------------------------------------------------
 
@@ -55,11 +55,21 @@ for (i in seq_along(files)) {
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
-  folds = min(floor(task$nrow / min_obs), outer_folds)
-  resampling = rsmp("cv", folds = folds)$instantiate(task)
-  stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
+  # Just for runtime estimation: Do simple holdout
+  if (all.equal(c(outer_folds, inner_folds), c(1, 1))) {
+    folds = 1
+    resampling = rsmp("holdout")$instantiate(task)
+  } else {
+    # normal CV
+    folds = min(floor(task$nrow / min_obs), outer_folds)
+    resampling = rsmp("cv", folds = folds)$instantiate(task)
 
-  save_resampling(resampling, names[i])
+    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
+
+    save_resampling(resampling, names[i])
+  }
+
+
 
   tasks[[i]] = task
   resamplings[[i]] = resampling
@@ -80,7 +90,7 @@ tasktab[, dimrank := data.table::frank(dim)]
 tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
 
 write.csv(tasktab, here::here("tasktab.csv"), row.names = FALSE)
-saveRDS(tasktab, file = here::here("tasktab.rds"))
+#saveRDS(tasktab, file = here::here("tasktab.rds"))
 
 # Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
@@ -93,7 +103,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$predict_type = "crank"
 
   learner$fallback = fallback
-  learner$encapsulate = c(train = "evaluate", predict = "evaluate")
+  learner$encapsulate = c(train = "callr", predict = "callr")
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -141,10 +151,18 @@ auto_tune = function(learner, ...) { # wrap into random search
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
+  if (inner_folds == 1) {
+    # Runtime testing mode: holdout
+    resampling = rsmp("holdout")
+  } else {
+    # regular mode: (3-fold) CV
+    resampling = rsmp("cv", folds = inner_folds)
+  }
+
   AutoTuner$new(
     learner = learner,
     search_space = search_space,
-    resampling = rsmp("cv", folds = inner_folds),
+    resampling = resampling,
     # Measure will be set via global variable in loop
     measure = measure,
     # budget set in settings.R: n_evals + k * dim_search_space
@@ -336,30 +354,21 @@ for (measure in measures) {
   addJobTags(ids, measure$id)
 }
 
-summarizeExperiments(by = c("task_id", "learner_id"))
+print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
 # by number of unique time points (ranked) (higher == more memory needed)
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
-data.table::setorder(alljobs, uniq_t_rank)
-
 
 # Pretest -----------------------------------------------------------------
 if (FALSE) {
   res = list(walltime = 4 * 3600, memory = 4096)
-  #ids = findExperiments(repls = 1)
+  ids = findExperiments(repls = 1)
 
   alljobs |>
     dplyr::filter(repl == 1, grepl("rcll", measure)) |>
-    dplyr::filter(task_id %in% c("bladder0", "hdfail"), learner_id %in% c("GLM", "CPH", "RAN")) |>
-    findNotSubmitted() |>
-    submitJobs()
-
-  alljobs |>
-    dplyr::filter(repl == 1, grepl("rcll", measure)) |>
-    dplyr::filter(task_id %in% c("bladder0")) |>
     findNotSubmitted() |>
     submitJobs()
 

@@ -2,10 +2,10 @@
 ### Benchmark Settings
 ###################################################################################################
 # registry dir (NA for testing)
-reg_dir = file.path(root, "registry")
+reg_dir = file.path(root, "registry_runtime_est")
 
 # number of outer (evaluation) folds
-outer_folds = 5
+outer_folds = 1
 
 # minimum number of observations per fold. If this requirement is not met,
 # outer_folds is decreased to the largest fold number where this is possible.
@@ -16,11 +16,11 @@ min_obs = 30
 # budget_multiplier = 1
 
 # Suggested budget
-budget_constant = 0
-budget_multiplier = 50
+budget_constant = 1
+budget_multiplier = 0
 
 # number of inner (tuning) folds
-inner_folds = 3
+inner_folds = 1
 
 # RNG seed
 seed = 123
