@@ -19,20 +19,22 @@ data.table::setnames(alljobs, "tags", "measure")
 print(getStatus())
 print(unique(getErrorMessages()))
 
-ids = grepLogs(findErrors(), pattern = "incorrect number")
-summarizeExperiments(ids, by = c("learner_id"))
-
-ids = grepLogs(findErrors(), pattern = "Distribution")
-summarizeExperiments(ids, by = c("learner_id"))
+# ids = grepLogs(findErrors(), pattern = "incorrect number")
+# summarizeExperiments(ids, by = c("learner_id"))
+#
+# ids = grepLogs(findErrors(), pattern = "Distribution")
+# summarizeExperiments(ids, by = c("learner_id"))
 
 ids = findExpired()
-summarizeExperiments(ids, by = c("task_id"))
-summarizeExperiments(ids, by = c("learner_id"))
+if (nrow(ids) > 0) {
+  summarizeExperiments(ids, by = c("task_id"))
+  summarizeExperiments(ids, by = c("learner_id"))
+}
 
-showLog(ids[1])
+#showLog(ids[1])
 
-ids = ijoin(findExpired(), findExperiments(prob.pars = task_id == "child"))
-showLog(ids[1])
+#ids = ijoin(findExpired(), findExperiments(prob.pars = task_id == "child"))
+#showLog(ids[1])
 
 ###################################################################################################
 ### Reduce results
@@ -43,7 +45,8 @@ measures_eval = list(
   uno_c = msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
   # Added as graf alternative for now as per RS
   rcll = msr("surv.rcll", id = "rcll"),
-  # msr("surv.graf", id = "graf", proper = TRUE),
+
+  graf_proper = msr("surv.graf", id = "graf", proper = TRUE),
   dcalib = msr("surv.dcalib", id = "dcalib"),
 
   intlogloss = msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
@@ -51,13 +54,21 @@ measures_eval = list(
   calib = msr("surv.calib_alpha", id = "calib")
 )
 
+tictoc::tic(msg = "collecting results")
 bmr = reduceResultsBatchmark()
-saveRDS(bmr, "tmp/bmr.rds")
+tictoc::toc()
 
-#profvis::profvis({
-aggr = bmr$aggregate(measures = measures_eval[c("harrell_c", "rcll")], conditions = TRUE)
-#})
+tictoc::tic(msg = "saving results")
+saveRDS(bmr, "tmp/bmr.rds")
+tictoc::toc()
+tictoc::tic(msg = "collecting aggregated results")
+aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+tictoc::toc()
+tictoc::tic(msg = "saving aggregated results")
 saveRDS(aggr, "tmp/aggr.rds")
+tictoc::toc()
+
+
 resamplings_with_error = aggr[errors > 0, nr]
 
 mlr3viz::autoplot(bmr, measure = measures_eval$rcll)

@@ -12,8 +12,8 @@ outer_folds = 5
 min_obs = 30
 
 # tuning budget
-budget_constant = 3
-budget_multiplier = 0
+budget_constant = 5
+budget_multiplier = 1
 # budget_constant = 0
 # budget_multiplier = 50
 

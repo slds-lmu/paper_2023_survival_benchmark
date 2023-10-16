@@ -79,9 +79,10 @@ tasktab = data.table::rbindlist(lapply(tasks, \(x) {
 tasktab[, dimrank := data.table::frank(dim)]
 tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
 
+write.csv(tasktab, here::here("tasktab.csv"), row.names = FALSE)
 saveRDS(tasktab, file = here::here("tasktab.rds"))
 
-# Create Learners and populate Registry -----------------------------------# Base learner setup ------------------------------------------------------
+# Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
@@ -351,29 +352,30 @@ if (FALSE) {
   #ids = findExperiments(repls = 1)
 
   alljobs |>
-    dplyr::filter(repl == 1 & measure == "rcll") |>
-    dplyr::filter(task_id %in% c("bladder0", "hdfail"), learner_id %in% c("GLM", "CPH")) |>
+    dplyr::filter(repl == 1, grepl("rcll", measure)) |>
+    dplyr::filter(task_id %in% c("bladder0", "hdfail"), learner_id %in% c("GLM", "CPH", "RAN")) |>
+    findNotSubmitted() |>
     submitJobs()
 
-  # alljobs[, .(count = .N), by = task_id]
-  # alljobs[, .(count = .N), by = .(task_id, learner_id, measure)]
+  alljobs |>
+    dplyr::filter(repl == 1, grepl("rcll", measure)) |>
+    dplyr::filter(task_id %in% c("bladder0")) |>
+    findNotSubmitted() |>
+    submitJobs()
+
   alljobs |>
     dplyr::filter(uniq_t_rank <= 5) |>
-    submitJobs(resources = res)
+    findNotSubmitted() |>
+    submitJobs()
+
+ alljobs |>
+    dplyr::filter(repl == 1) |>
+    findNotSubmitted() |>
+    submitJobs()
 }
 
 
 # Submit ------------------------------------------------------------------
-
-if (FALSE) {
-  ids = findExperiments(repls = 1)
-
-  submitJobs(ids)
-
-  summarizeExperiments(findErrors(), by = "learner_id")
-  getErrorMessages()
-}
-
 if (FALSE) {
   ids = ajoin(ids, findDone())
   submitJobs(ids, resources = resources)
@@ -382,5 +384,4 @@ if (FALSE) {
   findErrors()
 
   getErrorMessages(findErrors())
-
 }
