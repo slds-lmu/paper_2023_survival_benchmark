@@ -49,4 +49,6 @@ if (FALSE) {
   library("mlr3extralearners")
   library("CoxBoost")
   library("survivalmodels")
+
+  library("callr")
 }
