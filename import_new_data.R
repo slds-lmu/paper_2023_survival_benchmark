@@ -49,8 +49,16 @@ save_data(bladder0)
 # This dataset contains the observed follow-up times and SMART statistics of
 # 52k unique hard drives.
 
-hdfail <- frailtySurv::hdfail %>%
+hdfail <- frailtySurv::hdfail |>
   select(-serial) # ID column
+
+# Coarsened version to reduce number of unqiue time points
+# Preserve values 0 < t < 1 because we don't want time = 0 issues
+# and there's few enough values in that range that it should not matter too much
+hdfail <- hdfail |>
+  dplyr::mutate(
+    time = ifelse(time > 1, floor(time), time)
+  )
 
 save_data(hdfail)
 
