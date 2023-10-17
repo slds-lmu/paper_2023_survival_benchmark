@@ -1,37 +1,37 @@
 lrnlist <- list(
-    KM = list(learner = "surv.kaplan")
+    KM = list(learner = "surv.kaplan", params = 0)
     ,
-    NL = list(learner = "surv.nelson")
+    NL = list(learner = "surv.nelson", params = 0)
     ,
-    AF = list(learner = "surv.akritas")
+    AF = list(learner = "surv.akritas", params = 1)
     ,
-    CPH = list(learner = "surv.coxph")
+    CPH = list(learner = "surv.coxph", params = 0)
     ,
-    GLM = list(learner = "surv.cv_glmnet", .encode = TRUE)
+    GLM = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE)
     ,
-    Pen = list(learner = "surv.penalized")
+    Pen = list(learner = "surv.penalized", params = 2)
     ,
-    Par = list(learner = "surv.parametric")
+    Par = list(learner = "surv.parametric", params = 1)
     ,
-    Flex = list(learner = "surv.flexible")
+    Flex = list(learner = "surv.flexible", params = 1)
     ,
-    RFSRC = list(learner = "surv.rfsrc")
+    RFSRC = list(learner = "surv.rfsrc", params = 5)
     ,
-    RAN = list(learner = "surv.ranger")
+    RAN = list(learner = "surv.ranger", params = 5)
     ,
-    CIF = list(learner = "surv.cforest")
+    CIF = list(learner = "surv.cforest", params = 5)
     ,
-    ORSF = list(learner = "surv.aorsf")
+    ORSF = list(learner = "surv.aorsf", params = 2)
     ,
-    RRT = list(learner = "surv.rpart")
+    RRT = list(learner = "surv.rpart", params = 1)
     ,
-    MBO = list(learner = "surv.mboost")
+    MBO = list(learner = "surv.mboost", params = 4)
     ,
-    CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE)
+    CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE)
     ,
-    XGB = list(learner = "surv.xgboost", .encode = TRUE)
+    XGB = list(learner = "surv.xgboost", .encode = TRUE, params = 6)
     ,
-    SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE)
+    SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
     # ,
     # CoxT = list(learner = "surv.coxtime", .encode = TRUE, .scale = TRUE)
     # ,
@@ -48,7 +48,7 @@ lrnlist <- list(
 
 lrnlist |>
   lapply(as.data.frame) |>
-  data.table::rbindlist(fill = TRUE) |>
-  dplyr::mutate(across(c(".encode", ".scale"), ~ifelse(is.na(.x), "-", "Yes"))) |>
+  data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
+  dplyr::mutate(across(where(is.logical), ~ifelse(is.na(.x), "-", "Yes"))) |>
   kableExtra::kbl() |>
   kableExtra::kable_styling(bootstrap_options = "striped")
