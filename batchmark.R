@@ -361,26 +361,18 @@ print(summarizeExperiments(by = c("task_id", "learner_id")))
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
+data.table::setkey(alljobs, job.id)
 
 # Pretest -----------------------------------------------------------------
 if (FALSE) {
-  res = list(walltime = 4 * 3600, memory = 4096)
+  # resources = list(walltime = 4 * 3600, memory = 4096)
   ids = findExperiments(repls = 1)
+  ids = ijoin(ids, findTagged("rcll"))
 
   alljobs |>
     dplyr::filter(repl == 1, grepl("rcll", measure)) |>
     findNotSubmitted() |>
-    submitJobs()
-
-  alljobs |>
-    dplyr::filter(uniq_t_rank <= 5) |>
-    findNotSubmitted() |>
-    submitJobs()
-
- alljobs |>
-    dplyr::filter(repl == 1) |>
-    findNotSubmitted() |>
-    submitJobs()
+    submitJobs(resources = resources)
 }
 
 

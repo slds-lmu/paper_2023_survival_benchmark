@@ -103,20 +103,20 @@ lrn_tab = tibble::tribble(
   "Par",       "surv.parametric",  "Parametric",      "Misc",
   "Flex",      "surv.flexible",    "Flexsurv Spline", "Misc",
   "SSVM",      "surv.svm",         "SVM",             "Misc",
-  "RFSRC",     "surv.rfsrc",       "RFSRC",           "Trees",
-  "RAN",       "surv.ranger",      "Ranger",          "Trees",
-  "CIF",       "surv.cforest",     "CIF",             "Trees",
-  "ORSF",      "surv.aorsf",       "ORSF",            "Trees",
-  "RRT",       "surv.rpart",       "Rpart",           "Trees",
+  "RFSRC",     "surv.rfsrc",       "RFSRC",           "Forests",
+  "RAN",       "surv.ranger",      "Ranger",          "Forests",
+  "CIF",       "surv.cforest",     "CIF",             "Forests",
+  "ORSF",      "surv.aorsf",       "ORSF",            "Forests",
+  "RRT",       "surv.rpart",       "Rpart",           "Forests",
   "MBO",       "surv.mboost",      "MBoost",          "Boosting",
   "CoxB",      "surv.cv_coxboost", "CoxBoost",        "Boosting",
-  "XGB",       "surv.xgboost",     "XGBoost",         "Boosting",
-  "CoxT",      "surv.coxtime",     "Cox-Time",        "Neural Network",
-  "DH",        "surv.deephit",     "DeepHit",         "Neural Network",
-  "DS",        "surv.deepsurv",    "DeepSurv",        "Neural Network",
-  "LH",        "surv.loghaz",      "Logistic-Hazard", "Neural Network",
-  "PCH",       "surv.pchazard",    "PC-Hazard",       "Neural Network",
-  "DNN",       "surv.dnnsurv",     "DNNSurv",         "Neural Network"
+  "XGB",       "surv.xgboost",     "XGBoost",         "Boosting"
+  # "CoxT",      "surv.coxtime",     "Cox-Time",        "Neural Network",
+  # "DH",        "surv.deephit",     "DeepHit",         "Neural Network",
+  # "DS",        "surv.deepsurv",    "DeepSurv",        "Neural Network",
+  # "LH",        "surv.loghaz",      "Logistic-Hazard", "Neural Network",
+  # "PCH",       "surv.pchazard",    "PC-Hazard",       "Neural Network",
+  # "DNN",       "surv.dnnsurv",     "DNNSurv",         "Neural Network"
 )
 lrn_tab$Type = factor(lrn_tab$Type, levels = unique(lrn_tab$Type))
 
