@@ -1,0 +1,261 @@
+---
+title: "Resource Estimates"
+author: "Lukas"
+date: now
+format: 
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 3
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+## Setup
+
+Benchmark setup for resource estimation:
+
+- Holdout outer resampling
+- Holdout inner resampling
+- 1 eval random search
+
+So 2 learner `$train()` and and `$predict()` calls total.
+We may or may not have gotten lucky with fast or slow HPCs in the random search eval.
+This is just a ballpark estimate.
+
+```{r}
+root = here::here()
+source(file.path(root, "settings_runtime_est.R"))
+
+library(batchtools)
+library(ggplot2)
+library(data.table)
+
+reg = loadRegistry(reg_dir, writeable = FALSE)
+
+alljobs = unwrap(getJobTable())[, .(job.id, repl, tags, task_id, learner_id, submitted, time.queued, time.running, mem.used, error)]
+# Enhance with task metadata (n, p, number of unique time points etc)
+tasktab = read.csv(here::here("tasktab.csv"))
+lrntab = read.csv(here::here("attic", "learners.csv"))
+alljobs = ljoin(alljobs, tasktab, by = "task_id")
+setkey(alljobs, job.id)
+# alljobs[c(1, 34, 455),]
+
+# Estimating runtime via `batchtools` builtin `ranger` only on selected variables (avoid time.queued, repl, note that job.id is excluded automatically):
+bt_est = alljobs |>
+  dplyr::select(job.id, task_id, learner_id, tags) |>
+  batchtools::estimateRuntimes()
+# print(bt_est)
+
+# Merging estimates runtimes with observed ones, converting to `hms` for readability:
+alljobs = alljobs[bt_est$runtimes]
+alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))]
+```
+
+```{r helper_funs}
+summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
+  checkmate::assert_subset(by, choices = c("task_id", "learner_id", "tags"))
+  checkmate::assert_subset(measure, choices = c("runtime", "mem.used"))
+  
+  xtab <- xdf |>
+    dplyr::filter(type == "observed") |>
+    dplyr::summarise(
+      min = min(.data[[measure]]),
+      q25 = quantile(.data[[measure]], prob = 0.25),
+      median = median(.data[[measure]]),
+      q75 = quantile(.data[[measure]], prob = 0.75),
+      max = max(.data[[measure]]),
+      n_jobs = dplyr::n(),
+      .by = dplyr::all_of(by)
+    )
+  
+  if (measure == "runtime") {
+    xtab <- xtab |> 
+      dplyr::mutate(dplyr::across(min:max, \(x) hms::hms(seconds = round(x, 1))))
+  }
+    if (measure == "mem.used") {
+    # mem.used shows MB, pretty_bytes expects bytes
+    xtab <- xtab |> 
+      dplyr::mutate(dplyr::across(min:max, \(x) prettyunits::pretty_bytes(x * 1000^2)))
+  }
+  
+  xtab |>
+    dplyr::arrange(dplyr::desc(.data[["q75"]])) |>
+    reactable::reactable(striped = TRUE)
+}
+
+plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
+    checkmate::assert_subset(by, choices = c("task_id", "learner_id", "tags"))
+  checkmate::assert_subset(measure, choices = c("runtime", "mem.used"))
+  
+  p <- xdf |>
+    dplyr::filter(...) |>
+    ggplot(aes(
+      y = reorder(.data[[by]], .data[[measure]]),
+      x = .data[[measure]]
+    )) +
+      geom_boxplot()
+  
+  if (measure == "runtime") {
+    p <- p + scale_x_time(breaks = (3600 * 24) * 1:20, minor_breaks = 3600 * 12 * 1:20)
+  }
+  if (measure == "mem.used") {
+    p <- p + scale_x_continuous(breaks = scales::pretty_breaks(), labels = \(x) prettyunits::pretty_bytes(x * 1000^2))
+  }
+  
+  title <- switch(measure, runtime = "Runtime", mem.used = "Memory")
+  x_ax <- switch(measure, runtime = "Runtime (HH:MM:SS)", mem.used = "Memory (GiB)")
+  p  +
+    labs(
+      title = sprintf("Job %s", title),
+      subtitle = sprintf("based on %i / %i jobs (%s%%)", sum(alljobs$type == "observed"), nrow(alljobs),
+                         round(100 * sum(alljobs$type == "observed")/nrow(alljobs), 1)),
+      x = x_ax, y = by
+    ) +
+    theme_minimal() +
+    theme(legend.position = "top")
+}
+```
+
+### Learners
+
+```{r}
+lrntab |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling()
+```
+
+### Tasks
+
+```{r}
+tasktab |>
+  dplyr::select(task_id, n, p, n_uniq_t) |>
+  dplyr::arrange(-n) |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling()
+```
+
+## Status
+
+### How many jobs are done?
+
+```{r}
+alljobs |>
+  dplyr::group_by(repl) |>
+  dplyr::summarize(
+    total = dplyr::n(),
+    done = sum(!is.na(time.running)),
+    perc = round(100 * done/total, 2)
+  ) |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling()
+```
+
+### Which are still running?
+
+Duration based on "now": `r Sys.time()`
+
+```{r}
+alljobs[findRunning(), c("learner_id", "task_id", "tags", "submitted")]  |>
+  dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
+  dplyr::select(-submitted) |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling()
+```
+
+
+## Runtime 
+
+Only showing observed, not estimated runtimes.
+
+### All Jobs by Runtime
+
+```{r}
+runtimes <- alljobs |>
+  dplyr::filter(type == "observed") |>
+  dplyr::select(
+    learner_id, task_id,
+    n, p, n_uniq_t,
+    measure = tags,
+    runtime, time.running.hms
+  ) |>
+  dplyr::arrange(dplyr::desc(runtime))
+
+runtimes |>
+  dplyr::mutate(time.running.hms = hms::round_hms(time.running.hms, secs = 1)) |>
+  dplyr::select(-runtime) |>
+  reactable::reactable(striped = TRUE)
+```
+
+### Summarizing by learner / task
+
+Limited to finished jobs only, `n_jobs` shows number of jobs used for summary.
+
+Sorted by 75% quantile, descending.
+
+### Runtime per Task
+
+```{r}
+plot_resources(alljobs, by = "task_id", measure = "runtime")
+summarize_resources(alljobs, by = "task_id", measure = "runtime")
+```
+
+### Runtime per Learner
+
+```{r}
+plot_resources(alljobs, by = "learner_id", measure = "runtime")
+summarize_resources(alljobs, by = "learner_id", measure = "runtime")
+```
+
+### Runtime per Measure
+
+```{r}
+plot_resources(alljobs, by = "tags", measure = "runtime")
+summarize_resources(alljobs, by = "tags", measure = "runtime")
+```
+
+## Memory
+
+### All jobs by Memory
+
+```{r}
+alljobs |>
+  dplyr::filter(!is.na(mem.used)) |>
+  dplyr::select(
+    learner_id, task_id,
+    n, p, n_uniq_t,
+    measure = tags,
+    mem.used
+  ) |>
+  dplyr::arrange(dplyr::desc(mem.used)) |>
+  dplyr::mutate(mem.used = prettyunits::pretty_bytes(mem.used * 1024^2)) |>
+  reactable::reactable(striped = TRUE)
+```
+
+
+### Memory per Task
+
+```{r}
+plot_resources(alljobs, by = "task_id", measure = "mem.used")
+summarize_resources(alljobs, by = "task_id", measure = "mem.used")
+```
+
+### Memory per Learner
+
+```{r}
+plot_resources(alljobs, by = "learner_id", measure = "mem.used")
+summarize_resources(alljobs, by = "learner_id", measure = "mem.used")
+```
+
+### Memory per Measure
+
+```{r}
+plot_resources(alljobs, by = "tags", measure = "mem.used")
+summarize_resources(alljobs, by = "tags", measure = "mem.used")
+```
+
