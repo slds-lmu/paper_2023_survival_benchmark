@@ -68,7 +68,7 @@ datasets <- tibble(pkgdata = datasets) |>
 # Do files in code/data and files in above table match up?
 setdiff(
   datasets$dataset,
-  fs::dir_ls(here::here("code/data")) |> fs::path_file() |> fs::path_ext_remove()
+  fs::dir_ls(here::here("code/data"), glob = "*.rds") |> fs::path_file() |> fs::path_ext_remove()
 )
 
 is.binary <- function(x) {
@@ -76,7 +76,7 @@ is.binary <- function(x) {
            error = function(e) FALSE, silent = TRUE)
 }
 
-xdat_summary <- fs::dir_ls(here::here("code/data")) |>
+xdat_summary <- fs::dir_ls(here::here("code/data"), glob = "*.rds") |>
   purrr::map_df(~{
     dat <- readRDS(.x)
     
@@ -103,6 +103,7 @@ xdat_summary <- fs::dir_ls(here::here("code/data")) |>
 # sanity overview
 datasets <- left_join(datasets, xdat_summary, by = "dataset") 
 saveRDS(datasets, here::here("attic", "datasets.rds"))
+write.csv(datasets, here::here("attic", "datasets.csv"), row.names = FALSE)
 
 datasets |>
   # arrange(tolower(dataset)) |>
