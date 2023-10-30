@@ -66,7 +66,7 @@ for (i in seq_along(files)) {
 
     stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
 
-    save_resampling(resampling, names[i])
+    #save_resampling(resampling, names[i])
   }
 
 
@@ -81,8 +81,8 @@ tasktab = data.table::rbindlist(lapply(tasks, \(x) {
   data.table::data.table(
     task_id = x$id,
     n = x$nrow,
-    p = x$ncol,
-    dim = x$nrow * x$ncol,
+    p = length(x$feature_names),
+    dim = x$nrow * length(x$feature_names),
     n_uniq_t = length(unique(x$data(cols = "time")[[1]]))
   )
 }))
