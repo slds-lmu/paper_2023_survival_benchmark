@@ -20,11 +20,11 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 Benchmark setup for resource estimation:
 
-- Holdout outer resampling
-- Holdout inner resampling
-- 1 eval random search
+- Holdout outer resampling (instead of 5-fold CV)
+- Holdout inner resampling (instead of 3-fold CV)
+- 1 eval random search (instead of ???)
 
-So 2 learner `$train()` and and `$predict()` calls total.
+So 2 learner `$train()` and and `$predict()` calls total per tuning measure.
 We may or may not have gotten lucky with fast or slow HPCs in the random search eval.
 This is just a ballpark estimate.
 
@@ -160,7 +160,7 @@ alljobs |>
 
 Duration based on "now": `r Sys.time()`
 
-```{r}
+```{r, eval = nrow(findRunning()) > 0}
 alljobs[findRunning(), c("learner_id", "task_id", "tags", "submitted")]  |>
   dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
   dplyr::select(-submitted) |>
