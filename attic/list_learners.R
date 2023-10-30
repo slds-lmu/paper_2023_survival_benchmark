@@ -44,11 +44,13 @@ lrnlist <- list(
     # PCH = list(learner = "surv.pchazard", .encode = TRUE, .scale = TRUE)
     # ,
     # DNN = list(learner = "surv.dnnsurv", .encode = TRUE, .scale = TRUE)
-  )
-
-lrnlist |>
+  ) |>
   lapply(as.data.frame) |>
   data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
-  dplyr::mutate(across(where(is.logical), ~ifelse(is.na(.x), "-", "Yes"))) |>
+  dplyr::mutate(across(where(is.logical), ~ifelse(is.na(.x), "-", "Yes")))
+
+write.csv(lrnlist, file = here::here("attic/learners.csv"), row.names = FALSE)
+
+lrnlist |>
   kableExtra::kbl() |>
   kableExtra::kable_styling(bootstrap_options = "striped")
