@@ -4,6 +4,10 @@ registry_*
 tmp/*
 # attic/
 
+attic/*.html
+*_files
+attic/scratch.R
+
 # History files
 .Rhistory
 .Rapp.history
