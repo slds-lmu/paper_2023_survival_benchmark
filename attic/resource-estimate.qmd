@@ -86,7 +86,7 @@ summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
   
   xtab |>
     dplyr::arrange(dplyr::desc(.data[["q75"]])) |>
-    reactable::reactable(striped = TRUE)
+    reactable::reactable(striped = TRUE, filterable = TRUE)
 }
 
 plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
@@ -189,7 +189,7 @@ runtimes <- alljobs |>
 runtimes |>
   dplyr::mutate(time.running.hms = hms::round_hms(time.running.hms, secs = 1)) |>
   dplyr::select(-runtime) |>
-  reactable::reactable(striped = TRUE)
+  reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
 
 ### Summarizing by learner / task
@@ -234,7 +234,7 @@ alljobs |>
   ) |>
   dplyr::arrange(dplyr::desc(mem.used)) |>
   dplyr::mutate(mem.used = prettyunits::pretty_bytes(mem.used * 1024^2)) |>
-  reactable::reactable(striped = TRUE)
+  reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
 
 
