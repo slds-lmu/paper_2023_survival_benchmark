@@ -64,12 +64,11 @@ range(hdfail$time)
 length(unique(hdfail$time))
 summary(hdfail$time)
 
-# Coarsened version to reduce number of unqiue time points
-# Preserve values 0 < t < 1 because we don't want time = 0 issues
-# and there's few enough values in that range that it should not matter too much
+# Coarsened version to reduce number of unique time points
+# Values 0 < t < 1 will be rounded to time = 0, save_data() drops these
 hdfail <- hdfail |>
   dplyr::mutate(
-    time = ifelse(time > 1, floor(time), time)
+    time = floor(time)
   )
 
 range(hdfail$time)
