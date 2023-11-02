@@ -3,6 +3,7 @@ registry-*
 registry_*
 tmp/*
 # attic/
+^tmp-*
 
 attic/*.html
 *_files
