@@ -66,7 +66,7 @@ for (i in seq_along(files)) {
 
     stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
 
-    #save_resampling(resampling, names[i])
+    save_resampling(resampling, names[i])
   }
 
 

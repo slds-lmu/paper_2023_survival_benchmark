@@ -15,22 +15,11 @@ library("mlr3pipelines")
 library("mlr3tuning")
 requireNamespace("mlr3extralearners")
 
-
-# Create Registry ---------------------------------------------------------
-if (dir.exists(reg_dir)) {
-  message("Loading registry with writable = TRUE")
-  reg = loadRegistry(reg_dir, writeable = TRUE)
-} else {
-  message("Creating new registry")
-  reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
-                               packages = c("mlr3", "mlr3proba"))
-}
-
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
 files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
 names = stringi::stri_sub(basename(files), 1, -5)
-tasks = resamplings = mlr3misc::named_list(names)
+tasks = mlr3misc::named_list(names)
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
@@ -38,23 +27,7 @@ for (i in seq_along(files)) {
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
-  # Just for runtime estimation: Do simple holdout
-  if (all.equal(c(outer_folds, inner_folds), c(1, 1))) {
-    folds = 1
-    resampling = rsmp("holdout")$instantiate(task)
-  } else {
-    # normal CV
-    folds = min(floor(task$nrow / min_obs), outer_folds)
-    resampling = rsmp("cv", folds = folds)$instantiate(task)
-
-    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
-
-    #save_resampling(resampling, names[i])
-  }
-
   tasks[[i]] = task
-  resamplings[[i]] = resampling
-  rm(data, task, folds, resampling)
 }
 
 
@@ -112,16 +85,6 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
 }
 
 
-# Set tuning measures -----------------------------------------------------
-# Tuning measures are a subset of all measures, remaining measures are used
-# for evaluation (see overleaf Table 1)
-measures = list(
-  msr("surv.cindex", id = "harrell_c"),
-  msr("surv.dcalib", id = "dcalib"),
-  msr("surv.rcll", id = "rcll")
-)
-
-
 # Assemble learners -------------------------------------------------------
 
 # survivalmodels::akritas
@@ -168,6 +131,16 @@ bmr = benchmark(
 
 scores = bmr$score(msrs(c("time_train", "time_predict")))
 aggr = bmr$aggregate(conditions = TRUE)
+
+measures = list(
+  msr("surv.cindex", id = "harrell_c"),
+  msr("surv.dcalib", id = "dcalib"),
+  msr("surv.rcll", id = "rcll")
+)
+
+tictoc::tic()
+bmr$score(measures[[1]])
+tictoc::toc()
 
 if (!fs::dir_exists("tmp-ranger-timing")) fs::dir_create("tmp-ranger-timing")
 saveRDS(bmr, here::here("tmp-ranger-timing", "bmr.rds"))
