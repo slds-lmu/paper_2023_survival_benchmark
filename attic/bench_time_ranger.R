@@ -163,11 +163,15 @@ future::plan("multisession", workers = parallelly::availableCores())
 
 ids = seq_len(nrow(grid))
 
-res = future.apply::future_lapply(ids, \(i) {
+grid = grid[2,]
 
-  learner = grid$learner[[i]]$clone()
-  task = grid$task[[i]]
-  resampling = grid$resampling[[i]]
+# future.lapply didn't like the externalptr in grid or something
+# res = future.apply::future_lapply(ids, \(i) {
+res = furrr::future_pmap(grid, \(task, learner, resampling) {
+
+  # learner = grid$learner[[i]]$clone()
+  # task = grid$task[[i]]
+  # resampling = grid$resampling[[i]]
 
   cli::cli_h2("Running {learner$id} on {task$id}")
 
@@ -183,30 +187,33 @@ res = future.apply::future_lapply(ids, \(i) {
 
   cli::cli_alert_info("Scoring: Harrel's C")
   tictoc::tic()
-  pred$score(measures$harrell_c)
-  t_measure_c = tictoc::toc()
+  s_harrel = pred$score(measures$harrell_c)
+  t_harrell = tictoc::toc()
 
   cli::cli_alert_info("Scoring: D-Calibration")
   tictoc::tic()
-  pred$score(measures$dcalib)
-  t_measure_d = tictoc::toc()
+  s_dcalib = pred$score(measures$dcalib)
+  t_dcalib = tictoc::toc()
 
   cli::cli_alert_info("Scoring: RCLL")
   tictoc::tic()
-  pred$score(measures$rcll)
-  t_measure_rc = tictoc::toc()
+  s_rcll = pred$score(measures$rcll)
+  t_rcll = tictoc::toc()
 
 
   data.table::data.table(
     learner = learner$id,
     task = task$id,
-    train = t_train$toc,
-    pred = t_pred$toc,
-    harell_c = t_measure_c$toc,
-    dcalib = t_measure_d$toc,
-    rcll = t_measure_rc$toc
+    time_train = t_train$toc,
+    time_pred = t_pred$toc,
+    time_harell_c = t_harrell$toc,
+    time_dcalib = t_dcalib$toc,
+    time_rcll = t_rcll$toc,
+    harrell_c = s_harrel,
+    dcalib = s_dcalib,
+    rcll = s_rcll
   )
-}, future.seed = TRUE)
+}, .options = furrr::furrr_options(seed = TRUE))
 
 resdf = data.table::rbindlist(res)
 if (!fs::dir_exists("tmp-ranger-timing")) fs::dir_create("tmp-ranger-timing")
