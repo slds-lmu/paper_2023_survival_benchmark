@@ -163,8 +163,6 @@ future::plan("multisession", workers = parallelly::availableCores())
 
 ids = seq_len(nrow(grid))
 
-grid = grid[2,]
-
 # future.lapply didn't like the externalptr in grid or something
 # res = future.apply::future_lapply(ids, \(i) {
 res = furrr::future_pmap(grid, \(task, learner, resampling) {
