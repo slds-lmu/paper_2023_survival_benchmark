@@ -1,5 +1,4 @@
 root = here::here()
-source(file.path(root, "settings_runtime_est.R"))
 
 # Packages ----------------------------------------------------------------
 
@@ -16,10 +15,15 @@ library("mlr3tuning")
 requireNamespace("mlr3extralearners")
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
-set.seed(seed)
+set.seed(123)
 files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
 names = stringi::stri_sub(basename(files), 1, -5)
 tasks = mlr3misc::named_list(names)
+
+idx = which(names %in% c("aids2", "grace", "child", "hdfail"))
+files = files[idx]
+names = names[idx]
+tasks = resamplings = mlr3misc::named_list(names)
 
 for (i in seq_along(files)) {
   data = readRDS(files[i])
@@ -27,7 +31,10 @@ for (i in seq_along(files)) {
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
+  resamplings[[i]] = rsmp("holdout")$instantiate(task)
   tasks[[i]] = task
+  rm(data, task)
+
 }
 
 
@@ -85,16 +92,23 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
 }
 
 
+measures = list(
+  harrell_c = msr("surv.cindex", id = "harrell_c"),
+  dcalib = msr("surv.dcalib", id = "dcalib"),
+  rcll = msr("surv.rcll", id = "rcll")
+)
+
 # Assemble learners -------------------------------------------------------
 
+learners = list(
 # survivalmodels::akritas
 # https://raphaels1.github.io/survivalmodels/reference/akritas.html
 AF = bl("surv.akritas", lambda = 0.5)
 #surv.akritas.lambda = p_dbl(0, 1)
 
-CPH = bl("surv.coxph")
+, CPH = bl("surv.coxph")
 
-RAN = bl("surv.ranger", num.trees = 500,
+, RAN = bl("surv.ranger", num.trees = 500,
          splitrule = "logrank",
          min.node.size = 5,
          replace = TRUE)
@@ -103,8 +117,8 @@ RAN = bl("surv.ranger", num.trees = 500,
 # surv.ranger.min.node.size = p_int(1, 50),
 # surv.ranger.replace = p_lgl(),
 # surv.ranger.sample.fraction = p_dbl(0, 1)
-CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 500, .encode = TRUE)
-XGB = bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRUE)
+# CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 500, .encode = TRUE)
+, XGB = bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRUE)
 # surv.xgboost.max_depth = p_int(1, 20),
 # surv.xgboost.subsample = p_dbl(0, 1),
 # surv.xgboost.colsample_bytree = p_dbl(0, 1),
@@ -112,35 +126,88 @@ XGB = bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRU
 # surv.xgboost.eta = p_dbl(0, 1),
 # surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
 
-learners = list(akritas = AF, ranger = RAN, CoxBoost = CoxB, XGB = XGB)
+)
+
 imap(learners, function(l, id) l$id = id)
 
 grid = benchmark_grid(
   tasks = tasks,
   learners = learners,
-  resamplings = rsmp("holdout")
-)
-
-future::plan("multisession", workers = 40)
-lgr::get_logger("mlr3")$set_threshold("debug")
-
-bmr = benchmark(
-  grid, store_models = TRUE, encapsulate = "callr"
+  resamplings = resamplings,
+  paired = TRUE
 )
 
 
-scores = bmr$score(msrs(c("time_train", "time_predict")))
-aggr = bmr$aggregate(conditions = TRUE)
+# Benchmark? ----------------------------------------------------------------------------------
 
-measures = list(
-  msr("surv.cindex", id = "harrell_c"),
-  msr("surv.dcalib", id = "dcalib"),
-  msr("surv.rcll", id = "rcll")
-)
+# future::plan("multisession", workers = 40)
+# lgr::get_logger("mlr3")$set_threshold("debug")
+#
+# bmr = benchmark(
+#   grid, store_models = TRUE, encapsulate = "callr"
+# )
+#
+#
+# scores = bmr$score(msrs(c("time_train", "time_predict")))
+# aggr = bmr$aggregate(conditions = TRUE)
+#
+# if (!fs::dir_exists("tmp-ranger-timing")) fs::dir_create("tmp-ranger-timing")
+# saveRDS(bmr, here::here("tmp-ranger-timing", "bmr.rds"))
+#
 
-tictoc::tic()
-bmr$score(measures[[1]])
-tictoc::toc()
+# Different approach --------------------------------------------------------------------------
 
+future::plan("multisession", workers = parallelly::availableCores())
+
+# res = lapply(seq_len(nrow(grid)), \(i) {
+
+ids = seq_len(nrow(grid))
+
+res = future.apply::future_lapply(ids, \(i) {
+
+  learner = grid$learner[[i]]$clone()
+  task = grid$task[[i]]
+  resampling = grid$resampling[[i]]
+
+  cli::cli_h2("Running {learner$id} on {task$id}")
+
+  cli::cli_alert_info("Training...")
+  tictoc::tic()
+  learner$train(task, resampling$train_set(1))
+  t_train = tictoc::toc()
+
+  cli::cli_alert_info("Predicting...")
+  tictoc::tic()
+  pred = learner$predict(task, resampling$test_set(1))
+  t_pred = tictoc::toc()
+
+  cli::cli_alert_info("Scoring: Harrel's C")
+  tictoc::tic()
+  pred$score(measures$harrell_c)
+  t_measure_c = tictoc::toc()
+
+  cli::cli_alert_info("Scoring: D-Calibration")
+  tictoc::tic()
+  pred$score(measures$dcalib)
+  t_measure_d = tictoc::toc()
+
+  cli::cli_alert_info("Scoring: RCLL")
+  tictoc::tic()
+  pred$score(measures$rcll)
+  t_measure_rc = tictoc::toc()
+
+
+  data.table::data.table(
+    learner = learner$id,
+    task = task$id,
+    train = t_train$toc,
+    pred = t_pred$toc,
+    harell_c = t_measure_c$toc,
+    dcalib = t_measure_d$toc,
+    rcll = t_measure_rc$toc
+  )
+}, future.seed = TRUE)
+
+resdf = data.table::rbindlist(res)
 if (!fs::dir_exists("tmp-ranger-timing")) fs::dir_create("tmp-ranger-timing")
-saveRDS(bmr, here::here("tmp-ranger-timing", "bmr.rds"))
+saveRDS(resdf, here::here("tmp-ranger-timing", "resdf.rds"))
