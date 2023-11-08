@@ -31,6 +31,7 @@ This is just a ballpark estimate.
 ```{r}
 root = here::here()
 source(file.path(root, "settings_runtime_est.R"))
+reg_dir = file.path(root, "registry_runtime_est")
 
 library(batchtools)
 library(ggplot2)
@@ -161,11 +162,10 @@ alljobs |>
 Duration based on "now": `r Sys.time()`
 
 ```{r, eval = nrow(findRunning()) > 0}
-alljobs[findRunning(), c("learner_id", "task_id", "tags", "submitted")]  |>
+alljobs[findNotDone(), c("learner_id", "task_id", "tags", "submitted")]  |>
   dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
   dplyr::select(-submitted) |>
-  kableExtra::kbl() |>
-  kableExtra::kable_styling()
+  reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
 
 
