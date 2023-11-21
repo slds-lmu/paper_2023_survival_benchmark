@@ -103,7 +103,7 @@ plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
       geom_boxplot()
   
   if (measure == "runtime") {
-    p <- p + scale_x_time(breaks = (3600 * 24) * 1:20, minor_breaks = 3600 * 12 * 1:20)
+    p <- p + scale_x_time(breaks = scales::pretty_breaks())
   }
   if (measure == "mem.used") {
     p <- p + scale_x_continuous(breaks = scales::pretty_breaks(), labels = \(x) prettyunits::pretty_bytes(x * 1000^2))
