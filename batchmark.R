@@ -245,7 +245,9 @@ for (measure in measures) {
     ,
 
     RFSRC = auto_tune(
-      bl("surv.rfsrc", ntree = 5000),
+      # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
+      # is set to a non-default value and we ensure both use 150 time points for evaluation
+      bl("surv.rfsrc", ntree = 5000, ntime = 150),
       surv.rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
       surv.rfsrc.mtry.ratio = p_dbl(0, 1),
       surv.rfsrc.nodesize = p_int(1, 50),
@@ -256,7 +258,8 @@ for (measure in measures) {
     ,
 
     RAN = auto_tune(
-      bl("surv.ranger", num.trees = 5000),
+      # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
+      bl("surv.ranger", num.trees = 5000, time.interest = 150),
       surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
       surv.ranger.mtry.ratio = p_dbl(0, 1),
       surv.ranger.min.node.size = p_int(1, 50),
