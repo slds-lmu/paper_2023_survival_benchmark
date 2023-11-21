@@ -756,11 +756,11 @@
       "Version": "1.8.4",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteUsername": "RaphaelS1",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "xoopR",
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
       "RemoteSha": "1854b22b53da6ff09939f99f4f7f4cc0d54b3660",
-      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
@@ -772,7 +772,7 @@
         "set6",
         "stats"
       ],
-      "Hash": "66efcbb8c07bf5a3dda3fd4478f7909d"
+      "Hash": "3f1c391e64ea0e504c86c512c794e7d9"
     },
     "doParallel": {
       "Package": "doParallel",
@@ -1652,11 +1652,11 @@
       "Version": "0.7.1-9000",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "3aa44b26eb19d1f75acbb2343e4fdfd2b7e213c1",
-      "RemoteHost": "api.github.com",
+      "RemoteSha": "c62f4c2afcedd88c9df0dfe1b18fbf715f3bfd5a",
       "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1668,7 +1668,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "e9de3c124313cdb7b97fa28a30ca06ea"
+      "Hash": "c5c609743cc7b3f73dd25df3a0d49593"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
@@ -1736,14 +1736,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.5.3",
+      "Version": "0.5.4",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "e557cd7360f2898ad832e35d81f1f58a6af93ced",
-      "RemoteHost": "api.github.com",
+      "RemoteSha": "083e6859b76764c431d734792a94958b5f1be8d7",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1760,7 +1760,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "03055fe0577fd1ee7320a88fd2c4c627"
+      "Hash": "061040e04ed407ec8beef784d1da4b4d"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2688,19 +2688,19 @@
     },
     "survivalmodels": {
       "Package": "survivalmodels",
-      "Version": "0.1.17",
+      "Version": "0.1.18",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "RaphaelS1",
       "RemoteRepo": "survivalmodels",
       "RemoteRef": "main",
-      "RemoteSha": "1fbe2fb4a7cdac0a5c9560144bc86b0b6ab66413",
-      "RemoteHost": "api.github.com",
+      "RemoteSha": "79b913fd6a3951314527eb8aedddf43a51ca19a6",
       "Remotes": "alan-turing-institute/distr6, RaphaelS1/param6, RaphaelS1/set6",
       "Requirements": [
         "Rcpp"
       ],
-      "Hash": "120b79ce584add1f5721a0b59e7d4ae2"
+      "Hash": "1f15ff0905adec3ce2dc61afb5821809"
     },
     "survivalsvm": {
       "Package": "survivalsvm",
