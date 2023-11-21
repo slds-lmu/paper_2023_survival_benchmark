@@ -27,7 +27,7 @@ seed = 123
 
 # resources
 resources = list(
-  walltime = 6 * 3600,
-  memory = 4 * 1024,
+  walltime = 20 * 3600,
+  memory = 50 * 1024,
   measure.memory = TRUE
 )
