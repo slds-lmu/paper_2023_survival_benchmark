@@ -82,7 +82,7 @@ summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
     if (measure == "mem.used") {
     # mem.used shows MB, pretty_bytes expects bytes
     xtab <- xtab |> 
-      dplyr::mutate(dplyr::across(min:max, \(x) x/1000)))
+      dplyr::mutate(dplyr::across(min:max, \(x) x/1000))
   }
   
   xtab |>
