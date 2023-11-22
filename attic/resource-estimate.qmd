@@ -82,7 +82,7 @@ summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
     if (measure == "mem.used") {
     # mem.used shows MB, pretty_bytes expects bytes
     xtab <- xtab |> 
-      dplyr::mutate(dplyr::across(min:max, \(x) x/1000))
+      dplyr::mutate(dplyr::across(min:max, \(x) round(x/1000, 2)))
   }
   
   xtab |>
@@ -221,6 +221,8 @@ summarize_resources(alljobs, by = "tags", measure = "runtime")
 
 ## Memory
 
+Raw values of `mem.used` show MB, converted to GB.
+
 ### All jobs by Memory
 
 ```{r}
@@ -233,7 +235,7 @@ alljobs |>
     mem.used
   ) |>
   dplyr::arrange(dplyr::desc(mem.used)) |>
-  dplyr::mutate(mem.used = prettyunits::pretty_bytes(mem.used * 1024^2)) |>
+  dplyr::mutate(mem.used = round(mem.used/1000, 3)) |>
   reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
 
@@ -253,8 +255,6 @@ summarize_resources(alljobs, by = "learner_id", measure = "mem.used")
 ```
 
 ### Memory per Measure
-
-Raw values of `mem.used` show MB, converted to GB.
 
 ```{r}
 plot_resources(alljobs, by = "tags", measure = "mem.used")
