@@ -2,6 +2,7 @@
 title: "Resource Estimates"
 author: "Lukas"
 date: now
+date-format: "YYYY-MM-DD HH:mm:ss (z)"
 format: 
   html:
     code-fold: true
@@ -159,7 +160,7 @@ alljobs |>
 
 ### Which are still running?
 
-Duration based on "now": `r Sys.time()`
+Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`
 
 ```{r, eval = nrow(findRunning()) > 0}
 alljobs[findNotDone(), c("learner_id", "task_id", "tags", "submitted")]  |>
