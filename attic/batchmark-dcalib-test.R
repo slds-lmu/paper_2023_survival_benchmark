@@ -256,6 +256,9 @@ data.table::setkey(alljobs, job.id)
 
 # Pretest -----------------------------------------------------------------
 if (FALSE) {
+
+  alljobs[, chunk := lpt(uniq_t_rank, n.chunks = 10)]
+
   # resources = list(walltime = 4 * 3600, memory = 4096)
   ids = findExperiments(repls = 1)
   ids = ijoin(ids, findTagged("rcll"))
