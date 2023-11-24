@@ -21,7 +21,7 @@ requireNamespace("mlr3extralearners")
 
 # Create Registry ---------------------------------------------------------
 
-fs::dir_delete(reg_dir)
+if (fs::dir_exists(reg_dir))  fs::dir_delete(reg_dir)
 message("Creating new registry")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
   packages = c("mlr3", "mlr3proba"))
