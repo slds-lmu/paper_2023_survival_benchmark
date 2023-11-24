@@ -247,7 +247,7 @@ for (measure in measures) {
     RFSRC = auto_tune(
       # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
       # is set to a non-default value and we ensure both use 150 time points for evaluation
-      bl("surv.rfsrc", ntree = 5000, ntime = 150),
+      bl("surv.rfsrc", ntree = 1000, ntime = 150),
       surv.rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
       surv.rfsrc.mtry.ratio = p_dbl(0, 1),
       surv.rfsrc.nodesize = p_int(1, 50),
@@ -259,7 +259,7 @@ for (measure in measures) {
 
     RAN = auto_tune(
       # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
-      bl("surv.ranger", num.trees = 5000, time.interest = 150),
+      bl("surv.ranger", num.trees = 1000, time.interest = 150),
       surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
       surv.ranger.mtry.ratio = p_dbl(0, 1),
       surv.ranger.min.node.size = p_int(1, 50),
@@ -270,7 +270,7 @@ for (measure in measures) {
     ,
 
     CIF = auto_tune(
-      bl("surv.cforest", ntree = 5000),
+      bl("surv.cforest", ntree = 1000),
       surv.cforest.mtryratio = p_dbl(0, 1),
       surv.cforest.minsplit = p_int(1, 50),
       surv.cforest.mincriterion = p_dbl(0, 1),
@@ -281,7 +281,7 @@ for (measure in measures) {
     ,
 
     ORSF = auto_tune(
-      bl("surv.aorsf", n_tree = 5000, control_type = "fast"),
+      bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
       surv.aorsf.mtry_ratio = p_dbl(0, 1),
       surv.aorsf.leaf_min_events = p_int(5, 50),
       # alpha only tunable when control_type == "net" (uses glmnet)
