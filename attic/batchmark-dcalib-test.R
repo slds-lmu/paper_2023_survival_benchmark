@@ -165,7 +165,7 @@ auto_tune = function(learner, ...) { # wrap into random search
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.dcalib", id = "dcalib_trunc"),
-  msr("surv.dcalib", id = "dcalib_inf"),
+  msr("surv.dcalib", id = "dcalib_inf", truncate = Inf),
   msr("surv.rcll", id = "rcll")
 )
 
