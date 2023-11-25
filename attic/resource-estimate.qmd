@@ -32,7 +32,6 @@ This is just a ballpark estimate.
 ```{r}
 root = here::here()
 source(file.path(root, "settings_runtime_est.R"))
-reg_dir = file.path(root, "registry_runtime_est")
 
 library(batchtools)
 library(ggplot2)
@@ -158,7 +157,7 @@ alljobs |>
   kableExtra::kable_styling()
 ```
 
-### Which are still running?
+### Which are still running or expired?
 
 Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`
 
@@ -192,6 +191,79 @@ runtimes |>
   dplyr::select(-runtime) |>
   reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
+
+### Sum of Total Runtime
+
+Assumptions:
+
+- Here `runtime` is measured on 1 train/predict on outer and inner holdout splits
+  - -> Take `runtime/2` for one train/predict as conservative estimate
+  - Most real evals will be on inner folds, i.e. smaller data
+- Budget is `tuning_params * 50` evals random search
+- Outer folds: 5
+- Inner folds: 3
+- Some learners are not tuned (KM, CoxBoost, ...) 
+  -> no params, no tuning
+  -> no inner CV in that case
+
+Estimated total runtime is then `runtime * outer_folds * inner_folds * params * 50`.
+
+```{r runtime-total-sum}
+#| column: page
+total_estimate <- runtimes |>
+  dplyr::group_by(learner_id, task_id) |>
+  dplyr::summarize(
+    # seconds per 2x train/predict -> hours per one (average, upper estimate)
+    hours = sum(runtime/60/60 / 2), 
+    .groups = "drop"
+  ) |>
+  dplyr::left_join(lrntab, by = c("learner_id" = ".id")) |>
+  dplyr::select(learner, task = task_id, params, internal_cv, hours) |>
+  dplyr::mutate(
+    # we tune learners with at least 1 param
+    tune = as.integer(params > 0),
+    internal_cv = as.integer(internal_cv == "Yes")
+  ) |>
+  dplyr::mutate(
+    learner = sub("surv\\.", "", learner),
+    n_outer = 5,
+    # No inner resampling if no tuning
+    n_inner = pmax(3 * tune, 1),
+    n_budget = pmax(50 * params * tune, 1),
+    total_h = hours * n_outer * n_inner * n_budget,
+    total_years = total_h / 24 / 365
+  ) |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 2)))
+
+total_estimate |>
+  dplyr::arrange(-total_h) |>
+  reactable::reactable(striped = TRUE, filterable = TRUE)
+```
+
+Totals per learner:
+
+```{r}
+total_estimate |>
+  dplyr::group_by(learner) |>
+  dplyr::summarise(
+    total_h = round(sum(total_h), 2),
+    total_years = round(sum(total_years), 2)
+  ) |>
+  reactable::reactable(striped = TRUE)
+```
+
+Sum total:
+
+```{r}
+total_estimate |>
+  dplyr::summarise(
+    total_h = round(sum(total_h), 2),
+    total_years = round(sum(total_years), 2)
+  ) |>
+  kableExtra::kbl()
+```
+
+
 
 ### Summarizing by learner / task
 
