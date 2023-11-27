@@ -56,7 +56,7 @@ for (i in seq_along(files)) {
   task$set_col_roles("status", add_to = "stratum")
 
   # Just for runtime estimation: Do simple holdout
-  if (all.equal(c(outer_folds, inner_folds), c(1, 1))) {
+  if (identical(c(outer_folds, inner_folds), c(1, 1))) {
     folds = 1
     resampling = rsmp("holdout")$instantiate(task)
   } else {
