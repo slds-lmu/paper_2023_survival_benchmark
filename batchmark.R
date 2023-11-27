@@ -105,6 +105,9 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$fallback = fallback
   learner$encapsulate = c(train = "callr", predict = "callr")
 
+  # Set timeout for rubustness. Time in seconds. 86400 == 1 day.
+  learner$timeout = c(train = 86400, predict = 86400)
+
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
   # 2. imputesample to impute them, analogously to robustify pipeline
