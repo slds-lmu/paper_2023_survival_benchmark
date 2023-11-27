@@ -1633,8 +1633,14 @@
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
       "Version": "0.1.0",
-      "Source": "Repository",
-      "Repository": "RSPM",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3batchmark",
+      "RemoteRef": "main",
+      "RemoteSha": "5e55685c85788b435ad4945c72cf717a97a430dd",
+      "Remotes": "mlr-org/mlr3@release",
       "Requirements": [
         "R",
         "batchtools",
@@ -1645,7 +1651,7 @@
         "mlr3misc",
         "uuid"
       ],
-      "Hash": "ab5b7746e6da7730f9b0ab6f833d62cd"
+      "Hash": "4d81c6feecd0571f205b27e1c571dd12"
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
