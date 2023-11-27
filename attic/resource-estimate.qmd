@@ -87,7 +87,7 @@ summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
   
   xtab |>
     dplyr::arrange(dplyr::desc(.data[["q75"]])) |>
-    reactable::reactable(striped = TRUE, filterable = TRUE)
+    reactable::reactable(striped = TRUE, filterable = TRUE, defaultPageSize = 20)
 }
 
 plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
@@ -249,7 +249,8 @@ total_estimate |>
     total_h = round(sum(total_h), 2),
     total_years = round(sum(total_years), 2)
   ) |>
-  reactable::reactable(striped = TRUE)
+  dplyr::arrange(-total_h) |>
+  reactable::reactable(striped = TRUE, defaultPageSize = 20)
 ```
 
 Sum total:
