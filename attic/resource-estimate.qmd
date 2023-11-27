@@ -274,6 +274,8 @@ Sorted by 75% quantile, descending.
 ### Runtime per Task
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "task_id", measure = "runtime")
 summarize_resources(alljobs, by = "task_id", measure = "runtime")
 ```
@@ -281,6 +283,8 @@ summarize_resources(alljobs, by = "task_id", measure = "runtime")
 ### Runtime per Learner
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "learner_id", measure = "runtime")
 summarize_resources(alljobs, by = "learner_id", measure = "runtime")
 ```
@@ -288,6 +292,8 @@ summarize_resources(alljobs, by = "learner_id", measure = "runtime")
 ### Runtime per Measure
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "tags", measure = "runtime")
 summarize_resources(alljobs, by = "tags", measure = "runtime")
 ```
@@ -316,6 +322,8 @@ alljobs |>
 ### Memory per Task
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "task_id", measure = "mem.used")
 summarize_resources(alljobs, by = "task_id", measure = "mem.used")
 ```
@@ -323,6 +331,8 @@ summarize_resources(alljobs, by = "task_id", measure = "mem.used")
 ### Memory per Learner
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "learner_id", measure = "mem.used")
 summarize_resources(alljobs, by = "learner_id", measure = "mem.used")
 ```
@@ -330,6 +340,8 @@ summarize_resources(alljobs, by = "learner_id", measure = "mem.used")
 ### Memory per Measure
 
 ```{r}
+#| column: page
+
 plot_resources(alljobs, by = "tags", measure = "mem.used")
 summarize_resources(alljobs, by = "tags", measure = "mem.used")
 ```
