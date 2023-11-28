@@ -1653,6 +1653,21 @@
       ],
       "Hash": "4d81c6feecd0571f205b27e1c571dd12"
     },
+    "mlr3benchmark": {
+      "Package": "mlr3benchmark",
+      "Version": "0.1.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6",
+        "checkmate",
+        "data.table",
+        "ggplot2",
+        "mlr3misc"
+      ],
+      "Hash": "9b26dd574cc36cbe6fe71d832dad039a"
+    },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
       "Version": "0.7.1-9000",
