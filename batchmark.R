@@ -17,7 +17,7 @@ library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
-#' Store nstantiated resamplings as mlr3 resampling objects
+#' Store instantiated resamplings as mlr3 resampling objects
 #' and as portable CSV files to `here::here("resamplings"`)
 #'
 #' @param resampling Object of class `Resampling`, has to be instantiated.
@@ -69,8 +69,6 @@ for (i in seq_along(files)) {
     save_resampling(resampling, names[i])
   }
 
-
-
   tasks[[i]] = task
   resamplings[[i]] = resampling
   rm(data, task, folds, resampling)
@@ -89,8 +87,8 @@ tasktab = data.table::rbindlist(lapply(tasks, \(x) {
 tasktab[, dimrank := data.table::frank(dim)]
 tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
 
-write.csv(tasktab, here::here("tasktab.csv"), row.names = FALSE)
-#saveRDS(tasktab, file = here::here("tasktab.rds"))
+write.csv(tasktab, here::here("attic/tasktab.csv"), row.names = FALSE)
+#saveRDS(tasktab, file = here::here("attic/tasktab.rds"))
 
 # Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation

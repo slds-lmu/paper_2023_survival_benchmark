@@ -347,3 +347,22 @@ plot_resources(alljobs, by = "tags", measure = "mem.used")
 summarize_resources(alljobs, by = "tags", measure = "mem.used")
 ```
 
+## Overview
+
+```{r}
+alljobs |>
+  dplyr::mutate(
+    mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used),
+    hours = runtime/2/60/60,
+    hours = ifelse(type == "estimated", max(hours), hours),
+    mem_gb = mem.used / 1000
+  ) |>
+  dplyr::select(
+    learner_id, task_id,
+    n, p, n_uniq_t,
+    measure = tags,
+    hours, mem_gb
+  ) |>
+  write.csv(file = "attic/resource_est.csv", row.names = FALSE)
+```
+

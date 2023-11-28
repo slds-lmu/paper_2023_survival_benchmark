@@ -26,4 +26,14 @@ inner_folds = 3
 seed = 123
 
 # resources
-resources = list(walltime = 3600, memory = 8 * 1024)
+resources_default = list(
+  walltime = 10 * 3600,
+  memory = 10 * 1024,
+  measure.memory = TRUE
+)
+
+resources_long = list(
+  walltime = 10 * 24 * 3600,
+  memory = 50 * 1024,
+  measure.memory = TRUE
+)

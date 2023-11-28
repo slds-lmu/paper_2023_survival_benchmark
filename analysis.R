@@ -4,14 +4,18 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 ### Packages
 ###################################################################################################
-library("batchtools")
-library("mlr3batchmark")
+library(batchtools)
+library(mlr3batchmark)
+library(mlr3benchmark)
 library(ggplot2)
 
 reg = loadRegistry(reg_dir, writeable = TRUE)
 
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
+tasktab = read.csv(here::here("attic/tasktab.csv"))
+alljobs = ljoin(alljobs, tasktab, by = "task_id")
+data.table::setkey(alljobs, job.id)
 
 ###################################################################################################
 ### Current State
@@ -19,22 +23,11 @@ data.table::setnames(alljobs, "tags", "measure")
 print(getStatus())
 print(unique(getErrorMessages()))
 
-# ids = grepLogs(findErrors(), pattern = "incorrect number")
-# summarizeExperiments(ids, by = c("learner_id"))
-#
-# ids = grepLogs(findErrors(), pattern = "Distribution")
-# summarizeExperiments(ids, by = c("learner_id"))
-
 ids = findExpired()
 if (nrow(ids) > 0) {
   summarizeExperiments(ids, by = c("task_id"))
   summarizeExperiments(ids, by = c("learner_id"))
 }
-
-#showLog(ids[1])
-
-#ids = ijoin(findExpired(), findExperiments(prob.pars = task_id == "child"))
-#showLog(ids[1])
 
 ###################################################################################################
 ### Reduce results
