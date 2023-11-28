@@ -191,7 +191,7 @@ measures = list(
 )
 
 
-# Asssemle learners -------------------------------------------------------
+# Assemble learners -------------------------------------------------------
 for (measure in measures) {
   learners = list(
     KM = bl("surv.kaplan")

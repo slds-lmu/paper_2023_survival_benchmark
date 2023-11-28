@@ -41,7 +41,7 @@ reg = loadRegistry(reg_dir, writeable = FALSE)
 
 alljobs = unwrap(getJobTable())[, .(job.id, repl, tags, task_id, learner_id, submitted, time.queued, time.running, mem.used, error)]
 # Enhance with task metadata (n, p, number of unique time points etc)
-tasktab = read.csv(here::here("tasktab.csv"))
+tasktab = read.csv(here::here("attic", "tasktab.csv"))
 lrntab = read.csv(here::here("attic", "learners.csv"))
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 setkey(alljobs, job.id)
@@ -174,7 +174,7 @@ alljobs[findNotDone(), c("learner_id", "task_id", "tags", "submitted")]  |>
 Only showing observed, not estimated runtimes.
 
 ### All Jobs by Runtime
-
+ 
 ```{r}
 runtimes <- alljobs |>
   dplyr::filter(type == "observed") |>
@@ -350,7 +350,7 @@ summarize_resources(alljobs, by = "tags", measure = "mem.used")
 ## Overview
 
 ```{r}
-alljobs |>
+resource_est_tab <- alljobs |>
   dplyr::mutate(
     mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used),
     hours = runtime/2/60/60,
@@ -362,7 +362,10 @@ alljobs |>
     n, p, n_uniq_t,
     measure = tags,
     hours, mem_gb
-  ) |>
-  write.csv(file = "attic/resource_est.csv", row.names = FALSE)
+  )
+
+resource_est_tab
+
+write.csv(resource_est_tab, file = here::here("attic", "resource_est.csv"), row.names = FALSE)
 ```
 
