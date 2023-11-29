@@ -35,6 +35,7 @@ source(file.path(root, "settings_runtime_est.R"))
 
 library(batchtools)
 library(ggplot2)
+library(mlr3batchmark)
 library(data.table)
 
 reg = loadRegistry(reg_dir, writeable = FALSE)
@@ -56,6 +57,12 @@ bt_est = alljobs |>
 # Merging estimates runtimes with observed ones, converting to `hms` for readability:
 alljobs = alljobs[bt_est$runtimes]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))]
+
+if (!(file.exists("bmr-resource-est.rds"))) {
+  bmr = reduceResultsBatchmark(store_backends = FALSE)
+  saveRDS(bmr, "bmr-resource-est.rds")
+}
+
 ```
 
 ```{r helper_funs}
@@ -365,7 +372,7 @@ summarize_resources(alljobs, by = "tags", measure = "mem.used")
 # 
 # resource_est_tab
 
-memtab <- alljobs |>
+memtab = alljobs |>
   dplyr::mutate(mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used)) |>
   dplyr::group_by(learner_id, task_id, measure = tags) |>
   dplyr::summarise(mem_gb = mean(mem.used/1000), .groups = "drop")
@@ -373,6 +380,13 @@ memtab <- alljobs |>
 resource_est_tab = total_estimate |>
   dplyr::select(learner_id, task_id, measure, hours, total_h) |>
   dplyr::left_join(memtab, by = c("learner_id", "task_id", "measure"))
+
+resource_est_tab = resource_est_tab |>
+  dplyr::mutate(
+    hours = ifelse(is.na(hours), max(hours, na.rm = TRUE), hours),
+    total_h = ifelse(is.na(total_h), max(total_h, na.rm = TRUE), total_h),
+    mem_gb = ifelse(is.na(mem_gb), max(mem_gb, na.rm = TRUE), mem_gb)
+  ) 
 
 write.csv(resource_est_tab, file = here::here("attic", "resource_est.csv"), row.names = FALSE)
 ```
