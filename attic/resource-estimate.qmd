@@ -211,21 +211,20 @@ Estimated total runtime is then `runtime * outer_folds * inner_folds * params * 
 ```{r runtime-total-sum}
 #| column: page
 total_estimate <- runtimes |>
-  dplyr::group_by(learner_id, task_id) |>
+  dplyr::group_by(learner_id, task_id, measure) |>
   dplyr::summarize(
     # seconds per 2x train/predict -> hours per one (average, upper estimate)
     hours = sum(runtime/60/60 / 2), 
     .groups = "drop"
   ) |>
   dplyr::left_join(lrntab, by = c("learner_id" = ".id")) |>
-  dplyr::select(learner, task = task_id, params, internal_cv, hours) |>
+  dplyr::select(learner_id, task_id, measure, params, internal_cv, hours) |>
   dplyr::mutate(
     # we tune learners with at least 1 param
     tune = as.integer(params > 0),
     internal_cv = as.integer(internal_cv == "Yes")
   ) |>
   dplyr::mutate(
-    learner = sub("surv\\.", "", learner),
     n_outer = 5,
     # No inner resampling if no tuning
     n_inner = pmax(3 * tune, 1),
@@ -244,7 +243,7 @@ Totals per learner:
 
 ```{r}
 total_estimate |>
-  dplyr::group_by(learner) |>
+  dplyr::group_by(learner_id) |>
   dplyr::summarise(
     total_h = round(sum(total_h), 2),
     total_years = round(sum(total_years), 2)
@@ -350,21 +349,30 @@ summarize_resources(alljobs, by = "tags", measure = "mem.used")
 ## Overview
 
 ```{r}
-resource_est_tab <- alljobs |>
-  dplyr::mutate(
-    mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used),
-    hours = runtime/2/60/60,
-    hours = ifelse(type == "estimated", max(hours), hours),
-    mem_gb = mem.used / 1000
-  ) |>
-  dplyr::select(
-    learner_id, task_id,
-    n, p, n_uniq_t,
-    measure = tags,
-    hours, mem_gb
-  )
+# resource_est_tab <- alljobs |>
+#   dplyr::mutate(
+#     mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used),
+#     hours = runtime/2/60/60,
+#     hours = ifelse(type == "estimated", max(hours), hours),
+#     mem_gb = mem.used / 1000
+#   ) |>
+#   dplyr::select(
+#     learner_id, task_id,
+#     n, p, n_uniq_t,
+#     measure = tags,
+#     hours, mem_gb
+#   )
+# 
+# resource_est_tab
 
-resource_est_tab
+memtab <- alljobs |>
+  dplyr::mutate(mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used)) |>
+  dplyr::group_by(learner_id, task_id, measure = tags) |>
+  dplyr::summarise(mem_gb = mean(mem.used/1000), .groups = "drop")
+
+resource_est_tab = total_estimate |>
+  dplyr::select(learner_id, task_id, measure, hours, total_h) |>
+  dplyr::left_join(memtab, by = c("learner_id", "task_id", "measure"))
 
 write.csv(resource_est_tab, file = here::here("attic", "resource_est.csv"), row.names = FALSE)
 ```
