@@ -58,11 +58,10 @@ bt_est = alljobs |>
 alljobs = alljobs[bt_est$runtimes]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))]
 
-if (!(file.exists("bmr-resource-est.rds"))) {
-  bmr = reduceResultsBatchmark(store_backends = FALSE)
-  saveRDS(bmr, "bmr-resource-est.rds")
-}
-
+# if (!(file.exists("bmr-resource-est.rds"))) {
+#   bmr = reduceResultsBatchmark(store_backends = FALSE)
+#   saveRDS(bmr, "bmr-resource-est.rds")
+# }
 ```
 
 ```{r helper_funs}
