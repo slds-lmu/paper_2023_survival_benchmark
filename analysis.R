@@ -4,9 +4,11 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 ### Packages
 ###################################################################################################
+if (FALSE) library(PMCMRplus)
 library(batchtools)
 library(mlr3batchmark)
 library(mlr3benchmark)
+# For renv to detect the dependency (for $friedman_posthoc())
 library(ggplot2)
 
 reg = loadRegistry(reg_dir, writeable = TRUE)
@@ -34,18 +36,20 @@ if (nrow(ids) > 0) {
 ###################################################################################################
 # Store eval measures for easier retrieval
 measures_eval = list(
-  harrell_c = msr("surv.cindex", id = "harrell_c"),
-  uno_c = msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  # Added as graf alternative for now as per RS
-  rcll = msr("surv.rcll", id = "rcll"),
+  msr("surv.cindex", id = "harrell_c"),
+  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+  msr("surv.rcll", id = "rcll"),
 
-  graf_proper = msr("surv.graf", id = "graf", proper = TRUE),
-  dcalib = msr("surv.dcalib", id = "dcalib"),
+  msr("surv.graf", id = "graf_proper", proper = TRUE),
+  msr("surv.graf", id = "graf_improper", proper = FALSE),
 
-  intlogloss = msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  logloss = msr("surv.logloss", id = "logloss"),
-  calib = msr("surv.calib_alpha", id = "calib")
+  msr("surv.dcalib", id = "dcalib_inf", truncate = Inf),
+
+  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+  msr("surv.logloss", id = "logloss"),
+  msr("surv.calib_alpha", id = "calib")
 )
+names(measures_eval) = mlr3misc::ids(measures_eval)
 
 tictoc::tic(msg = "collecting results")
 bmr = reduceResultsBatchmark()
@@ -104,12 +108,6 @@ lrn_tab = tibble::tribble(
   "MBO",       "surv.mboost",      "MBoost",          "Boosting",
   "CoxB",      "surv.cv_coxboost", "CoxBoost",        "Boosting",
   "XGB",       "surv.xgboost",     "XGBoost",         "Boosting"
-  # "CoxT",      "surv.coxtime",     "Cox-Time",        "Neural Network",
-  # "DH",        "surv.deephit",     "DeepHit",         "Neural Network",
-  # "DS",        "surv.deepsurv",    "DeepSurv",        "Neural Network",
-  # "LH",        "surv.loghaz",      "Logistic-Hazard", "Neural Network",
-  # "PCH",       "surv.pchazard",    "PC-Hazard",       "Neural Network",
-  # "DNN",       "surv.dnnsurv",     "DNNSurv",         "Neural Network"
 )
 lrn_tab$Type = factor(lrn_tab$Type, levels = unique(lrn_tab$Type))
 
