@@ -1740,7 +1740,7 @@
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "c62f4c2afcedd88c9df0dfe1b18fbf715f3bfd5a",
+      "RemoteSha": "c46c4ea21471f903aea55ea1eef9608c4963e115",
       "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1752,11 +1752,11 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "c5c609743cc7b3f73dd25df3a0d49593"
+      "Hash": "69488e7cdb06617fe3f59b0e997c2b3f"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
-      "Version": "0.5.6",
+      "Version": "0.5.7",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1768,7 +1768,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "8b71930f216fa191473895ce05965c00"
+      "Hash": "4d1fc5ac63fc0d9efbfc3c13d9219b78"
     },
     "mlr3measures": {
       "Package": "mlr3measures",
@@ -1848,9 +1848,9 @@
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
-      "Version": "0.19.0",
+      "Version": "0.19.2",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -1862,7 +1862,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "0654f180a077d9fb660c5515e5b82258"
+      "Hash": "3f75c3c8cb270a4b0a9f6df2acb5ecee"
     },
     "mlr3viz": {
       "Package": "mlr3viz",
