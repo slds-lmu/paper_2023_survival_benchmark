@@ -4,11 +4,10 @@ source(file.path(root, "settings.R"))
 ###################################################################################################
 ### Packages
 ###################################################################################################
-if (FALSE) library(PMCMRplus)
 library(batchtools)
 library(mlr3batchmark)
 library(mlr3benchmark)
-# For renv to detect the dependency (for $friedman_posthoc())
+# requires PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
 library(ggplot2)
 
 reg = loadRegistry(reg_dir, writeable = TRUE)

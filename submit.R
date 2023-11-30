@@ -35,26 +35,26 @@ alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  prob
 # learners without inner resampling (KM, CoxBoost, ..) so not technically untuned but no inner resampling
 # where measure == "dcalib,harrell_c,rcll"
 
-jobs_untuned = alljobs[measure == "dcalib,harrell_c,rcll", ]
+jobs_untuned = alljobs[grepl(",", measure), ]
 jobs_untuned[, chunk := lpt(total_h, 10)]
 print(jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
-jobs_untuned[learner_id == "CoxB" & chunk <= 5, ]
+jobs_untuned[learner_id == "CoxB", ]
 
 # Tuning on Harrell's C -----------------------------------------------------------------------
 jobs_harrell = alljobs[measure == "harrell_c", ]
 jobs_harrell[, chunk := lpt(total_h, 10)]
-# print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
+print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
 
 # Tuning on RCLL -------------------------------------------------------------------
 jobs_rcll = alljobs[measure == "rcll", ]
 jobs_rcll[, chunk := lpt(total_h, 10)]
-print(jobs_highprio[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
+print(jobs_rcll[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
 
-# Tuning on D-Calibration ---------------------------------------------------------------------
-jobs_dcalib = alljobs[measure == "dcalib", ]
-jobs_dcalib[, chunk := lpt(total_h, 10)]
+# # Tuning on D-Calibration ---------------------------------------------------------------------
+# jobs_dcalib = alljobs[measure == "dcalib", ]
+# jobs_dcalib[, chunk := lpt(total_h, 10)]
 # print(jobs_dcalib[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 

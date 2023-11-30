@@ -24,15 +24,16 @@ if (FALSE) {
   renv::install("mlr3pipelines", prompt = FALSE)
   renv::install("mlr3tuning", prompt = FALSE)
 
-  renv::install("mlr3batchmark", prompt = FALSE) # on CRAN now with v0.1.0
-  # renv::install("mlr-org/mlr3batchmark")
+  # renv::install("mlr3batchmark", prompt = FALSE) # on CRAN now with v0.1.0
+  renv::install("mlr-org/mlr3batchmark")
 
   # Non-CRAN pkgs for manual installation/updating
   renv::install("mlr-org/mlr3proba", prompt = FALSE)
   renv::install("mlr-org/mlr3extralearners", prompt = FALSE)
+  renv::install("xoopR/distr6", prompt = FALSE)
+  renv::install("xoopR/survivalmodels", prompt = FALSE)
+
   renv::install("binderh/CoxBoost", prompt = FALSE)
-  renv::install("RaphaelS1/distr6", prompt = FALSE)
-  renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 }
 
 # For quick local installation outside of renv -------------------------------

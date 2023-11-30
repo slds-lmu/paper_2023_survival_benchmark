@@ -29,6 +29,8 @@ So 2 learner `$train()` and and `$predict()` calls total per tuning measure.
 We may or may not have gotten lucky with fast or slow HPCs in the random search eval.
 This is just a ballpark estimate.
 
+Note: `dcalib` as tuning measure was removed.
+
 ```{r}
 root = here::here()
 source(file.path(root, "settings_runtime_est.R"))
@@ -46,7 +48,7 @@ tasktab = read.csv(here::here("attic", "tasktab.csv"))
 lrntab = read.csv(here::here("attic", "learners.csv"))
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 setkey(alljobs, job.id)
-# alljobs[c(1, 34, 455),]
+alljobs = alljobs[tags != "dcalib", ]
 
 # Estimating runtime via `batchtools` builtin `ranger` only on selected variables (avoid time.queued, repl, note that job.id is excluded automatically):
 bt_est = alljobs |>
@@ -60,6 +62,10 @@ alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "se
 
 # if (!(file.exists("bmr-resource-est.rds"))) {
 #   bmr = reduceResultsBatchmark(store_backends = FALSE)
+#   aggr = bmr$aggregate(measures = msrs(c("time_predict", "time_train", "time_both")), conditions = TRUE)
+#   aggr[, resample_result := NULL]
+#   
+#   saveRDS(aggr, "aggr-resource-est.rds")
 #   saveRDS(bmr, "bmr-resource-est.rds")
 # }
 ```
@@ -296,10 +302,11 @@ Assumptions:
 
 Estimated total runtime is then `runtime * outer_folds * inner_folds * n_params * 50`.
 
+Estimates are partially incomplete as some pretest jobs are not completed yet, hence very long runtimes are missing.
+
 ```{r runtime-total-sum}
 #| column: page
 total_estimate <- runtimes |>
-  dplyr::filter(measure %in% c("harrell_c", "rcll")) |>
   dplyr::group_by(learner_id, task_id, measure) |>
   dplyr::summarize(
     # seconds per 2x train/predict -> hours per one (average, upper estimate)
@@ -354,6 +361,19 @@ total_estimate |>
   reactable::reactable(striped = TRUE, defaultPageSize = 20)
 ```
 
+### Totals per measure:
+
+```{r}
+total_estimate |>
+  dplyr::group_by(measure) |>
+  dplyr::summarise(
+    total_h = round(sum(total_h), 2),
+    total_years = round(sum(total_years), 2)
+  ) |>
+  dplyr::arrange(-total_h) |>
+  reactable::reactable(striped = TRUE, defaultPageSize = 20)
+```
+
 ### Sum total:
 
 ```{r}
@@ -369,22 +389,6 @@ total_estimate |>
 ## Overview
 
 ```{r}
-# resource_est_tab <- alljobs |>
-#   dplyr::mutate(
-#     mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used),
-#     hours = runtime/2/60/60,
-#     hours = ifelse(type == "estimated", max(hours), hours),
-#     mem_gb = mem.used / 1000
-#   ) |>
-#   dplyr::select(
-#     learner_id, task_id,
-#     n, p, n_uniq_t,
-#     measure = tags,
-#     hours, mem_gb
-#   )
-# 
-# resource_est_tab
-
 memtab = alljobs |>
   dplyr::mutate(mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used)) |>
   dplyr::group_by(learner_id, task_id, measure = tags) |>
