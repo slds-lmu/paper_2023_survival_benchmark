@@ -1,5 +1,5 @@
 root = here::here()
-source(file.path(root, "settings_runtime_est.R"))
+source(file.path(root, "settings.R"))
 
 # Packages ----------------------------------------------------------------
 
@@ -180,10 +180,12 @@ auto_tune = function(learner, ...) { # wrap into random search
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.dcalib", id = "dcalib"),
 
   # Added as graf alternative for now as per RS
   msr("surv.rcll", id = "rcll")
+
+  # Excluding dcalib as it's not needed
+  # msr("surv.dcalib", id = "dcalib", truncate = Inf),
 
   # If graf, then both
   # msr("surv.graf", id = "graf_proper", proper = TRUE),
@@ -302,7 +304,8 @@ for (measure in measures) {
 
     ,
 
-    MBO = auto_tune(bl("surv.mboost"),
+    MBO = auto_tune(
+      bl("surv.mboost"),
       surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),
       surv.mboost.nu = p_dbl(0, 0.1),
@@ -366,27 +369,3 @@ alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, t
 data.table::setnames(alljobs, "tags", "measure")
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 data.table::setkey(alljobs, job.id)
-
-# Pretest -----------------------------------------------------------------
-if (FALSE) {
-  # resources = list(walltime = 4 * 3600, memory = 4096)
-  ids = findExperiments(repls = 1)
-  ids = ijoin(ids, findTagged("rcll"))
-
-  alljobs |>
-    dplyr::filter(repl == 1, grepl("rcll", measure)) |>
-    findNotSubmitted() |>
-    submitJobs(resources = resources)
-}
-
-
-# Submit ------------------------------------------------------------------
-if (FALSE) {
-  ids = ajoin(ids, findDone())
-  submitJobs(ids, resources = resources)
-
-  getJobStatus()
-  findErrors()
-
-  getErrorMessages(findErrors())
-}
