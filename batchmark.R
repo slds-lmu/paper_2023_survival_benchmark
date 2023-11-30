@@ -1,5 +1,6 @@
 root = here::here()
-source(file.path(root, "settings.R"))
+# source(file.path(root, "settings.R"))
+source(file.path(root, "settings_trial_mode.R"))
 
 # Packages ----------------------------------------------------------------
 

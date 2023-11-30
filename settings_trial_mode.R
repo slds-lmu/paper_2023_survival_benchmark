@@ -16,8 +16,8 @@ min_obs = 30
 # budget_multiplier = 1
 
 # Suggested budget
-budget_constant = 0
-budget_multiplier = 50
+budget_constant = 10
+budget_multiplier = 0
 
 # Maximum time autotuner is allowed to run, scale with budget?
 budget_runtime_seconds = 3600
