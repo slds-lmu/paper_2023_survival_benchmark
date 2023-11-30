@@ -26,11 +26,11 @@ save_resampling = function(resampling, task_name) {
   if (!dir.exists(here::here("resamplings"))) dir.create(here::here("resamplings"))
   stopifnot(resampling$is_instantiated)
 
-  file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
   file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
-
-  saveRDS(resampling, file_rds)
   write.csv(resampling$instance, file_csv, row.names = FALSE)
+
+  #file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
+  # saveRDS(resampling, file_rds)
 }
 
 # Create Registry ---------------------------------------------------------
@@ -87,7 +87,7 @@ tasktab = data.table::rbindlist(lapply(tasks, \(x) {
 tasktab[, dimrank := data.table::frank(dim)]
 tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
 
-write.csv(tasktab, here::here("attic/tasktab.csv"), row.names = FALSE)
+write.csv(tasktab, here::here("attic", "tasktab.csv"), row.names = FALSE)
 #saveRDS(tasktab, file = here::here("attic/tasktab.rds"))
 
 # Base learner setup ------------------------------------------------------
@@ -103,8 +103,8 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$fallback = fallback
   learner$encapsulate = c(train = "callr", predict = "callr")
 
-  # Set timeout for rubustness. Time in seconds. 86400 == 1 day.
-  learner$timeout = c(train = 86400, predict = 86400)
+  # Set timeout for robustness. Time in seconds.
+  learner$timeout = c(train = timeout_train, predict = timeout_predict)
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -166,10 +166,17 @@ auto_tune = function(learner, ...) { # wrap into random search
     resampling = resampling,
     # Measure will be set via global variable in loop
     measure = measure,
-    # budget set in settings.R: n_evals + k * dim_search_space
-    terminator = trm("evals", n_evals = budget_constant, k = budget_multiplier),
+    # evals: budget set in settings.R: n_evals + k * dim_search_space
+    # run_time: maximum time tuning is allowed to run
+    # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
+    # terminator = trm("evals", n_evals = budget_constant, k = budget_multiplier),
+    terminator = trm("combo",
+        list(trm("run_time", secs = budget_runtime_seconds),
+             trm("evals", n_evals = budget_constant, k = budget_multiplier)),
+        any = TRUE
+    ),
     tuner = tnr("random_search"),
-    store_tuning_instance = TRUE,
+    store_tuning_instance = FALSE, # TODO: Check in small experiment if really not required
     store_benchmark_result = FALSE,
     store_models = FALSE
   )
@@ -342,7 +349,6 @@ for (measure in measures) {
         x
       }
     )
-
 
   )
 

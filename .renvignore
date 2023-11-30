@@ -3,4 +3,4 @@
 code/*.R
 registry/*
 registry*
-#attic/*
+attic/_dependencies.R
