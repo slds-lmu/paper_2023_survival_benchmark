@@ -30,7 +30,7 @@ save_resampling = function(resampling, task_name) {
   file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
   write.csv(resampling$instance, file_csv, row.names = FALSE)
 
-  #file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
+  # file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
   # saveRDS(resampling, file_rds)
 }
 
@@ -105,7 +105,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   learner$encapsulate = c(train = "callr", predict = "callr")
 
   # Set timeout for robustness. Time in seconds.
-  learner$timeout = c(train = timeout_train, predict = timeout_predict)
+  learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -147,12 +147,13 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     as_learner()
 }
 
-auto_tune = function(learner, ...) { # wrap into random search
+auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random search
   learner = as_learner(learner)
   search_space = ps(...)
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
+  #browser()
   if (inner_folds == 1) {
     # Runtime testing mode: holdout
     resampling = rsmp("holdout")
@@ -161,7 +162,60 @@ auto_tune = function(learner, ...) { # wrap into random search
     resampling = rsmp("cv", folds = inner_folds)
   }
 
-  AutoTuner$new(
+  # Need to switch tuner/trm since some learners have very small search spaces
+  # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
+  # search space and not waste compute by repeatedly evaluating the same HPCs
+  if (use_grid_search) {
+    tuner = tnr("grid_search", resolution = prod(search_space$nlevels))
+    terminator = trm("none")
+
+  } else {
+    terminator = trm("combo",
+                     list(trm("run_time", secs = budget_runtime_seconds),
+                          trm("evals", n_evals = budget_constant, k = budget_multiplier)),
+                     any = TRUE
+    )
+    tuner = tnr("random_search")
+  }
+  #
+  # define terminator and tuner here depending on learner ID (Flex and Par)
+
+  # FIXME
+  callback_backup = callback_tuning("mlr3tuning.backup_archive",
+                             on_optimization_end = function(callback, context) {
+                               # browser()
+
+                               task_id = context$instance$objective$task$id
+                               # We don't have the outer resampling iter number so hashing
+                               # the data is the next best thing we can do
+                               iter_hash = digest::digest(context$instance$objective$task$data())
+
+                               # reg_dir is set in settings.R in global env
+                               path = fs::path(reg_dir, "tuning_archives")
+                               if (!fs::dir_exists(path)) fs::dir_create(path)
+
+                               # Construct a file name that is hopefully fully unambiguous
+                               callback$state$file_name = sprintf(
+                                 "%s__%s__%s__%s__%i.rds",
+                                 callback$state$tuning_measure,
+                                 callback$state$learner_id,
+                                 task_id,
+                                 iter_hash,
+                                 as.integer(Sys.time()) # unix epoch for good measure
+                                )
+
+                               callback$state$path = fs::path(path, callback$state$file_name)
+                               if (file.exists(callback$state$path)) unlink(callback$state$path)
+                               # cli::cli_alert_info("Writing archive to {callback$state$path}")
+                               saveRDS(as.data.table(context$instance$archive), callback$state$path)
+                             }
+  )
+
+  callback_backup$state$learner_id = stringr::str_match(learner$id, "(surv\\.\\w+)\\.")[[2]]
+  callback_backup$state$tuning_measure = measure$id
+
+
+  at = AutoTuner$new(
     learner = learner,
     search_space = search_space,
     resampling = resampling,
@@ -170,17 +224,32 @@ auto_tune = function(learner, ...) { # wrap into random search
     # evals: budget set in settings.R: n_evals + k * dim_search_space
     # run_time: maximum time tuning is allowed to run
     # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
-    # terminator = trm("evals", n_evals = budget_constant, k = budget_multiplier),
-    terminator = trm("combo",
-        list(trm("run_time", secs = budget_runtime_seconds),
-             trm("evals", n_evals = budget_constant, k = budget_multiplier)),
-        any = TRUE
-    ),
-    tuner = tnr("random_search"),
-    store_tuning_instance = FALSE, # TODO: Check in small experiment if really not required
+    terminator = terminator,
+    tuner = tuner,
+    # Need tuning instance for archive, need archive to know if fallback was needed
+    # Callback writes out archive, no need to store instance explicitly
+    store_tuning_instance = FALSE,
+    # Not needed: benchmark result of inner resamplings
     store_benchmark_result = FALSE,
-    store_models = FALSE
+    # Don't need models, only needed for
+    store_models = FALSE,
+    callbacks = list(callback_backup)
   )
+
+  # Also define a fallback learner on
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
+                 method = "mean", overwrite = FALSE, graph_learner = TRUE)
+
+  #  Needs to be consistent with each other but doesn't "do" anything, just formailty in surv context
+  fallback$predict_type = "crank"
+  at$predict_type = "crank"
+
+  # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
+  # # which would not be caugh tby fallback/encaps during inner resampling with GraphLearner
+  at$encapsulate = c(train = "callr", predict = "callr")
+  at$timeout = c(train = timeout_train_at, predict = timeout_predict_at)
+
+  at
 }
 
 # Set tuning measures -----------------------------------------------------
@@ -243,14 +312,16 @@ for (measure in measures) {
 
     Par = auto_tune(
       bl("surv.parametric", type = "aft"),
-      surv.parametric.dist = p_fct(c("weibull", "lognormal", "loglogistic"))
+      surv.parametric.dist = p_fct(c("weibull", "lognormal", "loglogistic")),
+      use_grid_search = TRUE
     )
 
     ,
 
     Flex = auto_tune(
       bl("surv.flexible"),
-      surv.flexible.k = p_int(1, 10)
+      surv.flexible.k = p_int(1, 10),
+      use_grid_search = TRUE
     )
 
     ,
@@ -307,7 +378,8 @@ for (measure in measures) {
 
     RRT = auto_tune(
       bl("surv.rpart"),
-      surv.rpart.minbucket = p_int(5, 50)
+      surv.rpart.minbucket = p_int(5, 50),
+      use_grid_search = TRUE
     )
 
     ,

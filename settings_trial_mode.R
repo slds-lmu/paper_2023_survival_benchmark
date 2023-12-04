@@ -2,7 +2,7 @@
 ### Benchmark Settings
 ###################################################################################################
 # registry dir (NA for testing)
-reg_dir = file.path(root, "registry")
+reg_dir = file.path(root, "registry_trial")
 
 # number of outer (evaluation) folds
 outer_folds = 5
@@ -16,8 +16,8 @@ min_obs = 30
 # budget_multiplier = 1
 
 # Suggested budget
-budget_constant = 10
-budget_multiplier = 0
+budget_constant = 0
+budget_multiplier = 5
 
 # Maximum time autotuner is allowed to run, scale with budget?
 budget_runtime_seconds = 3600
@@ -25,8 +25,11 @@ budget_runtime_seconds = 3600
 # number of inner (tuning) folds
 inner_folds = 3
 
-timeout_train = 600
-timeout_predict = 600
+timeout_train_bl = 600
+timeout_predict_bl = 600
+
+timeout_train_at = 3600
+timeout_predict_at = 3600
 
 # RNG seed
 seed = 123
