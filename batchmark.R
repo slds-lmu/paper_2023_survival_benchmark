@@ -212,7 +212,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     terminator = trm_runtime
   } else {
     # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
-    terminator = trm("combo", list(trm_runtime, trm_evals, any = TRUE))
+    terminator = trm("combo", list(trm_runtime, trm_evals), any = TRUE)
     tuner = tnr("random_search")
   }
 
