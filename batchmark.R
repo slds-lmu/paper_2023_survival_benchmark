@@ -1,6 +1,7 @@
 root = here::here()
 # source(file.path(root, "settings.R"))
 source(file.path(root, "settings_trial_mode.R"))
+source(file.path(root, "helpers.R"))
 
 # Packages ----------------------------------------------------------------
 
@@ -18,31 +19,15 @@ library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
-#' Store instantiated resamplings as mlr3 resampling objects
-#' and as portable CSV files to `here::here("resamplings"`)
-#'
-#' @param resampling Object of class `Resampling`, has to be instantiated.
-#' @param task_name String to use as file name.
-save_resampling = function(resampling, task_name) {
-  if (!dir.exists(here::here("resamplings"))) dir.create(here::here("resamplings"))
-  stopifnot(resampling$is_instantiated)
-
-  file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
-  write.csv(resampling$instance, file_csv, row.names = FALSE)
-
-  # file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
-  # saveRDS(resampling, file_rds)
-}
 
 # Create Registry ---------------------------------------------------------
 if (dir.exists(reg_dir)) {
-  message("Loading registry with writable = TRUE")
-  reg = loadRegistry(reg_dir, writeable = TRUE)
-} else {
-  message("Creating new registry")
-  reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
-    packages = c("mlr3", "mlr3proba"))
+  unlink(reg_dir, recursive = TRUE)
 }
+
+message("Creating new registry")
+reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
+  packages = c("mlr3", "mlr3proba"), source = file.path(root, "helpers.R"))
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(seed)
@@ -75,21 +60,7 @@ for (i in seq_along(files)) {
   rm(data, task, folds, resampling)
 }
 
-# Save overview of tasks with some metadata which comes in handy later
-tasktab = data.table::rbindlist(lapply(tasks, \(x) {
-  data.table::data.table(
-    task_id = x$id,
-    n = x$nrow,
-    p = length(x$feature_names),
-    dim = x$nrow * length(x$feature_names),
-    n_uniq_t = length(unique(x$data(cols = "time")[[1]]))
-  )
-}))
-tasktab[, dimrank := data.table::frank(dim)]
-tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
-
-write.csv(tasktab, here::here("attic", "tasktab.csv"), row.names = FALSE)
-#saveRDS(tasktab, file = here::here("attic/tasktab.rds"))
+tasktab = save_tasktab(tasks)
 
 # Base learner setup ------------------------------------------------------
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
@@ -155,34 +126,6 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
 
 # AutoTuner -----------------------------------------------------------------------------------
 
-callback_backup_impl = function(callback, context) {
-
-  # Ensure the folder containing tuning archives exists
-  if (!fs::dir_exists(callback_backup$state$path_dir)) {
-    fs::dir_create(callback_backup$state$path_dir)
-  }
-
-  task_id = context$instance$objective$task$id
-  # We don't have the outer resampling iter number so hashing
-  # the data is the next best thing we can do
-  iter_hash = digest::digest(context$instance$objective$task$data())
-
-  # Construct a file name that is hopefully fully unambiguous
-  callback$state$file_name = sprintf(
-    "%s__%s__%s__%i__%s.rds",
-    callback$state$tuning_measure,
-    callback$state$learner_id,
-    task_id,
-    as.integer(Sys.time()), # unix epoch for good measure and sortability
-    iter_hash
-  )
-  # Assemble path based on directory and filename, store in state just in case.
-  callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
-
-  # cli::cli_alert_info("Writing archive to {callback$state$path}")
-  saveRDS(as.data.table(context$instance$archive), callback$state$path)
-}
-
 auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random search
   learner = as_learner(learner)
   search_space = ps(...)
@@ -197,7 +140,6 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     resampling = rsmp("cv", folds = inner_folds)
   }
 
-
   # Need to switch tuner/trm since some learners have very small search spaces
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
   # search space and not waste compute by repeatedly evaluating the same HPCs
@@ -208,7 +150,10 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   trm_evals = trm("evals", n_evals = budget_constant, k = budget_multiplier)
 
   if (use_grid_search) {
-    tuner = tnr("grid_search", resolution = prod(search_space$nlevels))
+    # Use resolution that is normally greater than number of unique HPCs
+    # For factors etc. this is fine, and for RRT (integer, 46 vals) this is also fine.
+    # Also allows shorter runs during testing with small budget
+    tuner = tnr("grid_search", resolution = budget_multiplier)
     terminator = trm_runtime
   } else {
     # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
