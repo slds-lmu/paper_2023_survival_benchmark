@@ -101,11 +101,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
-  learner$fallback = fallback
-  learner$encapsulate = c(train = "callr", predict = "callr")
-
-  # Set timeout for robustness. Time in seconds.
-  learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
+  # learner$fallback = fallback
+  # learner$encapsulate = c(train = "callr", predict = "callr")
+  #
+  # # Set timeout for robustness. Time in seconds.
+  # learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -140,11 +140,17 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   # removeconstants: should constant features be introduced, they're dropped.
   #  - Done after treatment encoding
   # Stack preprocessing on top of learner + distr stuff. 'form' as per RS
-  preproc %>>%
+  graph_learner = preproc %>>%
     po("removeconstants") %>>%
     ppl("distrcompositor", learner = learner, form = "ph") |>
     # Need to convert to GraphLearner
     as_learner()
+
+  graph_learner$predict_type = "crank"
+  graph_learner$fallback = fallback
+  graph_learner$encapsulate = c(train = "callr", predict = "callr")
+  graph_learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
+  graph_learner
 }
 
 auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random search
@@ -178,7 +184,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     tuner = tnr("random_search")
   }
   #
-  # define terminator and tuner here depending on learner ID (Flex and Par)
+  # define terminator and tuner here depending on learner ID (Flex, Par, RRT)
 
   # FIXME
   callback_backup = callback_tuning("mlr3tuning.backup_archive",
