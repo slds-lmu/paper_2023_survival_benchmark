@@ -190,10 +190,6 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
                                # the data is the next best thing we can do
                                iter_hash = digest::digest(context$instance$objective$task$data())
 
-                               # reg_dir is set in settings.R in global env
-                               path = fs::path(reg_dir, "tuning_archives")
-                               if (!fs::dir_exists(path)) fs::dir_create(path)
-
                                # Construct a file name that is hopefully fully unambiguous
                                callback$state$file_name = sprintf(
                                  "%s__%s__%s__%s__%i.rds",
@@ -204,13 +200,16 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
                                  as.integer(Sys.time()) # unix epoch for good measure
                                 )
 
-                               callback$state$path = fs::path(path, callback$state$file_name)
+                               callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
+                               if (!fs::dir_exists(callback$state$path)) fs::dir_create(callback$state$path)
                                if (file.exists(callback$state$path)) unlink(callback$state$path)
+
                                # cli::cli_alert_info("Writing archive to {callback$state$path}")
                                saveRDS(as.data.table(context$instance$archive), callback$state$path)
                              }
   )
 
+  callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
   callback_backup$state$learner_id = stringr::str_match(learner$id, "(surv\\.\\w+)\\.")[[2]]
   callback_backup$state$tuning_measure = measure$id
 
