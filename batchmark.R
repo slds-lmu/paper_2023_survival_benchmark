@@ -173,7 +173,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   # search space and not waste compute by repeatedly evaluating the same HPCs
   if (use_grid_search) {
     tuner = tnr("grid_search", resolution = prod(search_space$nlevels))
-    terminator = trm("none")
+    terminator = trm("run_time", secs = budget_runtime_seconds)
 
   } else {
     terminator = trm("combo",
