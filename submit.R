@@ -1,6 +1,6 @@
 root = here::here()
-source(file.path(root, "settings.R"))
-# reg_dir = file.path(root, "registry_runtime_est")
+source(file.path(root, "settings_trial_mode.R"))
+# reg_dir = file.path(root, "registry")
 
 library("batchtools")
 library("mlr3batchmark")
@@ -46,6 +46,10 @@ jobs_harrell = alljobs[measure == "harrell_c", ]
 jobs_harrell[, chunk := lpt(total_h, 10)]
 print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
+
+jobs_harrell[learner_id == "Par" & uniq_t_rank < 5, ]
+jobs_harrell[learner_id %in% c("RRT", "Flex") & uniq_t_rank < 3, ]
+jobs_harrell[learner_id == "Flex" & uniq_t_rank < 3, ]
 
 # Tuning on RCLL -------------------------------------------------------------------
 jobs_rcll = alljobs[measure == "rcll", ]
