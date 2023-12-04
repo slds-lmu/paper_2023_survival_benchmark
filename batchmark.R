@@ -183,7 +183,11 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   # FIXME
   callback_backup = callback_tuning("mlr3tuning.backup_archive",
                              on_optimization_end = function(callback, context) {
-                               # browser()
+
+                               # Ensure the folder containing tuning archives exists
+                               if (!fs::dir_exists(callback_backup$state$path_dir)) {
+                                 fs::dir_create(callback_backup$state$path_dir)
+                               }
 
                                task_id = context$instance$objective$task$id
                                # We don't have the outer resampling iter number so hashing
@@ -199,10 +203,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
                                  iter_hash,
                                  as.integer(Sys.time()) # unix epoch for good measure
                                 )
-
+                               # Assemble path based on directory and filename, store in state just in case.
                                callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
-                               if (!fs::dir_exists(callback$state$path)) fs::dir_create(callback$state$path)
-                               if (file.exists(callback$state$path)) unlink(callback$state$path)
 
                                # cli::cli_alert_info("Writing archive to {callback$state$path}")
                                saveRDS(as.data.table(context$instance$archive), callback$state$path)
