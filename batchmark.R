@@ -153,13 +153,42 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   graph_learner
 }
 
+# AutoTuner -----------------------------------------------------------------------------------
+
+callback_backup_impl = function(callback, context) {
+
+  # Ensure the folder containing tuning archives exists
+  if (!fs::dir_exists(callback_backup$state$path_dir)) {
+    fs::dir_create(callback_backup$state$path_dir)
+  }
+
+  task_id = context$instance$objective$task$id
+  # We don't have the outer resampling iter number so hashing
+  # the data is the next best thing we can do
+  iter_hash = digest::digest(context$instance$objective$task$data())
+
+  # Construct a file name that is hopefully fully unambiguous
+  callback$state$file_name = sprintf(
+    "%s__%s__%s__%i__%s.rds",
+    callback$state$tuning_measure,
+    callback$state$learner_id,
+    task_id,
+    as.integer(Sys.time()), # unix epoch for good measure and sortability
+    iter_hash
+  )
+  # Assemble path based on directory and filename, store in state just in case.
+  callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
+
+  # cli::cli_alert_info("Writing archive to {callback$state$path}")
+  saveRDS(as.data.table(context$instance$archive), callback$state$path)
+}
+
 auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random search
   learner = as_learner(learner)
   search_space = ps(...)
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
-  #browser()
   if (inner_folds == 1) {
     # Runtime testing mode: holdout
     resampling = rsmp("holdout")
@@ -168,59 +197,30 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     resampling = rsmp("cv", folds = inner_folds)
   }
 
+
   # Need to switch tuner/trm since some learners have very small search spaces
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
   # search space and not waste compute by repeatedly evaluating the same HPCs
+
+  # run_time: maximum time tuning is allowed to run, seconds (evaluated after all inne resampling iters)
+  trm_runtime = trm("run_time", secs = budget_runtime_seconds)
+  # evals: budget set in settings.R: n_evals + k * dim_search_space
+  trm_evals = trm("evals", n_evals = budget_constant, k = budget_multiplier)
+
   if (use_grid_search) {
     tuner = tnr("grid_search", resolution = prod(search_space$nlevels))
-    terminator = trm("run_time", secs = budget_runtime_seconds)
-
+    terminator = trm_runtime
   } else {
-    terminator = trm("combo",
-                     list(trm("run_time", secs = budget_runtime_seconds),
-                          trm("evals", n_evals = budget_constant, k = budget_multiplier)),
-                     any = TRUE
-    )
+    # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
+    terminator = trm("combo", list(trm_runtime, trm_evals, any = TRUE))
     tuner = tnr("random_search")
   }
-  #
-  # define terminator and tuner here depending on learner ID (Flex, Par, RRT)
 
-  # FIXME
-  callback_backup = callback_tuning("mlr3tuning.backup_archive",
-                             on_optimization_end = function(callback, context) {
-
-                               # Ensure the folder containing tuning archives exists
-                               if (!fs::dir_exists(callback_backup$state$path_dir)) {
-                                 fs::dir_create(callback_backup$state$path_dir)
-                               }
-
-                               task_id = context$instance$objective$task$id
-                               # We don't have the outer resampling iter number so hashing
-                               # the data is the next best thing we can do
-                               iter_hash = digest::digest(context$instance$objective$task$data())
-
-                               # Construct a file name that is hopefully fully unambiguous
-                               callback$state$file_name = sprintf(
-                                 "%s__%s__%s__%s__%i.rds",
-                                 callback$state$tuning_measure,
-                                 callback$state$learner_id,
-                                 task_id,
-                                 iter_hash,
-                                 as.integer(Sys.time()) # unix epoch for good measure
-                                )
-                               # Assemble path based on directory and filename, store in state just in case.
-                               callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
-
-                               # cli::cli_alert_info("Writing archive to {callback$state$path}")
-                               saveRDS(as.data.table(context$instance$archive), callback$state$path)
-                             }
-  )
+  callback_backup = callback_tuning("mlr3tuning.backup_archive", on_optimization_end = callback_backup_impl)
 
   callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
   callback_backup$state$learner_id = stringr::str_match(learner$id, "(surv\\.\\w+)\\.")[[2]]
   callback_backup$state$tuning_measure = measure$id
-
 
   at = AutoTuner$new(
     learner = learner,
@@ -228,9 +228,6 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     resampling = resampling,
     # Measure will be set via global variable in loop
     measure = measure,
-    # evals: budget set in settings.R: n_evals + k * dim_search_space
-    # run_time: maximum time tuning is allowed to run
-    # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
     terminator = terminator,
     tuner = tuner,
     # Need tuning instance for archive, need archive to know if fallback was needed
@@ -238,7 +235,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     store_tuning_instance = FALSE,
     # Not needed: benchmark result of inner resamplings
     store_benchmark_result = FALSE,
-    # Don't need models, only needed for
+    # Don't need models, only needed for variable imp etc. afaict
     store_models = FALSE,
     callbacks = list(callback_backup)
   )
@@ -247,12 +244,12 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
                  method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
-  #  Needs to be consistent with each other but doesn't "do" anything, just formailty in surv context
+  # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
   at$predict_type = "crank"
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
-  # # which would not be caugh tby fallback/encaps during inner resampling with GraphLearner
+  # # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   at$encapsulate = c(train = "callr", predict = "callr")
   at$timeout = c(train = timeout_train_at, predict = timeout_predict_at)
 
