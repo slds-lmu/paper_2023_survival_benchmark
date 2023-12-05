@@ -17,19 +17,19 @@ min_obs = 30
 
 # Suggested budget
 budget_constant = 0
-budget_multiplier = 5
+budget_multiplier = 50
 
-# Maximum time autotuner is allowed to run, scale with budget?
-budget_runtime_seconds = 3600
+# Maximum time autotuner is allowed to run for one set of inner resamplings
+budget_runtime_seconds = 3600 * 48
 
 # number of inner (tuning) folds
 inner_folds = 3
 
-timeout_train_bl = 600
-timeout_predict_bl = 600
+timeout_train_bl = 3600 * 12
+timeout_predict_bl = 3600 * 6
 
-timeout_train_at = 3600
-timeout_predict_at = 3600
+timeout_train_at = 3600 * 24
+timeout_predict_at = 3600 * 12
 
 # RNG seed
 seed = 123
