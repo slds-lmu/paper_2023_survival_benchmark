@@ -1,3 +1,5 @@
+# Helpers run pre-benchmark -------------------------------------------------------------------
+
 #' Store instantiated resamplings as mlr3 resampling objects
 #' and as portable CSV files to `here::here("resamplings"`)
 #'
@@ -14,6 +16,14 @@ save_resampling = function(resampling, task_name) {
   # saveRDS(resampling, file_rds)
 }
 
+#' Store additional data fro tasks
+#'
+#' Useful to augment job table and later results with e.g. n, p, number of unique event times, ...
+#' Repeatedly refreshed in case there are changes with the included tasks in the benchmark.
+#' Written to CSV such that possibly unintended changes are immediately obvious via `git status`.
+#'
+#' @param tasks List of `TaskSurv` objects.
+#' @param path Path to store CSV file of results.
 save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
   # Save overview of tasks with some metadata which comes in handy later
   tasktab = data.table::rbindlist(lapply(tasks, \(x) {
@@ -32,7 +42,13 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
   tasktab
 }
 
-# Ran into issues when this was defined outside in helpers.R
+#' mlr3tuning callback to save the tuning archive outside of the job.
+#'
+#' Avoid having to serialize the entire tuning instance, i.e. `store_tuning_instance = FALSE` can
+#' be used to reduce the result serialization overhead.
+#'
+#' The file path for storage is derived from the registry directory, learner, task and resampling hash.
+#' E.g.: `/path/to/reg_dir/tuning_archives/tuning.measure__learner.id__task.id__unix.epoch__hash(task$data()).rds`
 callback_backup_impl = function(callback, context) {
 
   # Ensure the folder containing tuning archives exists
@@ -60,3 +76,75 @@ callback_backup_impl = function(callback, context) {
   # cli::cli_alert_info("Writing archive to {callback$state$path}")
   saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
 }
+
+
+# Utilities for analysis ----------------------------------------------------------------------
+
+#' List of included learners with short IDs and some extra info
+#'
+#' @param path Path to store CSV file.
+#'
+#' @examples
+#' save_lrntab()
+save_lrntab <- function(path = here::here("attic", "learners.csv")) {
+  lrnlist <- list(
+    KM = list(learner = "surv.kaplan", params = 0),
+    NL = list(learner = "surv.nelson", params = 0),
+    AF = list(learner = "surv.akritas", params = 1),
+    CPH = list(learner = "surv.coxph", params = 0),
+    GLM = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
+    Pen = list(learner = "surv.penalized", params = 2),
+    Par = list(learner = "surv.parametric", params = 1),
+    Flex = list(learner = "surv.flexible", params = 1),
+    RFSRC = list(learner = "surv.rfsrc", params = 5),
+    RAN = list(learner = "surv.ranger", params = 5),
+    CIF = list(learner = "surv.cforest", params = 5),
+    ORSF = list(learner = "surv.aorsf", params = 2),
+    RRT = list(learner = "surv.rpart", params = 1),
+    MBO = list(learner = "surv.mboost", params = 4),
+    CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
+    XGB = list(learner = "surv.xgboost", .encode = TRUE, params = 6),
+    SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
+  ) |>
+    lapply(data.table::as.data.table) |>
+    data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
+    setNames(c("learner_id", "learner_id_long", "params", "encode", "internal_cv", "scale")) |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x)))
+
+  lrnlist |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(.x, "Yes", "No"))) |>
+    write.csv(file = path, row.names = FALSE)
+
+  lrnlist
+}
+
+
+
+# Debug utilities -----------------------------------------------------------------------------
+
+#' Get the object size of job results
+#'
+#' In the context of the known issue with the serialization of R6 objects,
+#' this `loadResult()`s a job result and uses `pryr::object_size` to get its size.
+#'
+#' @param ids [`findDone()`] `job.ids` to get result sizes for.
+#' @return A data.table with columns `job.id`, `size` (in MiB).
+#' @examples
+#' res_size = check_result_sizes()
+#' jobs_done = alljobs[findDone(), ]
+#' jobs_done = jobs_done[res_size, ]
+#' jobs_done[, .(avg_size = mean(size)), by = c("learner_id")]
+check_result_sizes = function(ids = batchtools::findDone()) {
+  if (nrow(ids) > 0) {
+    sizes = vapply(unlist(done), \(x) {
+      batchtools::loadResult(x) |>
+        pryr::object_size() |>
+        as.numeric()
+    }, FUN.VALUE = 1)
+    done[, size_bytes := prettyunits::pretty_bytes(bytes = sizes)]
+    done[, size := sizes / 1024^2][]
+  } else {
+    message("Don't know yet.")
+  }
+}
+
