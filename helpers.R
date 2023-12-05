@@ -112,7 +112,6 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x)))
 
   lrnlist |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(.x, "Yes", "No"))) |>
     write.csv(file = path, row.names = FALSE)
 
   lrnlist
