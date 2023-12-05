@@ -31,36 +31,8 @@ if (FALSE) {
   renv::install("mlr-org/mlr3proba", prompt = FALSE)
   renv::install("mlr-org/mlr3extralearners", prompt = FALSE)
   renv::install("xoopR/distr6", prompt = FALSE)
-  renv::install("xoopR/survivalmodels", prompt = FALSE)
+  renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 
   renv::install("binderh/CoxBoost", prompt = FALSE)
 }
 
-# For quick local installation outside of renv -------------------------------
-# using pak because its fast and does github
-if (FALSE) {
-  pak::pak("survival")
-  pak::pak("pracma")
-  pak::pak("glmnet")
-  pak::pak("penalized")
-  pak::pak("flexsurv")
-  pak::pak("randomForestSRC")
-  pak::pak("ranger")
-  pak::pak("partykit")
-  pak::pak("sandwich")
-  pak::pak("coin")
-  pak::pak("aorsf")
-  pak::pak("rpart")
-  pak::pak("mboost")
-  pak::pak("xgboost")
-  pak::pak("survivalsvm")
-  pak::pak("pseudo")
-  pak::pak("actuar") # For surv.parametric
-  pak::pak("mlr3batchmark") # on CRAN now with v0.1.0
-
-  pak::pak("RaphaelS1/distr6")
-  pak::pak("mlr-org/mlr3proba")
-  pak::pak("mlr-org/mlr3extralearners")
-  pak::pak("binderh/CoxBoost")
-  pak::pak("RaphaelS1/survivalmodels") # For akritas
-}
