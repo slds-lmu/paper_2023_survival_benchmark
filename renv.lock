@@ -1740,7 +1740,7 @@
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "c46c4ea21471f903aea55ea1eef9608c4963e115",
+      "RemoteSha": "7546845da71f1dfac6ac214fbddd8bcc953737d9",
       "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1752,7 +1752,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "69488e7cdb06617fe3f59b0e997c2b3f"
+      "Hash": "87be043569a0aa152413cba4d856c7f8"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
