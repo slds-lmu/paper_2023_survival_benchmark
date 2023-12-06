@@ -1,6 +1,7 @@
 root = here::here()
 # source(file.path(root, "settings.R"))
 source(file.path(root, "settings_trial_mode.R"))
+# source(file.path(root, "settings_runtime_est.R"))
 source(file.path(root, "helpers.R"))
 
 # Packages ----------------------------------------------------------------
@@ -71,12 +72,6 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   # As per RS to fix #38
   fallback$predict_type = "crank"
   learner$predict_type = "crank"
-
-  # learner$fallback = fallback
-  # learner$encapsulate = c(train = "callr", predict = "callr")
-  #
-  # # Set timeout for robustness. Time in seconds.
-  # learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence

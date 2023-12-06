@@ -11,6 +11,11 @@ outer_folds = 5
 # outer_folds is decreased to the largest fold number where this is possible.
 min_obs = 30
 
+# RNG seed
+seed = 123
+
+# Budgets -------------------------------------------------------------------------------------
+
 # Trial mode budget
 # budget_constant = 5
 # budget_multiplier = 1
@@ -31,10 +36,8 @@ timeout_predict_bl = 3600 * 6
 timeout_train_at = 3600 * 24
 timeout_predict_at = 3600 * 12
 
-# RNG seed
-seed = 123
+# Resources -----------------------------------------------------------------------------------
 
-# resources
 resources_default = list(
   walltime = 10 * 3600,
   memory = 10 * 1024,

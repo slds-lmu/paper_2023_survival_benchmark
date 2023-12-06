@@ -146,4 +146,3 @@ check_result_sizes = function(ids = batchtools::findDone()) {
     message("Don't know yet.")
   }
 }
-

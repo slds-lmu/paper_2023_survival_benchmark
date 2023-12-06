@@ -5,34 +5,41 @@
 reg_dir = file.path(root, "registry")
 
 # number of outer (evaluation) folds
-outer_folds = 5
+outer_folds = 1
 
 # minimum number of observations per fold. If this requirement is not met,
 # outer_folds is decreased to the largest fold number where this is possible.
 min_obs = 30
 
-# Trial mode budget
-# budget_constant = 5
-# budget_multiplier = 1
+# RNG seed
+seed = 123
+
+# Budgets -------------------------------------------------------------------------------------
+
+# Runtime estimation: Multiplier of 1 so 1 eval per tunable param
+budget_constant = 0
+budget_multiplier = 1
 
 # Suggested budget
-budget_constant = 0
-budget_multiplier = 50
+# budget_constant = 0
+# budget_multiplier = 50
 
-# Maximum time autotuner is allowed to run, scale with budget?
-budget_runtime_seconds = 3600
+# Maximum time autotuner is allowed to run for one set of inner resamplings
+budget_runtime_seconds = 3600 * 24 * 10
 
 # number of inner (tuning) folds
 inner_folds = 3
 
-timeout_train = 600
-timeout_predict = 600
+timeout_train_bl = 3600 * 24 * 10
+timeout_predict_bl = 3600 * 24 * 10
 
-# RNG seed
-seed = 123
+timeout_train_at = 3600 * 24 * 10
+timeout_predict_at = 3600 * 24 * 10
+
+# Resources -----------------------------------------------------------------------------------
 
 # resources
-resources_default = list(
+resources = list(
   walltime = 10 * 3600,
   memory = 10 * 1024,
   measure.memory = TRUE
