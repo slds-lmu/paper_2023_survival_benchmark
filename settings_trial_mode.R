@@ -7,6 +7,9 @@ reg_dir = file.path(root, "registry_trial")
 # number of outer (evaluation) folds
 outer_folds = 5
 
+# number of inner (tuning) folds
+inner_folds = 3
+
 # minimum number of observations per fold. If this requirement is not met,
 # outer_folds is decreased to the largest fold number where this is possible.
 min_obs = 30
@@ -26,9 +29,6 @@ budget_multiplier = 50
 
 # Maximum time autotuner is allowed to run for one set of inner resamplings
 budget_runtime_seconds = 3600 * 48
-
-# number of inner (tuning) folds
-inner_folds = 3
 
 timeout_train_bl = 3600 * 12
 timeout_predict_bl = 3600 * 6
