@@ -148,6 +148,9 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     # Use resolution that is normally greater than number of unique HPCs
     # For factors etc. this is fine, and for RRT (integer, 46 vals) this is also fine.
     # Also allows shorter runs during testing with small budget
+
+    # Account for pretest where we want 1 eval, so budget_constant is 1
+    if (budget_constant + budget_multiplier == 1) budget_multiplier = 1
     tuner = tnr("grid_search", resolution = budget_multiplier)
     terminator = trm_runtime
   } else {

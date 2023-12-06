@@ -34,19 +34,16 @@ alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  prob
 # where measure == "dcalib,harrell_c,rcll"
 
 jobs_untuned = alljobs[grepl(",", measure), ]
-jobs_untuned[, chunk := lpt(total_h, 10)]
+jobs_untuned[, chunk := lpt(total_h, 50)]
 print(jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
-jobs_untuned[learner_id == "CoxB", ]
+# jobs_untuned[learner_id == "CoxB", ]
 
 # Tuning on Harrell's C -----------------------------------------------------------------------
 jobs_harrell = alljobs[measure == "harrell_c", ]
-jobs_harrell[, chunk := lpt(total_h, 50)]
+jobs_harrell[, chunk := lpt(total_h, 70)]
 print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
-
-jobs_harrell[learner_id %in% c("Par", "RRT", "Flex", "XGB") & uniq_t_rank < 3, ] |>
-  submitJobs()
 
 # Tuning on RCLL -------------------------------------------------------------------
 jobs_rcll = alljobs[measure == "rcll", ]

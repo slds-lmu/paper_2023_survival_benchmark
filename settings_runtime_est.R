@@ -2,7 +2,7 @@
 ### Benchmark Settings
 ###################################################################################################
 # registry dir (NA for testing)
-reg_dir = file.path(root, "registry")
+reg_dir = file.path(root, "registry_runtime_est_dec")
 
 # number of outer (evaluation) folds
 outer_folds = 1
@@ -16,9 +16,10 @@ seed = 123
 
 # Budgets -------------------------------------------------------------------------------------
 
-# Runtime estimation: Multiplier of 1 so 1 eval per tunable param
-budget_constant = 0
-budget_multiplier = 1
+# Runtime estimation:
+budget_constant = 1
+# Multiplier of 1 so 1 eval per tunable param?
+budget_multiplier = 0
 
 # Suggested budget
 # budget_constant = 0
