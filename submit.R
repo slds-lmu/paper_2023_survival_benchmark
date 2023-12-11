@@ -13,16 +13,7 @@ print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
 # by number of unique time points (ranked) (higher == more memory needed)
-alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
-data.table::setnames(alljobs, "tags", "measure")
-
-tasktab = read.csv(here::here("attic/tasktab.csv"))
-resource_tab = read.csv(here::here("attic/resource_est.csv"))
-resource_tab = resource_tab[, c("learner_id", "task_id", "measure", "hours", "total_h", "mem_gb")]
-
-alljobs = ljoin(alljobs, tasktab, by = "task_id")
-alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id", "measure"))
-data.table::setkey(alljobs, job.id)
+alljobs = collect_job_table(reg = reg)
 
 # Estimated runtimes might be missing, so "impute" as 75% quantile for not entirely implausible values
 alljobs[, hours   := ifelse(is.na(hours),   quantile(hours, na.rm = TRUE,   probs = 0.75), hours),   by = .(task_id)]

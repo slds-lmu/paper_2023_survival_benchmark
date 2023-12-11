@@ -392,10 +392,3 @@ for (measure in measures) {
 }
 
 print(summarizeExperiments(by = c("task_id", "learner_id")))
-
-# Aggregate job table for selective submission, order jobs by tasks and taks
-# by number of unique time points (ranked) (higher == more memory needed)
-alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
-data.table::setnames(alljobs, "tags", "measure")
-alljobs = ljoin(alljobs, tasktab, by = "task_id")
-data.table::setkey(alljobs, job.id)

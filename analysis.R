@@ -1,5 +1,6 @@
 root = here::here()
-source(file.path(root, "settings.R"))
+#source(file.path(root, "settings.R"))
+source(file.path(root, "settings_trial_mode.R"))
 
 ###################################################################################################
 ### Packages
@@ -14,21 +15,9 @@ reg = loadRegistry(reg_dir, writeable = TRUE)
 
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
 data.table::setnames(alljobs, "tags", "measure")
-tasktab = read.csv(here::here("attic/tasktab.csv"))
+tasktab = read.csv(here::here("attic", "tasktab.csv"))
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 data.table::setkey(alljobs, job.id)
-
-###################################################################################################
-### Current State
-###################################################################################################
-print(getStatus())
-print(unique(getErrorMessages()))
-
-ids = findExpired()
-if (nrow(ids) > 0) {
-  summarizeExperiments(ids, by = c("task_id"))
-  summarizeExperiments(ids, by = c("learner_id"))
-}
 
 ###################################################################################################
 ### Reduce results
@@ -50,25 +39,38 @@ measures_eval = list(
 )
 names(measures_eval) = mlr3misc::ids(measures_eval)
 
-tictoc::tic(msg = "collecting results")
-bmr = reduceResultsBatchmark()
+
+# Harrell's C ------------------------------------------------------------------------------------
+
+tictoc::tic(msg = "collecting results: harrell_c")
+bmr_harrell = reduceResultsBatchmark(findTagged("harrell_c"))
 tictoc::toc()
 
+tictoc::tic(msg = "mlr3benchmark aggregating results")
+bma_harrell = mlr3benchmark::as_benchmark_aggr(bmr_harrell, meas = measures_eval)
+tictoc::toc()
+
+
 tictoc::tic(msg = "saving results")
-saveRDS(bmr, "tmp/bmr.rds")
+saveRDS(bmr, "tmp/bmr_harrell.rds")
 tictoc::toc()
 tictoc::tic(msg = "collecting aggregated results")
-aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+aggr_harrell = bmr_harrell$aggregate(measures = measures_eval, conditions = TRUE)
 tictoc::toc()
 tictoc::tic(msg = "saving aggregated results")
-saveRDS(aggr, "tmp/aggr.rds")
+saveRDS(aggr_harrell, "tmp/aggr_harrell.rds")
 tictoc::toc()
+
+bma_harrell$friedman_posthoc(meas = "harrell_c")
 
 
 resamplings_with_error = aggr[errors > 0, nr]
+bmr_harrell$resample_result(resamplings_with_error[1])$errors
 
-mlr3viz::autoplot(bmr, measure = measures_eval$rcll)
-# bmr$resample_result(resamplings_with_error[1])$errors
+mlr3viz::autoplot(bmr_harrell, measure = measures_eval$rcll)
+mlr3viz::autoplot(bma_harrell, type = "cd", meas = "harrell_c")
+mlr3viz::autoplot(bma_harrell, type = "box", meas = "harrell_c")
+
 
 ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
   facet_wrap(vars(task_id)) +
@@ -76,59 +78,10 @@ ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   theme_minimal(base_size = 14)
 
-scores = bmr$score(measures_eval$rcll)
+scores = bmr_harrell$score(measures_eval$rcll)
 
-ggplot(scores, aes(x = learner_id, y = surv.rcll)) +
+ggplot(scores, aes(x = learner_id, y = rcll)) +
   facet_wrap(vars(task_id)) +
   geom_boxplot() +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
   theme_minimal()
-
-
-# Fiddle ------------------------------------------------------------------
-# Attempting to roughly group the learners for quick viz
-
-lrn_tab = tibble::tribble(
-  ~learner_id, ~mlr3id,            ~Name,             ~Type,
-  "KM",        "surv.kaplan",      "Kaplan-Meier",    "Baseline",
-  "NL",        "surv.nelson",      "Nelson-Aalen",    "Baseline",
-  "AF",        "surv.akritas",     "Akritas",         "Baseline",
-  "CPH",       "surv.coxph",       "Cox PH",          "Misc",
-  "GLM",       "surv.cv_glmnet",   "glmnet",          "Misc",
-  "Pen",       "surv.penalized",   "Penalized",       "Misc",
-  "Par",       "surv.parametric",  "Parametric",      "Misc",
-  "Flex",      "surv.flexible",    "Flexsurv Spline", "Misc",
-  "SSVM",      "surv.svm",         "SVM",             "Misc",
-  "RFSRC",     "surv.rfsrc",       "RFSRC",           "Forests",
-  "RAN",       "surv.ranger",      "Ranger",          "Forests",
-  "CIF",       "surv.cforest",     "CIF",             "Forests",
-  "ORSF",      "surv.aorsf",       "ORSF",            "Forests",
-  "RRT",       "surv.rpart",       "Rpart",           "Forests",
-  "MBO",       "surv.mboost",      "MBoost",          "Boosting",
-  "CoxB",      "surv.cv_coxboost", "CoxBoost",        "Boosting",
-  "XGB",       "surv.xgboost",     "XGBoost",         "Boosting"
-)
-lrn_tab$Type = factor(lrn_tab$Type, levels = unique(lrn_tab$Type))
-
-aggr = ljoin(aggr, lrn_tab)
-
-aggr[, .(count = .N), by = task_id]
-
-aggr |>
-  #subset(task_id == "channing") |>
-  ggplot(aes(x = learner_id, y = harrell_c)) +
-  facet_grid(cols = vars(Type), rows = vars(task_id), scales = "free") +
-  geom_boxplot() +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  theme_minimal(base_size = 14)
-
-aggr |>
-  #subset(task_id == "channing") |>
-  ggplot(aes(x = learner_id, y = harrell_c)) +
-  coord_flip() +
-  facet_grid(rows = vars(Type), cols = vars(task_id), scales = "free") +
-  geom_boxplot() +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  theme_minimal(base_size = 14)
-
-aggr[harrell_c <= 0.5, ]

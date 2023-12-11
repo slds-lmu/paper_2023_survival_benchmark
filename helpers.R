@@ -76,8 +76,6 @@ callback_backup_impl = function(callback, context) {
   # cli::cli_alert_info("Writing archive to {callback$state$path}")
   saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
 }
-
-
 # Utilities for analysis ----------------------------------------------------------------------
 
 #' List of included learners with short IDs and some extra info
@@ -119,6 +117,45 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
   lrnlist
 }
 
+# Utilities for job management ----------------------------------------------------------------
+
+
+#' Assemble augmented batchtools job table
+#'
+#' Includes regular `getJobTable()` info but also task data (n, p, ...) and
+#' resource usage estimates.
+#'
+#' @param reg Registry, defaulting to `getDefaultRegistry()`.
+#' @param task_tab_file Path to CSV file as created by `save_tasktab()`.
+#' @param resource_est_file See `attic/resource-estimate.qmd`.
+#' @param keep_columns Character vector of columsn from `getJobtTable()` to keep.
+#'
+#' @return A data.table keyed with `job.id`.
+#'
+#' @examples
+#' collect_job_table()
+collect_job_table = function(
+    reg = batchtools::getDefaultRegistry(),
+    task_tab_file = here::here("attic", "tasktab.csv"),
+    resource_est_file = here::here("attic", "resource_est_dec.csv"),
+    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name")
+    ) {
+  alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))
+
+  alljobs = alljobs[, keep_columns, with = FALSE]
+
+  data.table::setnames(alljobs, "tags", "measure")
+
+  tasktab = read.csv(task_tab_file)
+  resource_tab = read.csv(resource_est_file)
+  resource_tab = resource_tab[, c("learner_id", "task_id", "measure", "hours", "total_h", "mem_gb")]
+
+  alljobs = ljoin(alljobs, tasktab, by = "task_id")
+  alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id", "measure"))
+  data.table::setkey(alljobs, job.id)
+
+  alljobs
+}
 
 
 # Debug utilities -----------------------------------------------------------------------------
