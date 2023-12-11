@@ -94,13 +94,13 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     CPH = list(learner = "surv.coxph", params = 0),
     GLM = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
     Pen = list(learner = "surv.penalized", params = 2),
-    Par = list(learner = "surv.parametric", params = 1),
-    Flex = list(learner = "surv.flexible", params = 1),
+    Par = list(learner = "surv.parametric", params = 1, grid = TRUE),
+    Flex = list(learner = "surv.flexible", params = 1, grid = TRUE),
     RFSRC = list(learner = "surv.rfsrc", params = 5),
     RAN = list(learner = "surv.ranger", params = 5),
     CIF = list(learner = "surv.cforest", params = 5),
     ORSF = list(learner = "surv.aorsf", params = 2),
-    RRT = list(learner = "surv.rpart", params = 1),
+    RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
     MBO = list(learner = "surv.mboost", params = 4),
     CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
     XGB = list(learner = "surv.xgboost", .encode = TRUE, params = 6),
@@ -108,8 +108,10 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
   ) |>
     lapply(data.table::as.data.table) |>
     data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
-    setNames(c("learner_id", "learner_id_long", "params", "encode", "internal_cv", "scale")) |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x)))
+    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x))) |>
+    # setNames(c("learner_id", "learner_id_long", "params", "encode", "internal_cv", "grid", "scale")) |>
+    dplyr::select(learner_id = .id, learner_id_long = learner, params, internal_cv, encode = .encode, scale = .scale, grid)
+
 
   lrnlist |>
     write.csv(file = path, row.names = FALSE)

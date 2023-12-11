@@ -1,5 +1,5 @@
 ---
-title: "Resource Estimates"
+title: "Resource Estimates (December)"
 author: "Lukas"
 date: now
 date-format: "YYYY-MM-DD HH:mm:ss (z)"
@@ -23,13 +23,19 @@ Benchmark setup for resource estimation:
 
 - Holdout outer resampling (instead of 5-fold CV)
 - Holdout inner resampling (instead of 3-fold CV)
-- 1 eval random search (instead of ???)
+- 1 eval random search (instead of 50 per tunable param)
 
 So 2 learner `$train()` and and `$predict()` calls total per tuning measure.
 We may or may not have gotten lucky with fast or slow HPCs in the random search eval.
 This is just a ballpark estimate.
 
-Note: `dcalib` as tuning measure was removed.
+Changes from last resource estimation:
+
+- Reduces forest learner `num.trees`-like param from 5000 to 1000
+- Removed `dcalib` tuning measure entirely
+- made `Flex`, `Par`, `RRT` use parameter grid rather than random search due to their small tuning spaces.
+- Only run estimation runs on `harrell_c` because times won't be hugely different for `rcll`
+
 
 ```{r}
 root = here::here()
@@ -48,7 +54,6 @@ tasktab = read.csv(here::here("attic", "tasktab.csv"))
 lrntab = read.csv(here::here("attic", "learners.csv"))
 alljobs = ljoin(alljobs, tasktab, by = "task_id")
 setkey(alljobs, job.id)
-alljobs = alljobs[tags != "dcalib", ]
 
 # Estimating runtime via `batchtools` builtin `ranger` only on selected variables (avoid time.queued, repl, note that job.id is excluded automatically):
 bt_est = alljobs |>
@@ -60,13 +65,19 @@ bt_est = alljobs |>
 alljobs = alljobs[bt_est$runtimes]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))]
 
-# if (!(file.exists("bmr-resource-est.rds"))) {
+# if (!(file.exists("bmr-resource-est-dec.rds"))) {
+#   tictoc::tic("reducing results")
 #   bmr = reduceResultsBatchmark(store_backends = FALSE)
+#   tictoc::toc()
 #   aggr = bmr$aggregate(measures = msrs(c("time_predict", "time_train", "time_both")), conditions = TRUE)
 #   aggr[, resample_result := NULL]
-#   
-#   saveRDS(aggr, "aggr-resource-est.rds")
-#   saveRDS(bmr, "bmr-resource-est.rds")
+# 
+#   tictoc::tic(msg = "saving aggr")
+#   saveRDS(aggr, "aggr-resource-est-dec.rds")
+#   tictoc::toc()
+#   tictoc::tic(msg = "saving bmr")
+#   saveRDS(bmr, "bmr-resource-est-dec.rds")
+#   tictoc::toc()
 # }
 ```
 
@@ -103,11 +114,11 @@ summarize_resources <- function(xdf, by = "task_id", measure = "runtime") {
 }
 
 plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
-    checkmate::assert_subset(by, choices = c("task_id", "learner_id", "tags"))
+  checkmate::assert_subset(by, choices = c("task_id", "learner_id", "tags"))
   checkmate::assert_subset(measure, choices = c("runtime", "mem.used"))
   
   p <- xdf |>
-    dplyr::filter(...) |>
+    dplyr::filter(..., type == "observed") |>
     ggplot(aes(
       y = reorder(.data[[by]], .data[[measure]]),
       x = .data[[measure]]
@@ -137,8 +148,15 @@ plot_resources <- function(xdf, by = "task_id", measure = "runtime", ...) {
 
 ### Learners
 
+Special cases for learners:
+
+- `internal_cv` learners like `glmnet` and `CoxBoost` internally use a cross validation. CB is not tuned on the inner folds at all and uses its own method.
+- `encode`/`scale` learners need factor encoding or scaling as part of the preprocessing pipeline
+- `grid` learners have such small tuning spaces that a grid search is preferable
+
 ```{r}
 lrntab |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.logical), \(x) ifelse(x, "\u2705", ""))) |>
   kableExtra::kbl() |>
   kableExtra::kable_styling()
 ```
@@ -159,7 +177,7 @@ tasktab |>
 
 ```{r}
 alljobs |>
-  dplyr::group_by(repl) |>
+  dplyr::group_by(repl, tags) |>
   dplyr::summarize(
     total = dplyr::n(),
     done = sum(!is.na(time.running)),
@@ -176,6 +194,7 @@ Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe
 ```{r, eval = nrow(findRunning()) > 0}
 alljobs[findNotDone(), c("learner_id", "task_id", "tags", "submitted")]  |>
   dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
+  dplyr::filter(!is.na(duration)) |>
   dplyr::select(-submitted) |>
   reactable::reactable(striped = TRUE, filterable = TRUE)
 ```
@@ -313,7 +332,7 @@ total_estimate <- runtimes |>
     hours = sum(runtime/60/60 / 2), 
     .groups = "drop"
   ) |>
-  dplyr::left_join(lrntab, by = c("learner_id" = ".id")) |>
+  dplyr::left_join(lrntab, by = "learner_id") |>
   dplyr::select(learner_id, task_id, measure, params, internal_cv, hours) |>
   dplyr::mutate(
     # we tune learners with at least 1 param
@@ -324,7 +343,13 @@ total_estimate <- runtimes |>
     n_outer = 5,
     # No inner resampling if no tuning
     n_inner = pmax(3 * tune, 1),
-    n_budget = pmax(50 * params * tune, 1),
+    #n_budget = pmax(50 * params * tune, 1),
+    n_budget = dplyr::case_when(
+      learner_id == "RRT" ~ 46,
+      learner_id == "Par" ~ 3,
+      learner_id == "Flex" ~ 10,
+      .default = pmax(50 * params * tune, 1)
+    ),
     total_h = hours * n_outer * n_inner * n_budget,
     total_years = total_h / 24 / 365
   ) |>
@@ -405,6 +430,6 @@ resource_est_tab = resource_est_tab |>
     mem_gb = ifelse(is.na(mem_gb), max(mem_gb, na.rm = TRUE), mem_gb)
   ) 
 
-write.csv(resource_est_tab, file = here::here("attic", "resource_est.csv"), row.names = FALSE)
+write.csv(resource_est_tab, file = here::here("attic", "resource_est_dec.csv"), row.names = FALSE)
 ```
 
