@@ -4,6 +4,9 @@
 # registry dir (NA for testing)
 reg_dir = file.path(root, "registry_trial")
 
+use_fallback_inner = FALSE
+use_fallback_outer = FALSE
+
 # number of outer (evaluation) folds
 outer_folds = 5
 
@@ -25,7 +28,7 @@ seed = 123
 
 # Suggested budget
 budget_constant = 0
-budget_multiplier = 50
+budget_multiplier = 2
 
 # Maximum time autotuner is allowed to run for one set of inner resamplings
 budget_runtime_seconds = 3600 * 48
@@ -45,7 +48,7 @@ resources_default = list(
 )
 
 resources_long = list(
-  walltime = 10 * 24 * 3600,
+  walltime = 7 * 24 * 3600,
   memory = 50 * 1024,
   measure.memory = TRUE
 )

@@ -135,14 +135,22 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
 #' jobs_done[, .(avg_size = mean(size)), by = c("learner_id")]
 check_result_sizes = function(ids = batchtools::findDone()) {
   if (nrow(ids) > 0) {
-    sizes = vapply(unlist(done), \(x) {
+    sizes = vapply(unlist(ids), \(x) {
       batchtools::loadResult(x) |>
         pryr::object_size() |>
         as.numeric()
     }, FUN.VALUE = 1)
-    done[, size_bytes := prettyunits::pretty_bytes(bytes = sizes)]
-    done[, size := sizes / 1024^2][]
+    ids[, size_bytes := prettyunits::pretty_bytes(bytes = sizes)]
+    ids[, size := sizes / 1024^2][]
   } else {
     message("Don't know yet.")
   }
+}
+
+#' For quicker aggregation
+aggr_result_sizes = function(ids = batchtools::findDone(), by = "learner_id") {
+  res_size = check_result_sizes(ids = ids)
+  jobs_done = unwrap(getJobTable())[findDone(), ]
+  jobs_done = jobs_done[res_size, ]
+  jobs_done[, .(avg_size = mean(size)), by = by][]
 }

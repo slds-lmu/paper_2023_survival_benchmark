@@ -4,6 +4,9 @@
 # registry dir (NA for testing)
 reg_dir = file.path(root, "registry_runtime_est_dec")
 
+use_fallback_inner = FALSE
+use_fallback_outer = FALSE
+
 # number of outer (evaluation) folds
 outer_folds = 1
 
@@ -47,7 +50,7 @@ resources = list(
 )
 
 resources_long = list(
-  walltime = 10 * 24 * 3600,
+  walltime = 7 * 24 * 3600,
   memory = 50 * 1024,
   measure.memory = TRUE
 )
