@@ -113,8 +113,10 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     as_learner()
 
   graph_learner$predict_type = "crank"
-  graph_learner$fallback = fallback
-  graph_learner$encapsulate = c(train = "callr", predict = "callr")
+  if (use_fallback_inner) {
+    graph_learner$fallback = fallback
+    graph_learner$encapsulate = c(train = "callr", predict = "callr")
+  }
   graph_learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
   graph_learner
 }
@@ -192,8 +194,12 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   at$predict_type = "crank"
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
-  # # which would not be caught by fallback/encaps during inner resampling with GraphLearner
-  at$encapsulate = c(train = "callr", predict = "callr")
+  # which would not be caught by fallback/encaps during inner resampling with GraphLearner
+  if (use_fallback_outer) {
+    at$fallback = fallback
+    at$encapsulate = c(train = "callr", predict = "callr")
+  }
+
   at$timeout = c(train = timeout_train_at, predict = timeout_predict_at)
 
   at
@@ -313,8 +319,6 @@ for (measure in measures) {
       bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
       surv.aorsf.mtry_ratio = p_dbl(0, 1),
       surv.aorsf.leaf_min_events = p_int(5, 50),
-      # alpha only tunable when control_type == "net" (uses glmnet)
-      # surv.aorsf.control_net_alpha = p_dbl(0, 1),
       .extra_trafo = function(x, param_set) {
         x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
         x
