@@ -117,6 +117,86 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
   lrnlist
 }
 
+#' Quickly recreate list of evaluation measures
+#'
+#' Define once, use everywhere.
+get_measures_eval = function() {
+  measures_eval = list(
+    msr("surv.cindex", id = "harrell_c"),
+    msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+    msr("surv.rcll", id = "rcll"),
+
+    msr("surv.graf", id = "graf_proper", proper = TRUE),
+    msr("surv.graf", id = "graf_improper", proper = FALSE),
+
+    msr("surv.dcalib", id = "dcalib", truncate = Inf),
+
+    msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+    msr("surv.logloss", id = "logloss"),
+    msr("surv.calib_alpha", id = "caliba")
+  )
+  names(measures_eval) = mlr3misc::ids(measures_eval)
+  measures_eval
+}
+
+#' Collect and save benchmark results
+#'
+#' @param reg Registry, defaulting to `getDefaultRegistry()`.
+#' @param tuning_measure E.g. "harrell_c"
+#' @param measures_eval List of mlr3 measures used for evaluation
+#' @param result_path `here::here("results")`, where to store results.
+#'   A subfolder based on registry folder name will be created.
+#'
+#' @return Nothing
+#'
+#' @examples
+collect_results <- function(
+    reg = batchtools::getDefaultRegistry(),
+    tuning_measure = "harrell_c",
+    measures_eval = get_measures_eval(),
+    result_path = here::here("results")
+) {
+
+  reg_name = fs::path_file(reg$file.dir)
+  cli::cli_alert_info("Using registry {reg_name}")
+  result_path = fs::path(result_path, reg_name)
+  cli::cli_alert_info("Storing results in {result_path}")
+  if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
+
+  selected_ids = findTagged(tuning_measure, reg = reg)
+  done_ids = findDone(selected_ids)
+  done_perc = round(100 * nrow(done_ids)/nrow(selected_ids), 3)
+  cli::cli_alert_info("Selected {nrow(selected_ids)} ids of which {nrow(done_ids)} are done ({done_perc}%)")
+
+  tictoc::tic(msg = glue::glue("Reducing results: {tuning_measure}"))
+  bmr = reduceResultsBatchmark(
+    ids = done_ids,
+    store_backends = TRUE, reg = reg
+  )
+  tictoc::toc()
+
+  tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
+  bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
+  tictoc::toc()
+
+  tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
+  aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+  tictoc::toc()
+
+  tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
+  saveRDS(bmr, file = glue::glue("{result_path}/bmrs_{tuning_measure}.rds"))
+  tictoc::toc()
+
+  tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
+  saveRDS(aggr, glue::glue("{result_path}/bma_{tuning_measure}.rds"))
+  tictoc::toc()
+
+  tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
+  saveRDS(aggr, glue::glue("{result_path}/aggr_{tuning_measure}.rds"))
+  tictoc::toc()
+
+}
+
 # Utilities for job management ----------------------------------------------------------------
 
 

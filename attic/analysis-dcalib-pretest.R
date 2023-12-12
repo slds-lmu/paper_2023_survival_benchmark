@@ -23,21 +23,7 @@ if (!file.exists(results_dir)) dir.create(results_dir)
 ### Reduce results
 ###################################################################################################
 # Store eval measures for easier retrieval
-measures_eval = list(
-  msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.rcll", id = "rcll"),
-
-  msr("surv.graf", id = "graf_proper", proper = TRUE),
-  msr("surv.graf", id = "graf_improper", proper = FALSE),
-
-  msr("surv.dcalib", id = "dcalib_inf", truncate = Inf),
-
-  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  msr("surv.logloss", id = "logloss"),
-  msr("surv.calib_alpha", id = "calib")
-)
-names(measures_eval) = mlr3misc::ids(measures_eval)
+measures_eval = get_measures_eval()
 
 unique(alljobs$measure)
 
