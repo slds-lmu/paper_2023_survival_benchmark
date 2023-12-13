@@ -189,10 +189,10 @@ alljobs |>
 
 ### Which are still running or expired?
 
-Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`
+Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`. If that time is greater than 7 days, they hit the cluster timeout wall.
 
 ```{r, eval = nrow(findRunning()) > 0}
-alljobs[findNotDone(), c("learner_id", "task_id", "tags", "submitted")]  |>
+alljobs[ijoin(findSubmitted(), findNotDone()), c("learner_id", "task_id", "tags", "submitted")]  |>
   dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
   dplyr::filter(!is.na(duration)) |>
   dplyr::select(-submitted) |>
