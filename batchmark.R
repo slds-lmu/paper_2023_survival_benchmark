@@ -30,11 +30,11 @@ requireNamespace("mlr3extralearners")
 reg_dir = file.path(root, settings$reg_name)
 
 if (dir.exists(reg_dir)) {
-  cli::cli_alert_danger("Deleting existing registry \"{reg_name}\"!")
+  cli::cli_alert_danger("Deleting existing registry \"{settings$reg_name}\"!")
   unlink(reg_dir, recursive = TRUE)
 }
 
-cli::cli_alert_info("Creating new registry \"{reg_name}\"!")
+cli::cli_alert_info("Creating new registry \"{settings$reg_name}\"!")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
   packages = c("mlr3", "mlr3proba"), source = file.path(root, "helpers.R"))
 
@@ -121,7 +121,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     as_learner()
 
   graph_learner$predict_type = "crank"
-  if (settings$fallback) {
+  if (settings$fallback$inner) {
     graph_learner$fallback = fallback
     graph_learner$encapsulate = c(train = "callr", predict = "callr")
   }
@@ -189,11 +189,15 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     tuner = tnr("random_search")
   }
 
-  callback_backup = callback_tuning("mlr3tuning.backup_archive", on_optimization_end = callback_backup_impl)
+  callback_backup = callback_tuning("mlr3tuning.backup_archive",
+                                    on_optimization_end = callback_backup_impl)
 
   callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
   callback_backup$state$learner_id = stringr::str_match(learner$id, "(surv\\.\\w+)\\.")[[2]]
   callback_backup$state$tuning_measure = measure$id
+
+  callback_archive_logs = callback_tuning("mlr3tuning.archive_logs",
+                                     on_eval_after_benchmark = callback_archive_logs_impl)
 
   at = AutoTuner$new(
     learner = learner,
@@ -210,7 +214,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
     store_models = settings$store$models,
-    callbacks = list(callback_backup)
+    callbacks = list(callback_backup, callback_logsave)
   )
 
   # Also define a fallback learner on
@@ -223,7 +227,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
-  if (settings$fallback) {
+  if (settings$fallback$outer) {
     at$fallback = fallback
     at$encapsulate = c(train = "callr", predict = "callr")
   }
@@ -427,4 +431,4 @@ for (measure in measures) {
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
 
-cli::cli_alert_success("Added {}um(experiments$.count)} experiments to registry \"{settings$reg_name}\"")
+cli::cli_alert_success("Added {sum(experiments$.count)} experiments to registry \"{settings$reg_name}\"")

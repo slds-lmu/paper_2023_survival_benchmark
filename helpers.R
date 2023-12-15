@@ -76,6 +76,14 @@ callback_backup_impl = function(callback, context) {
   # cli::cli_alert_info("Writing archive to {callback$state$path}")
   saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
 }
+
+callback_archive_logs_impl = function(callback, context) {
+
+
+}
+
+
+
 # Utilities for analysis ----------------------------------------------------------------------
 
 #' List of included learners with short IDs and some extra info

@@ -6,7 +6,9 @@ default:
   outer_folds: 5
   inner_folds: 3
   min_obs: 30
-  fallback: true
+  fallback:
+    inner: true
+    outer: true
   store:
     tuning_instance: false
     benchmark_result: false
@@ -29,6 +31,9 @@ default:
 # Lower budget, just checking everything works, close to "production"
 trial:
     reg_name: "registry_trial"
+    fallback:
+      inner: true
+      outer: false
     budget:
       evals_constant: 0
       evals_multiplier: 10
