@@ -1,8 +1,13 @@
 root = here::here()
 # source(file.path(root, "settings.R"))
-source(file.path(root, "settings_trial_mode.R"))
+# source(file.path(root, "settings_trial_mode.R"))
 # source(file.path(root, "settings_runtime_est.R"))
 source(file.path(root, "helpers.R"))
+
+# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
+# See https://rstudio.github.io/config/articles/config.html
+cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
+settings = config::get()
 
 # Packages ----------------------------------------------------------------
 
@@ -22,16 +27,19 @@ requireNamespace("mlr3extralearners")
 
 
 # Create Registry ---------------------------------------------------------
+reg_dir = file.path(root, settings$reg_name)
+
 if (dir.exists(reg_dir)) {
+  cli::cli_alert_danger("Deleting existing registry \"{reg_name}\"!")
   unlink(reg_dir, recursive = TRUE)
 }
 
-message("Creating new registry")
-reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = seed,
+cli::cli_alert_info("Creating new registry \"{reg_name}\"!")
+reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
   packages = c("mlr3", "mlr3proba"), source = file.path(root, "helpers.R"))
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
-set.seed(seed)
+set.seed(settings$seed)
 files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
 names = stringi::stri_sub(basename(files), 1, -5)
 tasks = resamplings = mlr3misc::named_list(names)
@@ -43,15 +51,15 @@ for (i in seq_along(files)) {
   task$set_col_roles("status", add_to = "stratum")
 
   # Just for runtime estimation: Do simple holdout
-  if (identical(c(outer_folds, inner_folds), c(1, 1))) {
+  if (identical(c(settings$outer_folds, settings$inner_folds), c(1, 1))) {
     folds = 1
-    resampling = rsmp("holdout")$instantiate(task)
+    resampling = rsmp("holdout", ratio = 4/5)$instantiate(task)
   } else {
     # normal CV
-    folds = min(floor(task$nrow / min_obs), outer_folds)
+    folds = min(floor(task$nrow / settings$min_obs), settings$outer_folds)
     resampling = rsmp("cv", folds = folds)$instantiate(task)
 
-    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= min_obs))
+    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$min_obs))
 
     save_resampling(resampling, names[i])
   }
@@ -113,11 +121,23 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
     as_learner()
 
   graph_learner$predict_type = "crank"
-  if (use_fallback_inner) {
+  if (settings$fallback) {
     graph_learner$fallback = fallback
     graph_learner$encapsulate = c(train = "callr", predict = "callr")
   }
-  graph_learner$timeout = c(train = timeout_train_bl, predict = timeout_predict_bl)
+
+  # Edge case for timeout: CoxBoost ("surv.cv_coxboost") has it's own tuning mechanism, so
+  # it's not wrapped in autotuner (like KM, NA). Timeout should therefore be set to
+  # "outer" timeout, same as autotuners.
+  # Choosing not to do this for KM and NA as they are fast enough to not cause issues here.
+  if (key == "surv.cv_coxboost") {
+    graph_learner$timeout = c(train   = settings$timeout$at_train   * 3600,
+                              predict = settings$timeout$at_predict * 3600)
+  } else {
+    graph_learner$timeout = c(train   = settings$timeout$bl_train   * 3600,
+                              predict = settings$timeout$bl_predict * 3600)
+  }
+
   graph_learner
 }
 
@@ -129,12 +149,12 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
-  if (inner_folds == 1) {
+  if (settings$inner_folds == 1) {
     # Runtime testing mode: holdout
-    resampling = rsmp("holdout")
+    resampling = rsmp("holdout", ratio = 2/3)
   } else {
     # regular mode: (3-fold) CV
-    resampling = rsmp("cv", folds = inner_folds)
+    resampling = rsmp("cv", folds = settings$inner_folds)
   }
 
   # Need to switch tuner/trm since some learners have very small search spaces
@@ -142,18 +162,26 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   # search space and not waste compute by repeatedly evaluating the same HPCs
 
   # run_time: maximum time tuning is allowed to run, seconds (evaluated after all inne resampling iters)
-  trm_runtime = trm("run_time", secs = budget_runtime_seconds)
+  trm_runtime = trm("run_time", secs = settings$budget$runtime_hours * 60 * 60)
   # evals: budget set in settings.R: n_evals + k * dim_search_space
-  trm_evals = trm("evals", n_evals = budget_constant, k = budget_multiplier)
+  trm_evals = trm("evals",
+                  n_evals = settings$budget$evals_constant,
+                  k = settings$budget$evals_multiplier)
 
   if (use_grid_search) {
     # Use resolution that is normally greater than number of unique HPCs
     # For factors etc. this is fine, and for RRT (integer, 46 vals) this is also fine.
     # Also allows shorter runs during testing with small budget
+    # Goal is to use grid_search with run_time terminator only
 
-    # Account for pretest where we want 1 eval, so budget_constant is 1
-    if (budget_constant + budget_multiplier == 1) budget_multiplier = 1
-    tuner = tnr("grid_search", resolution = budget_multiplier)
+    # Account for pretest where we want 1 eval, so budget_constant may be 1
+    if (settings$budget$evals_constant + settings$budget$evals_multiplier == 1) {
+      grid_resolution = 1
+    } else {
+      grid_resolution = settings$budget$evals_multiplier
+    }
+
+    tuner = tnr("grid_search", resolution = grid_resolution)
     terminator = trm_runtime
   } else {
     # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
@@ -177,11 +205,11 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     tuner = tuner,
     # Need tuning instance for archive, need archive to know if fallback was needed
     # Callback writes out archive, no need to store instance explicitly
-    store_tuning_instance = FALSE,
+    store_tuning_instance = settings$store$tuning_instance,
     # Not needed: benchmark result of inner resamplings
-    store_benchmark_result = FALSE,
+    store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
-    store_models = FALSE,
+    store_models = settings$store$models,
     callbacks = list(callback_backup)
   )
 
@@ -195,12 +223,13 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
-  if (use_fallback_outer) {
+  if (settings$fallback) {
     at$fallback = fallback
     at$encapsulate = c(train = "callr", predict = "callr")
   }
 
-  at$timeout = c(train = timeout_train_at, predict = timeout_predict_at)
+  at$timeout = c(train = settings$timeout$at_train * 3600,
+                 predict = settings$timeout$at_predict * 3600)
 
   at
 }
@@ -345,7 +374,12 @@ for (measure in measures) {
 
     ,
 
-    CoxB = bl("surv.cv_coxboost", penalty = "optimCoxBoostPenalty", maxstepno = 5000, .encode = TRUE)
+    CoxB = bl("surv.cv_coxboost",
+              penalty = "optimCoxBoostPenalty",
+              maxstepno = 5000,
+              # Number of inner tuning folds: analogous to other AutoTuners
+              K = settings$inner_folds,
+              .encode = TRUE)
 
     ,
 
@@ -381,7 +415,7 @@ for (measure in measures) {
   # custom grid design (with instantiated resamplings)
   grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
   grid$resampling = rep(resamplings, each = length(learners))
-  ids = batchmark(grid, store_models = FALSE)
+  ids = batchmark(grid, store_models = settings$store$models)
   addJobTags(ids, measure$id)
 
   # also tag jobs which have been skipped because they are not wrapped
@@ -391,4 +425,6 @@ for (measure in measures) {
   addJobTags(ids, measure$id)
 }
 
-print(summarizeExperiments(by = c("task_id", "learner_id")))
+experiments = summarizeExperiments(by = c("task_id", "learner_id"))
+
+cli::cli_alert_success("Added {}um(experiments$.count)} experiments to registry \"{settings$reg_name}\"")

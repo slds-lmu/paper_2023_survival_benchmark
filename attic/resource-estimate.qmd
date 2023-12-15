@@ -39,13 +39,17 @@ Changes from last resource estimation:
 
 ```{r}
 root = here::here()
-source(file.path(root, "settings_runtime_est.R"))
+
+cli::cli_alert_info("Loading config \"runtime_est\"")
+settings = config::get(config = "runtime_est")
+# source(file.path(root, "settings_runtime_est.R"))
 
 library(batchtools)
 library(ggplot2)
 library(mlr3batchmark)
 library(data.table)
 
+reg_dir = file.path(root, settings$reg_name)
 reg = loadRegistry(reg_dir, writeable = FALSE)
 
 alljobs = unwrap(getJobTable())[, .(job.id, repl, tags, task_id, learner_id, submitted, time.queued, time.running, mem.used, error)]
@@ -65,20 +69,20 @@ bt_est = alljobs |>
 alljobs = alljobs[bt_est$runtimes]
 alljobs[, time.running.hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))]
 
-# if (!(file.exists("bmr-resource-est-dec.rds"))) {
-#   tictoc::tic("reducing results")
-#   bmr = reduceResultsBatchmark(store_backends = FALSE)
-#   tictoc::toc()
-#   aggr = bmr$aggregate(measures = msrs(c("time_predict", "time_train", "time_both")), conditions = TRUE)
-#   aggr[, resample_result := NULL]
-# 
-#   tictoc::tic(msg = "saving aggr")
-#   saveRDS(aggr, "aggr-resource-est-dec.rds")
-#   tictoc::toc()
-#   tictoc::tic(msg = "saving bmr")
-#   saveRDS(bmr, "bmr-resource-est-dec.rds")
-#   tictoc::toc()
-# }
+if (!(file.exists("bmr-resource-est-dec.rds"))) {
+  tictoc::tic("reducing results")
+  bmr = reduceResultsBatchmark(store_backends = TRUE)
+  tictoc::toc()
+  aggr = bmr$aggregate(measures = msrs(c("time_predict", "time_train", "time_both")), conditions = TRUE)
+  aggr[, resample_result := NULL]
+
+  tictoc::tic(msg = "saving aggr")
+  saveRDS(aggr, "aggr-resource-est-dec.rds")
+  tictoc::toc()
+  tictoc::tic(msg = "saving bmr")
+  saveRDS(bmr, "bmr-resource-est-dec.rds")
+  tictoc::toc()
+}
 ```
 
 ```{r helper_funs}
@@ -192,7 +196,7 @@ alljobs |>
 Duration measured in **days** based on "now": `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`. If that time is greater than 7 days, they hit the cluster timeout wall.
 
 ```{r, eval = nrow(findRunning()) > 0}
-alljobs[ijoin(findSubmitted(), findNotDone()), c("learner_id", "task_id", "tags", "submitted")]  |>
+alljobs[ijoin(findSubmitted(), findNotDone())]  |>
   dplyr::mutate(duration = round(difftime(Sys.time(), submitted, unit = "days"), 2)) |>
   dplyr::filter(!is.na(duration)) |>
   dplyr::select(-submitted) |>
@@ -256,6 +260,20 @@ summarize_resources(alljobs, by = "learner_id", measure = "runtime")
 plot_resources(alljobs, by = "tags", measure = "runtime")
 summarize_resources(alljobs, by = "tags", measure = "runtime")
 ```
+
+### Train/Predict
+
+```{r}
+aggr = readRDS(here::here("aggr-resource-est-dec.rds"))
+
+aggr |>
+  dplyr::select(learner_id, task_id, warnings, errors, time_train, time_predict) |>
+  dplyr::mutate(dplyr::across(
+    dplyr::starts_with("time"), \(x) round(x / 60/60, 1))) |>
+  reactable::reactable(striped = TRUE, filterable = TRUE, defaultPageSize = 20)
+
+```
+
 
 ## Memory
 
@@ -350,14 +368,28 @@ total_estimate <- runtimes |>
       learner_id == "Flex" ~ 10,
       .default = pmax(50 * params * tune, 1)
     ),
-    total_h = hours * n_outer * n_inner * n_budget,
+    total_per_job = hours * n_inner * n_budget,
+    total_h = total_per_job * n_outer,
     total_years = total_h / 24 / 365
   ) |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 2)))
 
 total_estimate |>
+  dplyr::select(-internal_cv, -n_inner, -hours) |>
   dplyr::arrange(-total_h) |>
   reactable::reactable(striped = TRUE, filterable = TRUE)
+
+# total_estimate |>
+#   ggplot(aes(x = learner_id, y = total_per_job)) +
+#   geom_boxplot() +
+#   geom_hline(yintercept = 168, color = "red") +
+#   coord_flip()
+# 
+# total_estimate |>
+#   ggplot(aes(x = task_id, y = total_per_job)) +
+#   geom_boxplot() +
+#   geom_hline(yintercept = 168, color = "red") +
+#   coord_flip()
 ```
 
 ### Totals per learner:

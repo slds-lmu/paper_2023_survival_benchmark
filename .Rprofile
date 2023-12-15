@@ -51,4 +51,5 @@ if (FALSE) {
   library("survivalmodels")
 
   library("callr")
+  require("config")
 }

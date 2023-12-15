@@ -1,0 +1,54 @@
+# Default config: Should become production mode
+default:
+  reg_name: "registry"
+#  reg_dir: !expr here::here(reg_name)
+  seed: 123
+  outer_folds: 5
+  inner_folds: 3
+  min_obs: 30
+  fallback: true
+  store:
+    tuning_instance: false
+    benchmark_result: false
+    models: false
+  budget:
+    evals_constant: 0
+    evals_multiplier: 50
+    runtime_hours: 6
+  timeout:
+    # Times in hours (!) need to be converted to seconds at corretc places
+    bl_train: 10
+    bl_predict: 4
+    at_train: !expr 24 * 6.5 # 156 hours of 168 max
+    at_predict: !expr 11 # leave some headroom for job
+  resources:
+    # Cluster limit: 7 days / 168h / 604800s
+    walltime: 604800
+    memory: 5.33 # 384/72 memory per node on teton-knl?
+
+# Lower budget, just checking everything works, close to "production"
+trial:
+    reg_name: "registry_trial"
+    budget:
+      evals_constant: 0
+      evals_multiplier: 10
+      runtime_hours: 24
+    timeout:
+      bl_train: !expr 10
+      bl_predict: !expr 2
+
+# Ideally only one train/predict step and managable runtime for extrapolation
+runtime_est:
+    reg_name: "registry_runtime_est_dec"
+    outer_folds: 1
+    inner_folds: 1
+    budget:
+      evals_constant: 1
+      evals_multiplier: 0
+      runtime_hours: 8
+    timeout:
+      bl_train: !expr 24 * 6.5
+      bl_predict: !expr 24 * 6.5
+      at_train: !expr 24 * 6.5
+      at_predict: !expr 24 * 6.5
+

@@ -1,6 +1,12 @@
 root = here::here()
 #source(file.path(root, "settings.R"))
-source(file.path(root, "settings_trial_mode.R"))
+#source(file.path(root, "settings_trial_mode.R"))
+
+# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
+# See https://rstudio.github.io/config/articles/config.html
+cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
+settings = config::get()
+
 
 ###################################################################################################
 ### Packages
@@ -11,6 +17,7 @@ library(mlr3benchmark)
 # requires PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
 library(ggplot2)
 
+reg_dir = file.path(root, settings$reg_name)
 reg = loadRegistry(reg_dir, writeable = TRUE)
 
 alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]

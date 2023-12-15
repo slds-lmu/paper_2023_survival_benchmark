@@ -1,14 +1,19 @@
 root = here::here()
-source(file.path(root, "settings_trial_mode.R"))
-# reg_dir = file.path(root, "registry")
+# source(file.path(root, "settings_trial_mode.R"))
+
+# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
+# See https://rstudio.github.io/config/articles/config.html
+cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
+settings = config::get()
 
 library("batchtools")
 library("mlr3batchmark")
 
 # Assumes batchmark.R is run beforehand
-reg = loadRegistry(reg_dir, writeable = TRUE)
+reg_dir = file.path(root, settings$reg_name)
+reg = loadRegistry(settings$reg, writeable = TRUE)
 
-# Expecting 561 task x learner combinations, 5 outer folds, 3 inner folds
+# Expecting 544 task x learner combinations, 5 outer folds, 2 tuning measures
 print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
@@ -19,6 +24,8 @@ alljobs = collect_job_table(reg = reg)
 alljobs[, hours   := ifelse(is.na(hours),   quantile(hours, na.rm = TRUE,   probs = 0.75), hours),   by = .(task_id)]
 alljobs[, total_h := ifelse(is.na(total_h), quantile(total_h, na.rm = TRUE, probs = 0.75), total_h), by = .(task_id)]
 alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  probs = 0.75), mem_gb),  by = .(task_id)]
+
+# Set default resources?
 
 # Non-tuned learners --------------------------------------------------------------------------
 # learners without inner resampling (KM, CoxBoost, ..) so not technically untuned but no inner resampling
