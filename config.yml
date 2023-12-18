@@ -26,7 +26,7 @@ default:
   resources:
     # Cluster limit: 7 days / 168h / 604800s
     walltime: 604800
-    memory: 5.33 # 384/72 memory per node on teton-knl?
+    memory: !expr 1024 * 5.33 # 384/72 memory per node on teton-knl?
 
 # Lower budget, just checking everything works, close to "production"
 trial:
@@ -35,9 +35,9 @@ trial:
       inner: true
       outer: false
     budget:
-      evals_constant: 0
-      evals_multiplier: 10
-      runtime_hours: 24
+      # evals_constant: 5
+      # evals_multiplier: 0
+      runtime_hours: 6
     timeout:
       bl_train: !expr 10
       bl_predict: !expr 2
