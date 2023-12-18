@@ -26,6 +26,8 @@ alljobs[, total_h := ifelse(is.na(total_h), quantile(total_h, na.rm = TRUE, prob
 alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  probs = 0.75), mem_gb),  by = .(task_id)]
 
 # Set default resources?
+alljobs[, walltime := settings$resources$walltime]
+alljobs[, memory := settings$resources$memory]
 
 # Non-tuned learners --------------------------------------------------------------------------
 # learners without inner resampling (KM, CoxBoost, ..) so not technically untuned but no inner resampling
@@ -39,7 +41,7 @@ print(jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N)
 
 # Tuning on Harrell's C -----------------------------------------------------------------------
 jobs_harrell = alljobs[measure == "harrell_c", ]
-jobs_harrell[, chunk := lpt(total_h, 70)]
+jobs_harrell[, chunk := lpt(total_h, 100)]
 print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
 
 
@@ -47,9 +49,3 @@ print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N)
 jobs_rcll = alljobs[measure == "rcll", ]
 jobs_rcll[, chunk := lpt(total_h, 10)]
 print(jobs_rcll[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
-
-
-# # Tuning on D-Calibration ---------------------------------------------------------------------
-# jobs_dcalib = alljobs[measure == "dcalib", ]
-# jobs_dcalib[, chunk := lpt(total_h, 10)]
-# print(jobs_dcalib[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
