@@ -175,8 +175,11 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     # Goal is to use grid_search with run_time terminator only
 
     # Account for pretest where we want 1 eval, so budget_constant may be 1
+    # and multiplier 0
     if (settings$budget$evals_constant + settings$budget$evals_multiplier == 1) {
       grid_resolution = 1
+    } else if (settings$budget$evals_multiplier == 0) {
+      grid_resolution = settings$budget$evals_constant
     } else {
       grid_resolution = settings$budget$evals_multiplier
     }
@@ -197,7 +200,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
   callback_backup$state$tuning_measure = measure$id
 
   callback_archive_logs = callback_tuning("mlr3tuning.archive_logs",
-                                     on_eval_after_benchmark = callback_archive_logs_impl)
+                                          on_eval_before_archive = callback_archive_logs_impl)
 
   at = AutoTuner$new(
     learner = learner,
@@ -214,7 +217,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
     store_models = settings$store$models,
-    callbacks = list(callback_backup, callback_logsave)
+    callbacks = list(callback_backup, callback_archive_logs)
   )
 
   # Also define a fallback learner on

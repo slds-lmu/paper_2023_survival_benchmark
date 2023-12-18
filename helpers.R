@@ -77,9 +77,21 @@ callback_backup_impl = function(callback, context) {
   saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
 }
 
+#' Callback to find the learner logs and append them to the tuning archive.
+#' Archives get serialized to disk and can later be recovered to find
+#' error messages which would otherwise be obscured by using the fallback learners.
 callback_archive_logs_impl = function(callback, context) {
 
+  states = context$benchmark_result$.__enclos_env__$private$.data$learners(states = TRUE)
 
+  logs = data.table::rbindlist(lapply(states$learner, \(x) {
+    data.table::data.table(
+      learner_log = list(x$state$log),
+      fallback_log = list(x$state$fallback_state$log)
+    )
+  }))
+
+  context$aggregated_performance[, log := list(logs)]
 }
 
 
