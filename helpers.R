@@ -170,7 +170,7 @@ get_measures_eval = function() {
 #' @return Nothing
 #'
 #' @examples
-collect_results <- function(
+collect_results = function(
     reg = batchtools::getDefaultRegistry(),
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
@@ -214,6 +214,42 @@ collect_results <- function(
   tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
   saveRDS(aggr, glue::glue("{result_path}/aggr_{tuning_measure}.rds"))
   tictoc::toc()
+
+}
+
+#' Collect tuning archives saved separately to disk via callback
+#' @param reg_dir
+#' @param result_path `here::here("results")`
+reassemble_archives = function(
+    reg_dir,
+    result_path = here::here("results")
+  ) {
+
+  tuning_files = fs::dir_ls(here::here(reg_dir, "tuning_archives"))
+
+  learners = read.csv(here::here("attic", "learners.csv"))
+  learners = learners[, c("learner_id", "learner_id_long")]
+
+  archives = data.table::rbindlist(lapply(tuning_files, \(file) {
+    archive = readRDS(file)
+
+    components = fs::path_file(file) |>
+      fs::path_ext_remove() |>
+      stringi::stri_split_fixed(pattern = "__")
+    components = components[[1]]
+    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
+
+    data.table::data.table(t(components),
+               archive = list(archive),
+               warnings_sum = sum(archive$warnings),
+               errors_sum = sum(archive$errors))
+  }))
+
+  archives = archives[learners, on = "learner_id_long"]
+  archives[!is.na(tune_measure), ]
+  archives[, learner_id_long := NULL]
+
+  archives
 
 }
 
