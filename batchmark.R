@@ -72,7 +72,10 @@ for (i in seq_along(files)) {
 tasktab = save_tasktab(tasks)
 
 # Base learner setup ------------------------------------------------------
-bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner with fallback + encapsulation
+# Base learner with fallback + encapsulation, preprocessing pipeline and composition
+bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph") {
+  checkmate::assert_choice(.form, choices = c("ph", "aft"))
+
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
                  method = "mean", overwrite = FALSE, graph_learner = TRUE)
@@ -116,7 +119,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) { # get base learner wi
   # Stack preprocessing on top of learner + distr stuff. 'form' as per RS
   graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    ppl("distrcompositor", learner = learner, form = "ph") |>
+    ppl("distrcompositor", learner = learner, form = .form) |>
     # Need to convert to GraphLearner
     as_learner()
 
@@ -390,8 +393,24 @@ for (measure in measures) {
 
     ,
 
-    XGB = auto_tune(
-      bl("surv.xgboost", tree_method = "hist", booster = "gbtree", .encode = TRUE),
+    XGBCox = auto_tune(
+      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
+         objective = "survival:cox",
+         .encode = TRUE),
+      surv.xgboost.max_depth = p_int(1, 20),
+      surv.xgboost.subsample = p_dbl(0, 1),
+      surv.xgboost.colsample_bytree = p_dbl(0, 1),
+      surv.xgboost.nrounds = p_int(10, 5000),
+      surv.xgboost.eta = p_dbl(0, 1),
+      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
+    )
+
+    ,
+
+    XGBAFT = auto_tune(
+      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
+         objective = "survival:aft",
+         .encode = TRUE, .form = "aft"),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
