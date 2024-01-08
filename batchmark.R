@@ -72,8 +72,14 @@ for (i in seq_along(files)) {
 tasktab = save_tasktab(tasks)
 
 # Base learner setup ------------------------------------------------------
-# Base learner with fallback + encapsulation, preprocessing pipeline and composition
-bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph") {
+#' Base learner with fallback + encapsulation, preprocessing pipeline and composition
+#' @param key Learner key passed to `lrn()`.
+#' @param ... Additional arguments passed to `lrn()`.
+#' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
+#' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
+#' @param .form (`"ph"`) Passed to `distrcompositor` as `form = .form`.
+#' @param .estimator (`"kaplan"`) Passed to `distrcompoistor` as `estimator = .estimator`.
+bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimator = "kaplan") {
   checkmate::assert_choice(.form, choices = c("ph", "aft"))
 
   learner = lrn(key, ...)
@@ -116,10 +122,10 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph") {
 
   # removeconstants: should constant features be introduced, they're dropped.
   #  - Done after treatment encoding
-  # Stack preprocessing on top of learner + distr stuff. 'form' as per RS
+  # Stack preprocessing on top of learner + distr stuff.
   graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    ppl("distrcompositor", learner = learner, form = .form) |>
+    ppl("distrcompositor", learner = learner, form = .form, estimator = .estimator) |>
     # Need to convert to GraphLearner
     as_learner()
 
@@ -146,7 +152,12 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph") {
 
 # AutoTuner -----------------------------------------------------------------------------------
 
-auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random search
+#' Takes a base GraphLearner and search space and wraps it into AutoTuner
+#' @param learner GRaphLearner returned by `bl()`.
+#' @param ... Parameter search space, passed as `ps(...)`.
+#' @param use_grid_search (`FALSE`) FOr learners with small categorical search spaces, it's more
+#'   efficient to use grid search rather than to random search over e.g. 10 elements with 50 iters.
+auto_tune = function(learner, ..., use_grid_search = FALSE) {
   learner = as_learner(learner)
   search_space = ps(...)
   if (is.null(search_space$trafo))
@@ -223,7 +234,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     callbacks = list(callback_backup, callback_archive_logs)
   )
 
-  # Also define a fallback learner on
+  # Also define a fallback learner on AutoTuner
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
                  method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
@@ -238,6 +249,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) { # wrap into random
     at$encapsulate = c(train = "callr", predict = "callr")
   }
 
+  # Timeouts provided in hours via settings, converted to seconds.
+  # Ensures computational job can finish prematurely given cluster timeout would kill it otherwise.
   at$timeout = c(train = settings$timeout$at_train * 3600,
                  predict = settings$timeout$at_predict * 3600)
 
@@ -302,9 +315,17 @@ for (measure in measures) {
 
     ,
 
-    Par = auto_tune(
-      bl("surv.parametric", type = "aft"),
-      surv.parametric.dist = p_fct(c("weibull", "lognormal", "loglogistic")),
+    ParPH = auto_tune(
+      bl("surv.parametric", type = "ph", discrete = TRUE, .form = "ph"),
+      surv.parametric.dist = p_fct(c("weibull", "exponential")),
+      use_grid_search = TRUE
+    )
+
+    ,
+
+    ParAFT = auto_tune(
+      bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
+      surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
 
