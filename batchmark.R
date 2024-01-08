@@ -417,7 +417,7 @@ for (measure in measures) {
     XGBCox = auto_tune(
       bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
          objective = "survival:cox",
-         .encode = TRUE),
+         .encode = TRUE, .estimator = "breslow"),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
@@ -437,7 +437,9 @@ for (measure in measures) {
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
       surv.xgboost.nrounds = p_int(10, 5000),
       surv.xgboost.eta = p_dbl(0, 1),
-      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
+      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide")),
+      surv.xgboost.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
+      surv.xgboost.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
     )
 
     ,
