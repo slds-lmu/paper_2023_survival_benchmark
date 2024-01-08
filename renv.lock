@@ -1765,7 +1765,7 @@
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "7546845da71f1dfac6ac214fbddd8bcc953737d9",
+      "RemoteSha": "e7762b7990991c53cc638f26a25c96f6bb0e7731",
       "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1777,7 +1777,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "87be043569a0aa152413cba4d856c7f8"
+      "Hash": "a970f6142c224df163163a4007ffea50"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
@@ -1845,14 +1845,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.5.4",
+      "Version": "0.5.7",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "083e6859b76764c431d734792a94958b5f1be8d7",
+      "RemoteSha": "ae36e0861d286b820ef792ed208b54585dc14c87",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1869,7 +1869,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "061040e04ed407ec8beef784d1da4b4d"
+      "Hash": "ffad932c7763927b749aaf1b7aaa5220"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
