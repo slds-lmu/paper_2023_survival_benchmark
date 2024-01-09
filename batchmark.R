@@ -1,7 +1,4 @@
 root = here::here()
-# source(file.path(root, "settings.R"))
-# source(file.path(root, "settings_trial_mode.R"))
-# source(file.path(root, "settings_runtime_est.R"))
 source(file.path(root, "helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
@@ -13,7 +10,7 @@ settings = config::get()
 
 # Dependencies managed via renv. Manually update as necessary via renv::update()
 # See also attic/_dependencies.R
-renv::restore(prompt = FALSE)
+# renv::restore(prompt = FALSE)
 
 library("mlr3misc")
 library("mlr3")
@@ -24,7 +21,6 @@ library("mlr3tuning")
 library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
-
 
 # Create Registry ---------------------------------------------------------
 reg_dir = file.path(root, settings$reg_name)
@@ -81,12 +77,13 @@ tasktab = save_tasktab(tasks)
 #' @param .estimator (`"kaplan"`) Passed to `distrcompoistor` as `estimator = .estimator`.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimator = "kaplan") {
   checkmate::assert_choice(.form, choices = c("ph", "aft"))
+  checkmate::assert_choice(.estimator, choices = c("kaplan", "breslow"))
 
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
                  method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
-  # As per RS to fix #38
+  # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
@@ -315,22 +312,19 @@ for (measure in measures) {
 
     ,
 
-    ParPH = auto_tune(
-      bl("surv.parametric", type = "ph", discrete = TRUE, .form = "ph"),
-      surv.parametric.dist = p_fct(c("weibull", "exponential")),
-      use_grid_search = TRUE
-    )
-
-    ,
-
-    ParAFT = auto_tune(
+    # Use grid search due to small + finite search space
+    # AFT version needs
+    # - to pass .form to bl() for distrcompositor
+    # - Tune distributions within range of what's sensible/discussed with RS
+    Par = auto_tune(
       bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
-      surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
+      surv.parametric.dist = p_fct(c("weibull", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
 
     ,
 
+    # Use grid search due to small + finite search space
     Flex = auto_tune(
       bl("surv.flexible"),
       surv.flexible.k = p_int(1, 10),
@@ -405,6 +399,7 @@ for (measure in measures) {
 
     ,
 
+    # Does not use our inner resampling
     CoxB = bl("surv.cv_coxboost",
               penalty = "optimCoxBoostPenalty",
               maxstepno = 5000,
@@ -414,6 +409,7 @@ for (measure in measures) {
 
     ,
 
+    # XGB/cox needs new breslow estimator
     XGBCox = auto_tune(
       bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
          objective = "survival:cox",
@@ -428,6 +424,10 @@ for (measure in measures) {
 
     ,
 
+    # AFT version needs
+    # - Adjust objective accordingly to use aft
+    # - to pass .form to bl() for distrcompositor
+    # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
       bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
          objective = "survival:aft",

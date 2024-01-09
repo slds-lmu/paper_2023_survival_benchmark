@@ -112,8 +112,7 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     CPH = list(learner = "surv.coxph", params = 0),
     GLM = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
     Pen = list(learner = "surv.penalized", params = 2),
-    ParAFT = list(learner = "surv.parametric", params = 1, grid = TRUE),
-    ParPH = list(learner = "surv.parametric", params = 1, grid = TRUE),
+    Par = list(learner = "surv.parametric", params = 1, grid = TRUE),
     Flex = list(learner = "surv.flexible", params = 1, grid = TRUE),
     RFSRC = list(learner = "surv.rfsrc", params = 5),
     RAN = list(learner = "surv.ranger", params = 5),
@@ -285,6 +284,8 @@ collect_job_table = function(
   data.table::setnames(alljobs, "tags", "measure")
 
   tasktab = read.csv(task_tab_file)
+
+  # Get resource estimates
   resource_tab = read.csv(resource_est_file)
   data.table::setDT(resource_tab)
   resource_tab = resource_tab[, c("learner_id", "task_id", "measure", "hours", "total_h", "mem_gb")]
@@ -295,6 +296,7 @@ collect_job_table = function(
 
   resource_tab = rbind(resource_tab, xgbaft)
 
+  # Join everything
   alljobs = ljoin(alljobs, tasktab, by = "task_id")
   alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id", "measure"))
   data.table::setkey(alljobs, job.id)

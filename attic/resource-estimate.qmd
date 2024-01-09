@@ -41,7 +41,7 @@ Changes from last resource estimation:
 root = here::here()
 
 cli::cli_alert_info("Loading config \"runtime_est\"")
-settings = config::get(config = "runtime_est")
+# settings = config::get(config = "runtime_est")
 # source(file.path(root, "settings_runtime_est.R"))
 
 library(batchtools)
@@ -49,7 +49,7 @@ library(ggplot2)
 library(mlr3batchmark)
 library(data.table)
 
-reg_dir = file.path(root, settings$reg_name)
+reg_dir = file.path(root, "registry_runtime_est_dec")
 reg = loadRegistry(reg_dir, writeable = FALSE)
 
 alljobs = unwrap(getJobTable())[, .(job.id, repl, tags, task_id, learner_id, submitted, time.queued, time.running, mem.used, error)]

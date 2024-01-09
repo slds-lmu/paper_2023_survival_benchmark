@@ -19,6 +19,7 @@ if (FALSE) {
   renv::install("survivalsvm", prompt = FALSE)
   renv::install("pseudo", prompt = FALSE)
   renv::install("actuar", prompt = FALSE) # For surv.parametric
+  renv::install("binderh/CoxBoost", prompt = FALSE)
 
   renv::install("mlr3learners", prompt = FALSE)
   renv::install("mlr3pipelines", prompt = FALSE)
@@ -33,6 +34,5 @@ if (FALSE) {
   renv::install("xoopR/distr6", prompt = FALSE)
   renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 
-  renv::install("binderh/CoxBoost", prompt = FALSE)
 }
 
