@@ -1845,14 +1845,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.5.7",
+      "Version": "0.5.8",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "ae36e0861d286b820ef792ed208b54585dc14c87",
+      "RemoteSha": "0732d2837379d2d745b0b27718589a83f4572f84",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1869,7 +1869,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "ffad932c7763927b749aaf1b7aaa5220"
+      "Hash": "3dd907d7ba8460a7ad753ce883f8559e"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2125,6 +2125,7 @@
       "RemoteRef": "main",
       "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
       "Remotes": "xoopR/set6",
+      "Remotes": "xoopR/set6",
       "Requirements": [
         "R6",
         "checkmate",
@@ -2132,7 +2133,7 @@
         "dictionar6",
         "set6"
       ],
-      "Hash": "f6948611ff164d8375e70fb49c15eed7"
+      "Hash": "5e7165321aca392d486e9b0dd4932ad5"
     },
     "partykit": {
       "Package": "partykit",
