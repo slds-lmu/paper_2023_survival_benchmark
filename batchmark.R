@@ -318,7 +318,7 @@ for (measure in measures) {
     # - Tune distributions within range of what's sensible/discussed with RS
     Par = auto_tune(
       bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
-      surv.parametric.dist = p_fct(c("weibull", "lognormal",  "loglogistic")),
+      surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
 
