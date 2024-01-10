@@ -32,10 +32,10 @@ default:
 trial:
     reg_name: "registry_trial"
     fallback:
-      inner: true
+      inner: false
       outer: false
     budget:
-      # evals_constant: 5
+      evals_constant: 5
       # evals_multiplier: 0
       runtime_hours: 6
     timeout:
