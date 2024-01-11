@@ -3,7 +3,8 @@ source(file.path(root, "helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
-cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
+config_profile = Sys.getenv('R_CONFIG_ACTIVE', 'default')
+cli::cli_alert_info("Loading config \"{config_profile}\"")
 settings = config::get()
 
 # Packages ----------------------------------------------------------------

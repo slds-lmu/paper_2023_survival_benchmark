@@ -138,6 +138,10 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
   lrnlist
 }
 
+load_lrntab = function(path = here::here("attic", "learners.csv")) {
+  read.csv(path)
+}
+
 #' Quickly recreate list of evaluation measures
 #'
 #' Define once, use everywhere.
