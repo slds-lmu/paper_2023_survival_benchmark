@@ -1,5 +1,4 @@
 root = here::here()
-# source(file.path(root, "settings_trial_mode.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
@@ -13,7 +12,7 @@ library("mlr3batchmark")
 reg_dir = file.path(root, settings$reg_name)
 reg = loadRegistry(settings$reg, writeable = TRUE)
 
-# Expecting 544 task x learner combinations, 5 outer folds, 2 tuning measures
+# Expecting 576 task (32) x learner (19) combinations, 5 outer folds (except "veteran"), 2 tuning measures
 print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
@@ -25,13 +24,9 @@ alljobs[, hours   := ifelse(is.na(hours),   quantile(hours, na.rm = TRUE,   prob
 alljobs[, total_h := ifelse(is.na(total_h), quantile(total_h, na.rm = TRUE, probs = 0.75), total_h), by = .(task_id)]
 alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  probs = 0.75), mem_gb),  by = .(task_id)]
 
-# Set default resources?
-alljobs[, walltime := settings$resources$walltime]
-alljobs[, memory := settings$resources$memory]
-
 # Non-tuned learners --------------------------------------------------------------------------
 # learners without inner resampling (KM, CoxBoost, ..) so not technically untuned but no inner resampling
-# where measure == "dcalib,harrell_c,rcll"
+# where measure == "harrell_c,rcll"
 
 jobs_untuned = alljobs[grepl(",", measure), ]
 jobs_untuned[, chunk := lpt(total_h, 50)]
