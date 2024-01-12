@@ -79,6 +79,7 @@ tasktab = save_tasktab(tasks)
 bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimator = "kaplan") {
   checkmate::assert_choice(.form, choices = c("ph", "aft"))
   checkmate::assert_choice(.estimator, choices = c("kaplan", "breslow"))
+  cli::cli_h2("Constructing {key} (form = '{(.form)}')")
 
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
@@ -131,6 +132,8 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   if (settings$fallback$inner) {
     graph_learner$fallback = fallback
     graph_learner$encapsulate = c(train = "callr", predict = "callr")
+  } else {
+    cli::cli_alert_info("Not applying fallback learner for inner GraphLearner")
   }
 
   # Edge case for timeout: CoxBoost ("surv.cv_coxboost") has it's own tuning mechanism, so
@@ -138,6 +141,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   # "outer" timeout, same as autotuners.
   # Choosing not to do this for KM and NA as they are fast enough to not cause issues here.
   if (key == "surv.cv_coxboost") {
+    cli::cli_alert_info("Applying timeout for inner GraphLearner - CoxBoost exception!")
     graph_learner$timeout = c(train   = settings$timeout$at_train   * 3600,
                               predict = settings$timeout$at_predict * 3600)
   } else {
@@ -163,6 +167,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   if (settings$inner_folds == 1) {
     # Runtime testing mode: holdout
+    cli::cli_alert_warning("Using holdout inner resampling!")
     resampling = rsmp("holdout", ratio = 2/3)
   } else {
     # regular mode: (3-fold) CV
@@ -173,7 +178,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
   # search space and not waste compute by repeatedly evaluating the same HPCs
 
-  # run_time: maximum time tuning is allowed to run, seconds (evaluated after all inne resampling iters)
+  # run_time: maximum time tuning is allowed to run, seconds (evaluated after all inner resampling iters)
   trm_runtime = trm("run_time", secs = settings$budget$runtime_hours * 60 * 60)
   # evals: budget set in settings.R: n_evals + k * dim_search_space
   trm_evals = trm("evals",
@@ -181,6 +186,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
                   k = settings$budget$evals_multiplier)
 
   if (use_grid_search) {
+    cli::cli_alert_info("Using grid search for tuning")
+
     # Use resolution that is normally greater than number of unique HPCs
     # For factors etc. this is fine, and for RRT (integer, 46 vals) this is also fine.
     # Also allows shorter runs during testing with small budget
@@ -262,6 +269,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   if (settings$fallback$outer) {
     at$fallback = fallback
     at$encapsulate = c(train = "callr", predict = "callr")
+  } else {
+    cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
   }
 
   # Timeouts provided in hours via settings, converted to seconds.
