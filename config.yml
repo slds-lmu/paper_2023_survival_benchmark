@@ -15,17 +15,14 @@ default:
   budget:
     evals_constant: 0
     evals_multiplier: 50
-    runtime_hours: 6
+    # Time limit for tuning process, run_time terminator, will be converted to seconds
+    runtime_hours: !expr 6 * 24
   timeout:
-    # Times in hours (!) need to be converted to seconds at corretc places
-    bl_train: 10
+    # Times in hours (!) need to be converted to seconds at correct places
+    bl_train: 12
     bl_predict: 4
     at_train: !expr 24 * 6.5 # 156 hours of 168 max
     at_predict: !expr 11 # leave some headroom for job
-  resources:
-    # Cluster limit: 7 days / 168h / 604800s
-    walltime: 604800
-    memory: !expr 1024 * 5.33 # 384/72 memory per node on teton-knl?
 
 # Lower budget, just checking everything works, close to "production"
 trial:
@@ -35,13 +32,29 @@ trial:
       outer: true
     budget:
       evals_constant: 0
-      evals_multiplier: 3
-      runtime_hours: 2
+      evals_multiplier: 2
+      runtime_hours: 6
     timeout:
       bl_train: 10
       bl_predict: 4
       at_train: !expr 12 # 156 hours of 168 max
       at_predict: !expr 11 # leave some headroom for job
+
+debug:
+    reg_name: "registry_debug"
+    fallback:
+      inner: false
+      outer: false
+    budget:
+      evals_constant: 0
+      evals_multiplier: 1
+      runtime_hours: 0.00833333
+    timeout:
+      bl_train: 10
+      bl_predict: 4
+      at_train: !expr 12 # 156 hours of 168 max
+      at_predict: !expr 11 # leave some headroom for job
+
 
 # Ideally only one train/predict step and managable runtime for extrapolation
 runtime_est:
