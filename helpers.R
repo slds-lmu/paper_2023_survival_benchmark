@@ -200,20 +200,23 @@ collect_results = function(
   )
   tictoc::toc()
 
+  # benchmark result
+  tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
+  saveRDS(bmr, file = glue::glue("{result_path}/bmr_{tuning_measure}.rds"))
+  tictoc::toc()
+
+  # bma via mlr3benchmark
   tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
   bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
   tictoc::toc()
 
+  tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
+  saveRDS(bma, glue::glue("{result_path}/bma_{tuning_measure}.rds"))
+  tictoc::toc()
+
+  # benchmark$aggregate
   tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
   aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
-  tictoc::toc()
-
-  tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
-  saveRDS(bmr, file = glue::glue("{result_path}/bmrs_{tuning_measure}.rds"))
-  tictoc::toc()
-
-  tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
-  saveRDS(aggr, glue::glue("{result_path}/bma_{tuning_measure}.rds"))
   tictoc::toc()
 
   tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
@@ -235,6 +238,12 @@ reassemble_archives = function(
   learners = read.csv(here::here("attic", "learners.csv"))
   learners = learners[, c("learner_id", "learner_id_long")]
 
+  learners$learner_id_long = dplyr::case_when(
+    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+    .default = learners$learner_id_long
+  )
+
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     archive = readRDS(file)
 
@@ -251,7 +260,7 @@ reassemble_archives = function(
   }))
 
   archives = archives[learners, on = "learner_id_long"]
-  archives[!is.na(tune_measure), ]
+  archives = archives[!is.na(tune_measure), ]
   archives[, learner_id_long := NULL]
 
   archives

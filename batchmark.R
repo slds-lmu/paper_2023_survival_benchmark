@@ -207,8 +207,25 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   callback_backup = callback_tuning("mlr3tuning.backup_archive",
                                     on_optimization_end = callback_backup_impl)
 
+  # assemble learner_id, disambiguate XGBCox and XGBAFT
+  known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
+                     "surv.cv_glmnet", "surv.penalized", "surv.parametric", "surv.flexible",
+                     "surv.rfsrc", "surv.ranger", "surv.cforest", "surv.aorsf", "surv.rpart",
+                     "surv.mboost", "surv.cv_coxboost", "surv.xgboost", "surv.xgboost",
+                     "surv.svm")
+  pattern = paste0(known_learners, collapse = "|")
+  learner_id = stringr::str_extract(learner$id, pattern)
+  checkmate::assert_string(learner_id, min.chars = 7, pattern = "^surv")
+
+  if (learner_id == "surv.xgboost") {
+    learner_id = switch(learner$param_set$values$surv.xgboost.objective,
+                        `survival:cox` = "surv.xgboostcox",
+                        `survival:aft` = "surv.xgboostaft")
+   checkmate::assert_string(learner_id, min.chars = 15, pattern = "^surv\\.xgboost")
+  }
+
   callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
-  callback_backup$state$learner_id = stringr::str_match(learner$id, "(surv\\.\\w+)\\.")[[2]]
+  callback_backup$state$learner_id = learner_id
   callback_backup$state$tuning_measure = measure$id
 
   callback_archive_logs = callback_tuning("mlr3tuning.archive_logs",
