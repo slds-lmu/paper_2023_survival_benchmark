@@ -301,7 +301,7 @@ collect_job_table = function(
   # Get resource estimates
   resource_tab = read.csv(resource_est_file)
   data.table::setDT(resource_tab)
-  resource_tab = resource_tab[, c("learner_id", "task_id", "measure", "hours", "total_h", "mem_gb")]
+  resource_tab = resource_tab[, c("learner_id", "task_id", "hours", "total_h", "mem_gb")]
   # Reuse XGB results for XGBCox / AFT split
   resource_tab[learner_id == "XGB", learner_id := "XGBcox"]
   xgbaft = data.table::copy(resource_tab[learner_id == "XGBcox",])
@@ -311,7 +311,7 @@ collect_job_table = function(
 
   # Join everything
   alljobs = ljoin(alljobs, tasktab, by = "task_id")
-  alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id", "measure"))
+  alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id"))
   data.table::setkey(alljobs, job.id)
 
   alljobs

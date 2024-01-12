@@ -5,6 +5,10 @@ root = here::here()
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
 settings = config::get()
 
+mem_beartooth = 4681
+mem_teton = 4096
+mem_knl = 5457
+
 library("batchtools")
 library("mlr3batchmark")
 
@@ -30,17 +34,14 @@ alljobs[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  prob
 
 jobs_untuned = alljobs[grepl(",", measure), ]
 jobs_untuned[, chunk := lpt(total_h, 50)]
-print(jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
-
-# jobs_untuned[learner_id == "CoxB", ]
+chunks_untuned = jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
 
 # Tuning on Harrell's C -----------------------------------------------------------------------
 jobs_harrell = alljobs[measure == "harrell_c", ]
 jobs_harrell[, chunk := lpt(total_h, 100)]
-print(jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
-
+chunks_harrell = jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
 
 # Tuning on RCLL -------------------------------------------------------------------
 jobs_rcll = alljobs[measure == "rcll", ]
-jobs_rcll[, chunk := lpt(total_h, 10)]
-print(jobs_rcll[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk])
+jobs_rcll[, chunk := lpt(total_h, 100)]
+chunks_rcll = jobs_rcll[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
