@@ -317,19 +317,25 @@
     },
     "aorsf": {
       "Package": "aorsf",
-      "Version": "0.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.1.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "aorsf",
+      "RemoteRef": "main",
+      "RemoteSha": "c492fe65ea08b52bcc9b800d3da76ab061904296",
       "Requirements": [
         "R",
+        "R6",
         "Rcpp",
         "RcppArmadillo",
         "collapse",
         "data.table",
-        "stats",
+        "lifecycle",
         "utils"
       ],
-      "Hash": "a21a4cbc0fd613cfc82d2d77992eadd9"
+      "Hash": "97009ba54ad97085af6894257f7410f2"
     },
     "askpass": {
       "Package": "askpass",

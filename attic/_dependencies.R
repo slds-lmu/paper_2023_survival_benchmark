@@ -12,7 +12,11 @@ if (FALSE) {
   renv::install("partykit", prompt = FALSE)
   renv::install("sandwich", prompt = FALSE)
   renv::install("coin", prompt = FALSE)
-  renv::install("aorsf", prompt = FALSE)
+
+  # Require 0.1.2 due to split of internal functions and extralearners update
+  # renv::install("aorsf", prompt = FALSE)
+  renv::install("ropensci/aorsf", prompt = FALSE)
+  
   renv::install("rpart", prompt = FALSE)
   renv::install("mboost", prompt = FALSE)
   renv::install("xgboost", prompt = FALSE)
