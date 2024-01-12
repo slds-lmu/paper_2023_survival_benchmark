@@ -80,6 +80,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   checkmate::assert_choice(.form, choices = c("ph", "aft"))
   checkmate::assert_choice(.estimator, choices = c("kaplan", "breslow"))
   cli::cli_h2("Constructing {key} (form = '{(.form)}')")
+  if (.estimator == "breslow") cli::cli_alert_info("Using breslow estimator!")
 
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,

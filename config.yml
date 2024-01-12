@@ -21,8 +21,8 @@ default:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
     bl_predict: 4
-    at_train: !expr 24 * 6.5 # 156 hours of 168 max
-    at_predict: !expr 11 # leave some headroom for job
+    at_train: !expr 150 # of 168 max
+    at_predict: !expr 12 # leave some headroom for job
 
 # Lower budget, just checking everything works, close to "production"
 trial:
@@ -34,11 +34,6 @@ trial:
       evals_constant: 0
       evals_multiplier: 2
       runtime_hours: 6
-    timeout:
-      bl_train: 10
-      bl_predict: 4
-      at_train: !expr 12 # 156 hours of 168 max
-      at_predict: !expr 11 # leave some headroom for job
 
 debug:
     reg_name: "registry_debug"
