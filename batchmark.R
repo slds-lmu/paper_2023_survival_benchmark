@@ -125,7 +125,8 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   # Stack preprocessing on top of learner + distr stuff.
   graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    ppl("distrcompositor", learner = learner, form = .form, estimator = .estimator) |>
+    # Compose $distr prediction, but only if underlying learner does not produce them itself
+    ppl("distrcompositor", learner = learner, form = .form, estimator = .estimator, overwrite = FALSE) |>
     # Need to convert to GraphLearner
     as_learner()
 
