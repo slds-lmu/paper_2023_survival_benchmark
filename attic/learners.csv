@@ -14,5 +14,6 @@
 "RRT","surv.rpart",1,FALSE,FALSE,FALSE,TRUE
 "MBO","surv.mboost",4,FALSE,FALSE,FALSE,FALSE
 "CoxB","surv.cv_coxboost",0,TRUE,TRUE,FALSE,FALSE
-"XGB","surv.xgboost",6,FALSE,TRUE,FALSE,FALSE
+"XGBCox","surv.xgboost",6,FALSE,TRUE,FALSE,FALSE
+"XGBAFT","surv.xgboost",6,FALSE,TRUE,FALSE,FALSE
 "SSVM","surv.svm",4,FALSE,TRUE,TRUE,FALSE
