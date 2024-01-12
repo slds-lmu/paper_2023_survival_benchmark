@@ -259,6 +259,13 @@
       ],
       "Hash": "acb0a5bf38490f26ab8661b467f4f53a"
     },
+    "RhpcBLASctl": {
+      "Package": "RhpcBLASctl",
+      "Version": "0.23-42",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c966ea2957ff75e77afa5c908dfc89e1"
+    },
     "SQUAREM": {
       "Package": "SQUAREM",
       "Version": "2021.1",
@@ -1604,7 +1611,7 @@
     },
     "mboost": {
       "Package": "mboost",
-      "Version": "2.9-8",
+      "Version": "2.9-9",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1624,7 +1631,7 @@
         "survival",
         "utils"
       ],
-      "Hash": "56fbe7f3d0836b00e623ee4a675d0d44"
+      "Hash": "ded8580befd8b183d183f75253f11d87"
     },
     "memoise": {
       "Package": "memoise",
@@ -1695,12 +1702,13 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.17.0",
+      "Version": "0.17.2",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
+        "RhpcBLASctl",
         "backports",
         "checkmate",
         "data.table",
@@ -1716,19 +1724,18 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "367229e0d521f8cc9af254ded4957bd1"
+      "Hash": "1925aac9b5e8d55fb4e6424fdce6d60a"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
-      "Version": "0.1.0",
+      "Version": "0.1.1.9000",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3batchmark",
       "RemoteRef": "main",
-      "RemoteSha": "5e55685c85788b435ad4945c72cf717a97a430dd",
-      "Remotes": "mlr-org/mlr3@release",
+      "RemoteSha": "1aed0c0ba3732d93cc0695150a35d3dbc3aff758",
       "Requirements": [
         "R",
         "batchtools",
@@ -1739,7 +1746,7 @@
         "mlr3misc",
         "uuid"
       ],
-      "Hash": "4d81c6feecd0571f205b27e1c571dd12"
+      "Hash": "592138406a07222bde0d0aa75a049be6"
     },
     "mlr3benchmark": {
       "Package": "mlr3benchmark",
@@ -1765,8 +1772,8 @@
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "e7762b7990991c53cc638f26a25c96f6bb0e7731",
-      "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6",
+      "RemoteSha": "0cbdb722aef3f556f316231401faf1254bfe2768",
+      "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6, ropensci/aorsf",
       "Requirements": [
         "R",
         "R6",
@@ -1777,11 +1784,11 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "a970f6142c224df163163a4007ffea50"
+      "Hash": "86720f52b1620c9db3e7d730c41dbdda"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
-      "Version": "0.5.7",
+      "Version": "0.5.8",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1793,7 +1800,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "4d1fc5ac63fc0d9efbfc3c13d9219b78"
+      "Hash": "fbd56a9aa8cf8fd9c1a8431180685b5c"
     },
     "mlr3measures": {
       "Package": "mlr3measures",
@@ -1825,9 +1832,9 @@
     },
     "mlr3pipelines": {
       "Package": "mlr3pipelines",
-      "Version": "0.5.0-1",
+      "Version": "0.5.0-2",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -1841,18 +1848,18 @@
         "paradox",
         "withr"
       ],
-      "Hash": "409141671ee093e8485a64fc7d077082"
+      "Hash": "f3bf5ab6a463151176b29367401b28fd"
     },
     "mlr3proba": {
       "Package": "mlr3proba",
       "Version": "0.5.8",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "0732d2837379d2d745b0b27718589a83f4572f84",
+      "RemoteSha": "340e5a4bce99695699912cae5aead9656c0926b4",
+      "RemoteHost": "api.github.com",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1869,7 +1876,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "3dd907d7ba8460a7ad753ce883f8559e"
+      "Hash": "38d2625516f4fad9697cd25886a33d94"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2125,7 +2132,6 @@
       "RemoteRef": "main",
       "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
       "Remotes": "xoopR/set6",
-      "Remotes": "xoopR/set6",
       "Requirements": [
         "R6",
         "checkmate",
@@ -2133,7 +2139,7 @@
         "dictionar6",
         "set6"
       ],
-      "Hash": "5e7165321aca392d486e9b0dd4932ad5"
+      "Hash": "f6948611ff164d8375e70fb49c15eed7"
     },
     "partykit": {
       "Package": "partykit",
@@ -2414,7 +2420,7 @@
     },
     "randomForestSRC": {
       "Package": "randomForestSRC",
-      "Version": "3.2.2",
+      "Version": "3.2.3",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2423,7 +2429,7 @@
         "data.tree",
         "parallel"
       ],
-      "Hash": "aacf090d739dc35311a4443afaccc5ce"
+      "Hash": "8d427133fc7f8e54bbc1c96ba203d2c5"
     },
     "ranger": {
       "Package": "ranger",
@@ -2631,7 +2637,7 @@
     },
     "rpart": {
       "Package": "rpart",
-      "Version": "4.1.21",
+      "Version": "4.1.23",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2640,7 +2646,7 @@
         "graphics",
         "stats"
       ],
-      "Hash": "d5bc1a16e01e50e08581f0c362d3955d"
+      "Hash": "b3d390424f41d04174cccf84d49676c2"
     },
     "rprojroot": {
       "Package": "rprojroot",
@@ -2705,7 +2711,7 @@
     },
     "sandwich": {
       "Package": "sandwich",
-      "Version": "3.0-2",
+      "Version": "3.1-0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2714,7 +2720,7 @@
         "utils",
         "zoo"
       ],
-      "Hash": "dd5af939b8690baa8ee0bca996e99924"
+      "Hash": "1cf6ae532f0179350862fefeb0987c9b"
     },
     "sass": {
       "Package": "sass",
@@ -3200,7 +3206,7 @@
     },
     "xgboost": {
       "Package": "xgboost",
-      "Version": "1.7.5.1",
+      "Version": "1.7.6.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -3210,7 +3216,7 @@
         "jsonlite",
         "methods"
       ],
-      "Hash": "6b8d09cf8ffc148162a4d57d01e61490"
+      "Hash": "ac985d74c033923a3e56c6deb500fca3"
     },
     "xml2": {
       "Package": "xml2",
