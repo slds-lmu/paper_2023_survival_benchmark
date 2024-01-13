@@ -290,7 +290,8 @@ collect_job_table = function(
     resource_est_file = here::here("attic", "resource_est_dec.csv"),
     keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name")
     ) {
-  alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))
+  alljobs = unwrap(getJobTable(reg = reg), c("prob.pars", "algo.pars"))
+  checkmate::assert_data_table(alljobs, min.rows = 1)
 
   alljobs = alljobs[, keep_columns, with = FALSE]
 
