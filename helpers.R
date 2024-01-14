@@ -193,35 +193,53 @@ collect_results = function(
   done_perc = round(100 * nrow(done_ids)/nrow(selected_ids), 3)
   cli::cli_alert_info("Selected {nrow(selected_ids)} ids of which {nrow(done_ids)} are done ({done_perc}%)")
 
-  tictoc::tic(msg = glue::glue("Reducing results: {tuning_measure}"))
-  bmr = reduceResultsBatchmark(
-    ids = done_ids,
-    store_backends = TRUE, reg = reg
-  )
-  tictoc::toc()
+  path_bmr = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
+  path_bma = glue::glue("{result_path}/bma_{tuning_measure}.rds")
+  path_aggr = glue::glue("{result_path}/aggr_{tuning_measure}.rds")
 
-  # benchmark result
-  tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
-  saveRDS(bmr, file = glue::glue("{result_path}/bmr_{tuning_measure}.rds"))
-  tictoc::toc()
+  if (!file.exists(path_bmr)) {
+    tictoc::tic(msg = glue::glue("Reducing results: {tuning_measure}"))
+    bmr = reduceResultsBatchmark(
+      ids = done_ids,
+      store_backends = TRUE, reg = reg
+    )
+    tictoc::toc()
+
+    # benchmark result
+    tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
+    saveRDS(bmr, file = path_bmr)
+    tictoc::toc()
+  } else if (!fs::file_exists(path_bma) | !fs::file_exists(path_aggr)) {
+    bmr = readRDS(path_bmr)
+  } else {
+    cli::cli_alert_success("bmr, bma and aggr already exist!")
+  }
 
   # bma via mlr3benchmark
-  tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing results: {tuning_measure}"))
-  bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
-  tictoc::toc()
+  if (!fs::file_exists(path_bma)) {
+    tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing results: {tuning_measure}"))
+    bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
+    tictoc::toc()
 
-  tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
-  saveRDS(bma, glue::glue("{result_path}/bma_{tuning_measure}.rds"))
-  tictoc::toc()
+    tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
+    saveRDS(bma, path_bma)
+    tictoc::toc()
+  } else {
+    cli::cli_alert_success("bma already saved!")
+  }
 
-  # benchmark$aggregate
-  tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
-  aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
-  tictoc::toc()
+  if (!fs::file_exists(path_aggr)) {
+    # benchmark$aggregate
+    tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
+    aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+    tictoc::toc()
 
-  tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
-  saveRDS(aggr, glue::glue("{result_path}/aggr_{tuning_measure}.rds"))
-  tictoc::toc()
+    tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
+    saveRDS(aggr, path_aggr)
+    tictoc::toc()
+  } else {
+    cli::cli_alert_success("aggr already saved!")
+  }
 
 }
 
