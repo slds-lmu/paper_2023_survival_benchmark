@@ -1,6 +1,5 @@
 root = here::here()
-#source(file.path(root, "settings.R"))
-#source(file.path(root, "settings_trial_mode.R"))
+source(file.path(root, "helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
@@ -20,75 +19,64 @@ library(ggplot2)
 reg_dir = file.path(root, settings$reg_name)
 reg = loadRegistry(reg_dir, writeable = TRUE)
 
-alljobs = unwrap(getJobTable(), c("prob.pars", "algo.pars"))[, .(job.id, repl, tags, task_id, learner_id)]
-data.table::setnames(alljobs, "tags", "measure")
-tasktab = read.csv(here::here("attic", "tasktab.csv"))
-alljobs = ljoin(alljobs, tasktab, by = "task_id")
-data.table::setkey(alljobs, job.id)
+alljobs = collect_job_table(reg)
+result_path = here::here("results")
 
-###################################################################################################
-### Reduce results
-###################################################################################################
+# Reassembling tuning archives ----------------------------------------------------------------
+
+if (FALSE) {
+  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path)
+  archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
+}
+
+# Reducing results ----------------------------------------------------------------------------
+
 # Store eval measures for easier retrieval
-measures_eval = list(
-  msr("surv.cindex", id = "harrell_c"),
-  msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-  msr("surv.rcll", id = "rcll"),
+measures_eval = get_measures_eval()
 
-  msr("surv.graf", id = "graf_proper", proper = TRUE),
-  msr("surv.graf", id = "graf_improper", proper = FALSE),
+collect_results(reg, tuning_measure = "harrell_c", measures_eval = measures_eval, result_path = here::here("results"))
+collect_results(reg, tuning_measure = "rcll", measures_eval = measures_eval, result_path = here::here("results"))
 
-  msr("surv.dcalib", id = "dcalib_inf", truncate = Inf),
+aggr_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "aggr_harrell_c.rds"))
+bmr_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "aggr_harrell_c.rds"))
+bma_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
 
-  msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-  msr("surv.logloss", id = "logloss"),
-  msr("surv.calib_alpha", id = "calib")
-)
-names(measures_eval) = mlr3misc::ids(measures_eval)
+# Quick check ---------------------------------------------------------------------------------
 
+bma_harrell_c$friedman_posthoc(meas = measures_eval$harrell_c$id)
 
-# Harrell's C ------------------------------------------------------------------------------------
-
-tictoc::tic(msg = "collecting results: harrell_c")
-bmr_harrell = reduceResultsBatchmark(findTagged("harrell_c"))
-tictoc::toc()
-
-tictoc::tic(msg = "mlr3benchmark aggregating results")
-bma_harrell = mlr3benchmark::as_benchmark_aggr(bmr_harrell, meas = measures_eval)
-tictoc::toc()
+mlr3viz::autoplot(bma_harrell_c, meas = measures_eval$harrell_c$id)
+mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id)
+mlr3viz::autoplot(bma_harrell_c, type = "box", meas = measures_eval$harrell_c$id)
 
 
-tictoc::tic(msg = "saving results")
-saveRDS(bmr, "tmp/bmr_harrell.rds")
-tictoc::toc()
-tictoc::tic(msg = "collecting aggregated results")
-aggr_harrell = bmr_harrell$aggregate(measures = measures_eval, conditions = TRUE)
-tictoc::toc()
-tictoc::tic(msg = "saving aggregated results")
-saveRDS(aggr_harrell, "tmp/aggr_harrell.rds")
-tictoc::toc()
+aggr_harrell_c |>
+  ggplot(aes(x = learner_id, y = harrell_c)) +
+  geom_boxplot()
 
-bma_harrell$friedman_posthoc(meas = "harrell_c")
+aggr_harrell_c |>
+  ggplot(aes(x = learner_id, y = graf_proper)) +
+  geom_boxplot()
 
 
-resamplings_with_error = aggr[errors > 0, nr]
-bmr_harrell$resample_result(resamplings_with_error[1])$errors
+# resamplings_with_error = aggr_harrell_c[errors > 0, nr]
+# bma_harrell_c$resample_result(resamplings_with_error[1])$errors
 
-mlr3viz::autoplot(bmr_harrell, measure = measures_eval$rcll)
-mlr3viz::autoplot(bma_harrell, type = "cd", meas = "harrell_c")
-mlr3viz::autoplot(bma_harrell, type = "box", meas = "harrell_c")
+# aggr_harrell_c[learner_id %in% c("XGBCox", "XGBAFT"), ]
 
+if (FALSE) {
+  ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
+    facet_wrap(vars(task_id)) +
+    geom_boxplot() +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme_minimal(base_size = 14)
 
-ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
-  facet_wrap(vars(task_id)) +
-  geom_boxplot() +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  theme_minimal(base_size = 14)
+  scores = bmr_harrell$score(measures_eval$rcll)
 
-scores = bmr_harrell$score(measures_eval$rcll)
+  ggplot(scores, aes(x = learner_id, y = rcll)) +
+    facet_wrap(vars(task_id)) +
+    geom_boxplot() +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme_minimal()
 
-ggplot(scores, aes(x = learner_id, y = rcll)) +
-  facet_wrap(vars(task_id)) +
-  geom_boxplot() +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  theme_minimal()
+}

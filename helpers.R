@@ -183,9 +183,9 @@ collect_results = function(
 ) {
 
   reg_name = fs::path_file(reg$file.dir)
-  cli::cli_alert_info("Using registry {reg_name}")
+  cli::cli_alert_info("Using registry '{reg_name}'")
   result_path = fs::path(result_path, reg_name)
-  cli::cli_alert_info("Storing results in {result_path}")
+  cli::cli_alert_info("Storing results for '{tuning_measure}' in {fs::path_rel(result_path)}")
   if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
 
   selected_ids = findTagged(tuning_measure, reg = reg)
@@ -206,7 +206,7 @@ collect_results = function(
   tictoc::toc()
 
   # bma via mlr3benchmark
-  tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
+  tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing results: {tuning_measure}"))
   bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
   tictoc::toc()
 
@@ -215,7 +215,7 @@ collect_results = function(
   tictoc::toc()
 
   # benchmark$aggregate
-  tictoc::tic(msg = glue::glue("Aggregating results: {tuning_measure}"))
+  tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
   aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
   tictoc::toc()
 
@@ -246,6 +246,10 @@ reassemble_archives = function(
 
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     archive = readRDS(file)
+
+    # Temp fix because objects became to large
+    cli::cli_alert_info("Removing logs from archives!")
+    archive[, log := NULL]
 
     components = fs::path_file(file) |>
       fs::path_ext_remove() |>
