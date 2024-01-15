@@ -210,7 +210,9 @@ collect_results = function(
     saveRDS(bmr, file = path_bmr)
     tictoc::toc()
   } else if (!fs::file_exists(path_bma) | !fs::file_exists(path_aggr)) {
+    tictoc::tic(msg = glue::glue("Reading bmr from disk: {tuning_measure}"))
     bmr = readRDS(path_bmr)
+    tictoc::toc()
   } else {
     cli::cli_alert_success("bmr, bma and aggr already exist!")
   }
