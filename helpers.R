@@ -180,7 +180,8 @@ collect_results = function(
     reg_name,
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
-    result_path = here::here("results")
+    result_path = here::here("results"),
+    include_aggr = FALSE
 ) {
 
   reg_dir = file.path(root, reg_name)
@@ -239,18 +240,22 @@ collect_results = function(
 
   gc()
 
-  if (!fs::file_exists(path_aggr)) {
-    # benchmark$aggregate
-    tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
-    aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
-    tictoc::toc()
+  # Aggr is probably optional and also takes a while to create
+  if (include_aggr) {
+    if (!fs::file_exists(path_aggr)) {
+      # benchmark$aggregate
+      tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
+      aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+      tictoc::toc()
 
-    tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
-    saveRDS(aggr, path_aggr)
-    tictoc::toc()
-  } else {
-    cli::cli_alert_success("aggr already saved!")
+      tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
+      saveRDS(aggr, path_aggr)
+      tictoc::toc()
+    } else {
+      cli::cli_alert_success("aggr already saved!")
+    }
   }
+
 
 }
 
