@@ -85,16 +85,15 @@ callback_archive_logs_impl = function(callback, context) {
   states = context$benchmark_result$.__enclos_env__$private$.data$learners(states = TRUE)
 
   logs = data.table::rbindlist(lapply(states$learner, \(x) {
-    data.table::data.table(
-      learner_log = list(x$state$log),
-      fallback_log = list(x$state$fallback_state$log)
-    )
+    x$state$log
   }))
 
+  # Only attach log if there's something to attach
+  # if (any(sapply(logs$learner_log, nrow) > 0)) {
   context$aggregated_performance[, log := list(logs)]
+  # }
+
 }
-
-
 
 # Utilities for analysis ----------------------------------------------------------------------
 
@@ -166,7 +165,9 @@ get_measures_eval = function() {
 
 #' Collect and save benchmark results
 #'
-#' @param reg Registry, defaulting to `getDefaultRegistry()`.
+# @param reg Registry, defaulting to `getDefaultRegistry()`.
+#' @param reg_name Name of registry, e.g. `"registry"`.
+#'   Used to load the registry with `writeable = TRUE` to collect results.
 #' @param tuning_measure E.g. "harrell_c"
 #' @param measures_eval List of mlr3 measures used for evaluation
 #' @param result_path `here::here("results")`, where to store results.
@@ -176,13 +177,15 @@ get_measures_eval = function() {
 #'
 #' @examples
 collect_results = function(
-    reg = batchtools::getDefaultRegistry(),
+    reg_name,
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
     result_path = here::here("results")
 ) {
 
-  reg_name = fs::path_file(reg$file.dir)
+  reg_dir = file.path(root, reg_name)
+  reg = batchtools::loadRegistry(reg_dir, writeable = TRUE)
+
   cli::cli_alert_info("Using registry '{reg_name}'")
   result_path = fs::path(result_path, reg_name)
   cli::cli_alert_info("Storing results for '{tuning_measure}' in {fs::path_rel(result_path)}")
@@ -205,6 +208,8 @@ collect_results = function(
     )
     tictoc::toc()
 
+    gc()
+
     # benchmark result
     tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
     saveRDS(bmr, file = path_bmr)
@@ -216,6 +221,8 @@ collect_results = function(
   } else {
     cli::cli_alert_success("bmr, bma and aggr already exist!")
   }
+
+  gc()
 
   # bma via mlr3benchmark
   if (!fs::file_exists(path_bma)) {
@@ -229,6 +236,8 @@ collect_results = function(
   } else {
     cli::cli_alert_success("bma already saved!")
   }
+
+  gc()
 
   if (!fs::file_exists(path_aggr)) {
     # benchmark$aggregate
@@ -268,8 +277,8 @@ reassemble_archives = function(
     archive = readRDS(file)
 
     # Temp fix because objects became to large
-    cli::cli_alert_info("Removing logs from archives!")
-    archive[, log := NULL]
+    # cli::cli_alert_info("Removing logs from archives!")
+    # archive[, log := NULL]
 
     components = fs::path_file(file) |>
       fs::path_ext_remove() |>
