@@ -1737,11 +1737,11 @@
       "Version": "0.1.1.9000",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3batchmark",
       "RemoteRef": "main",
       "RemoteSha": "1aed0c0ba3732d93cc0695150a35d3dbc3aff758",
+      "RemoteHost": "api.github.com",
       "Requirements": [
         "R",
         "batchtools",
@@ -1861,11 +1861,11 @@
       "Version": "0.5.8",
       "Source": "GitHub",
       "RemoteType": "github",
+      "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "340e5a4bce99695699912cae5aead9656c0926b4",
-      "RemoteHost": "api.github.com",
+      "RemoteSha": "8565481b22e25655d434fdd2f055fa759f430fed",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1882,7 +1882,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "38d2625516f4fad9697cd25886a33d94"
+      "Hash": "9c460768437365c36c5fd6b2d6d8d3cc"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2138,6 +2138,7 @@
       "RemoteRef": "main",
       "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
       "Remotes": "xoopR/set6",
+      "Remotes": "xoopR/set6",
       "Requirements": [
         "R6",
         "checkmate",
@@ -2145,7 +2146,7 @@
         "dictionar6",
         "set6"
       ],
-      "Hash": "f6948611ff164d8375e70fb49c15eed7"
+      "Hash": "5e7165321aca392d486e9b0dd4932ad5"
     },
     "partykit": {
       "Package": "partykit",
