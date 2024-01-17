@@ -362,25 +362,27 @@ collect_job_table = function(
 #'
 #' @param alljobs Job table as returned by `collect_job_table()`. notably with column `measure`.
 #'   Will call `collect_job_table()` if not provided.
+#' @param byvars `character` Vector of variables in `alljobs` to group by, default is `"measure"`
 #'
 #' @return A `data.table` with main column `measure` and one column for each job state
 #'   (`queued`, `running`, `errored`, ...)
 #' @example
 #' check_job_state()
-check_job_state = function(alljobs = NULL) {
+#' check_job_state(byvars = c("measure", "learner_id"))
+check_job_state = function(alljobs = NULL, byvars = "measure") {
   if (is.null(alljobs)) {
     alljobs = collect_job_table()
   }
 
-  job_n = alljobs[, .(total = .N), by = measure]
+  job_n = alljobs[, .(total = .N), by = byvars]
 
   state_tab = data.table::rbindlist(list(
-    alljobs[findDone(), .(n = .N, state = "done"), by = measure][job_n, on = "measure"],
-    alljobs[findRunning(), .(n = .N, state = "running"), by = measure][job_n, on = "measure"],
-    alljobs[findErrors(), .(n = .N, state = "errored"), by = measure][job_n, on = "measure"],
-    alljobs[findExpired(), .(n = .N, state = "expired"), by = measure][job_n, on = "measure"],
-    alljobs[findQueued(), .(n = .N, state = "queued"), by = measure][job_n, on = "measure"],
-    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = measure][job_n, on = "measure"]
+    alljobs[findDone(), .(n = .N, state = "done"), by = byvars][job_n, on = byvars],
+    alljobs[findRunning(), .(n = .N, state = "running"), by = byvars][job_n, on = byvars],
+    alljobs[findErrors(), .(n = .N, state = "errored"), by = byvars][job_n, on = byvars],
+    alljobs[findExpired(), .(n = .N, state = "expired"), by = byvars][job_n, on = byvars],
+    alljobs[findQueued(), .(n = .N, state = "queued"), by = byvars][job_n, on = byvars],
+    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars][job_n, on = byvars]
   ))[!is.na(n), ]
 
   state_tab = state_tab[, perc := round(100 * n / total, 1)]
@@ -388,11 +390,13 @@ check_job_state = function(alljobs = NULL) {
   state_tab[, n := NULL]
   state_tab[, perc := NULL]
   state_tab[, total := NULL]
-  state_tab = data.table::dcast(state_tab, measure ~ state,
-                                fill = "\u2014", value.var = "val",
-                                fun.aggregate = identity
-                                )
-  state_tab[c(1, 3, 2),]
+  state_tab = data.table::dcast(
+    state_tab, ...  ~ state,
+    fill = "\u2014", value.var = "val",
+    fun.aggregate = identity
+  )
+  #state_tab[c(1, 3, 2),]
+  state_tab[]
 }
 
 
