@@ -395,8 +395,9 @@ check_job_state = function(alljobs = NULL, byvars = "measure") {
     fill = "\u2014", value.var = "val",
     fun.aggregate = identity
   )
-  #state_tab[c(1, 3, 2),]
-  state_tab[]
+
+  # Sorting cols like this feels less awkward than in base/dt I guess
+  dplyr::select(state_tab, dplyr::any_of(byvars), dplyr::any_of(c("not_submitted", "queued", "running", "errored", "expired", "done")))
 }
 
 
