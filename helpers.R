@@ -267,7 +267,11 @@ reassemble_archives = function(
     result_path = here::here("results")
   ) {
 
-  tuning_files = fs::dir_ls(here::here(reg_dir, "tuning_archives"))
+  archive_dir = here::here(reg_dir, "tuning_archives")
+  tuning_files = fs::dir_ls(archive_dir)
+  if (length(tuning_files) == 0) {
+    cli::cli_abort("No tuning archives found in {fs::path_rel(archive_dir)}!")
+  }
 
   learners = read.csv(here::here("attic", "learners.csv"))
   learners = learners[, c("learner_id", "learner_id_long")]
@@ -327,7 +331,7 @@ collect_job_table = function(
     task_tab_file = here::here("attic", "tasktab.csv"),
     resource_est_file = here::here("attic", "resource_est_dec.csv"),
     keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
-    optional_columns = c("batch.id", "comment")
+    optional_columns = c("batch.id", "comment", "memory")
     ) {
   alljobs = unwrap(getJobTable(reg = reg))
   checkmate::assert_data_table(alljobs, min.rows = 1)
