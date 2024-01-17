@@ -326,7 +326,7 @@ collect_job_table = function(
     reg = batchtools::getDefaultRegistry(),
     task_tab_file = here::here("attic", "tasktab.csv"),
     resource_est_file = here::here("attic", "resource_est_dec.csv"),
-    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name")
+    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name", "batch.id", "comment")
     ) {
   alljobs = unwrap(getJobTable(reg = reg), c("prob.pars", "algo.pars"))
   checkmate::assert_data_table(alljobs, min.rows = 1)
