@@ -326,12 +326,14 @@ collect_job_table = function(
     reg = batchtools::getDefaultRegistry(),
     task_tab_file = here::here("attic", "tasktab.csv"),
     resource_est_file = here::here("attic", "resource_est_dec.csv"),
-    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name", "batch.id", "comment")
+    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
+    optional_columns = c("batch.id", "comment")
     ) {
-  alljobs = unwrap(getJobTable(reg = reg), c("prob.pars", "algo.pars"))
+  alljobs = unwrap(getJobTable(reg = reg))
   checkmate::assert_data_table(alljobs, min.rows = 1)
 
-  alljobs = alljobs[, keep_columns, with = FALSE]
+  alljobs = alljobs[, c(keep_columns, optional_columns[optional_columns %in% names(alljobs)])
+                    , with = FALSE]
 
   data.table::setnames(alljobs, "tags", "measure")
 
@@ -354,6 +356,43 @@ collect_job_table = function(
   data.table::setkey(alljobs, job.id)
 
   alljobs
+}
+
+#' Aggregate job status by measure
+#'
+#' @param alljobs Job table as returned by `collect_job_table()`. notably with column `measure`.
+#'   Will call `collect_job_table()` if not provided.
+#'
+#' @return A `data.table` with main column `measure` and one column for each job state
+#'   (`queued`, `running`, `errored`, ...)
+#' @example
+#' check_job_state()
+check_job_state = function(alljobs = NULL) {
+  if (is.null(alljobs)) {
+    alljobs = collect_job_table()
+  }
+
+  job_n = alljobs[, .(total = .N), by = measure]
+
+  state_tab = data.table::rbindlist(list(
+    alljobs[findDone(), .(n = .N, state = "done"), by = measure][job_n, on = "measure"],
+    alljobs[findRunning(), .(n = .N, state = "running"), by = measure][job_n, on = "measure"],
+    alljobs[findErrors(), .(n = .N, state = "errored"), by = measure][job_n, on = "measure"],
+    alljobs[findExpired(), .(n = .N, state = "expired"), by = measure][job_n, on = "measure"],
+    alljobs[findQueued(), .(n = .N, state = "queued"), by = measure][job_n, on = "measure"],
+    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = measure][job_n, on = "measure"]
+  ))[!is.na(n), ]
+
+  state_tab = state_tab[, perc := round(100 * n / total, 1)]
+  state_tab = state_tab[, val := sprintf("%3.1f%% (%i)", perc, n)][]
+  state_tab[, n := NULL]
+  state_tab[, perc := NULL]
+  state_tab[, total := NULL]
+  state_tab = data.table::dcast(state_tab, measure ~ state,
+                                fill = "\u2014", value.var = "val",
+                                fun.aggregate = identity
+                                )
+  state_tab[c(1, 3, 2),]
 }
 
 
