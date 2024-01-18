@@ -1,13 +1,12 @@
 ---
-title: "Status"
-author: "Lukas Burk"
-date: "`r Sys.Date()`"
-output: 
-  html_document: 
-    toc: yes
-    toc_float: yes
-    fig_width: 9
-    fig_height: 6
+title: "Benchmark Status"
+author: Lukas
+date: now
+date-format: "YYYY-MM-DD HH:mm:ss Z"
+format: 
+  html:
+   toc: true
+editor: source
 editor_options: 
   chunk_output_type: console
 ---
@@ -30,8 +29,7 @@ reg = loadRegistry(reg_dir, writeable = FALSE)
 tablify = function(x) {
   x |>
     kbl() |>
-    kable_styling(bootstrap_options = c("striped", "hover")) |>
-    group_rows(table(x[[1]]))
+    kable_styling(bootstrap_options = c("striped", "hover"))
 }
 ```
 
@@ -88,4 +86,3 @@ check_job_state(byvars = c("learner_id", "task_id")) |>
 check_job_state(byvars = c("task_id", "learner_id")) |>
   tablify()
 ```
-
