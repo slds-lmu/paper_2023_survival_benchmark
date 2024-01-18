@@ -6,7 +6,7 @@ date-format: "YYYY-MM-DD HH:mm:ss Z"
 format: 
   html:
    toc: true
-   embed-resources: true
+   embed-resources: false
    code-fold: true
    fig-align: center
 editor: source
