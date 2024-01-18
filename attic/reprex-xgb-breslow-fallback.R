@@ -78,8 +78,10 @@ learners = list(
 
 imap(learners, function(l, id) l$id = id)
 
+tasks = tsk("rats")
+
 grid = benchmark_grid(
-  tasks = tsk("rats"),
+  tasks = tasks,
   learners = learners,
   resamplings = rsmp("holdout", ratio = 4/5)
 )
@@ -101,18 +103,18 @@ aggr
 
 # Error in question I can't figure out -----------------------------------
 
-learners$XGBCox_fallback_breslow$train(tasks$rats)
-learners$XGBCox_fallback_breslow$predict(tasks$rats)
+learners$XGBCox_fallback_breslow$train(tasks)
+learners$XGBCox_fallback_breslow$predict(tasks)
 learners$XGBCox_fallback_breslow$state$log
 
 # Doesn't appear without fallback
-learners$XGBCox_nofallback_breslow$train(tasks$rats)
-learners$XGBCox_nofallback_breslow$predict(tasks$rats)
+learners$XGBCox_nofallback_breslow$train(tasks)
+learners$XGBCox_nofallback_breslow$predict(tasks)
 learners$XGBCox_nofallback_breslow$state$log
 
 # Nor with fallback but without breslow
-learners$XGBCox_fallback_kaplan$train(tasks$rats)
-learners$XGBCox_fallback_kaplan$predict(tasks$rats)
+learners$XGBCox_fallback_kaplan$train(tasks)
+learners$XGBCox_fallback_kaplan$predict(tasks)
 learners$XGBCox_fallback_kaplan$state$log
 
 
