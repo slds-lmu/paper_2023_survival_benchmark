@@ -12,6 +12,10 @@ settings = config::get()
 # Dependencies managed via renv. Manually update as necessary via renv::update()
 # See also attic/_dependencies.R
 # renv::restore(prompt = FALSE)
+rs = renv::status()
+if (!rs$synchronized) {
+  cli::cli_alert_danger("renv library not synchronized!")
+}
 
 library("mlr3misc")
 library("mlr3")
