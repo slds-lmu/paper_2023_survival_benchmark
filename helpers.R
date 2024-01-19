@@ -144,23 +144,59 @@ load_lrntab = function(path = here::here("attic", "learners.csv")) {
 #' Quickly recreate list of evaluation measures
 #'
 #' Define once, use everywhere.
+#
+#get_measures_eval = function() {
+#  measures_eval = list(
+#    msr("surv.cindex", id = "harrell_c"),
+#    msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
+#    msr("surv.rcll", id = "rcll"),
+#
+#    msr("surv.graf", id = "graf_proper", proper = TRUE),
+#    msr("surv.graf", id = "graf_improper", proper = FALSE),
+#
+#    msr("surv.dcalib", id = "dcalib", truncate = Inf),
+#
+#    msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
+#    msr("surv.logloss", id = "logloss"),
+#    msr("surv.calib_alpha", id = "caliba")
+#  )
+#  names(measures_eval) = mlr3misc::ids(measures_eval)
+#  measures_eval
+#}
+
 get_measures_eval = function() {
   measures_eval = list(
-    msr("surv.cindex", id = "harrell_c"),
-    msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-    msr("surv.rcll", id = "rcll"),
+    msr("surv.cindex", id = "harrell_c", label = "Harrell's C"),
+    msr("surv.cindex", id = "uno_c", weight_meth = "G2", label = "Uno's C"),
+    msr("surv.rcll", id = "rcll", ERV = TRUE, label = "Right-Centered Log Loss (ERV)"),
 
-    msr("surv.graf", id = "graf_proper", proper = TRUE),
-    msr("surv.graf", id = "graf_improper", proper = FALSE),
+    msr("surv.graf", id = "graf_proper", proper = TRUE, ERV = TRUE, label = "Graf Score (Proper, ERV)"),
+    msr("surv.graf", id = "graf_improper", proper = FALSE, ERV = TRUE, label = "Graf Score (Improper, ERV)"),
 
-    msr("surv.dcalib", id = "dcalib", truncate = Inf),
+    msr("surv.dcalib", id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
 
-    msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-    msr("surv.logloss", id = "logloss"),
-    msr("surv.calib_alpha", id = "caliba")
+    msr("surv.intlogloss", id = "intlogloss", proper = TRUE, label = "Integrated Log Loss"),
+    msr("surv.logloss", id = "logloss", label = "Log Loss"),
+    msr("surv.calib_alpha", id = "caliba", label = "Van Houwelingen's Alpha")
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
   measures_eval
+}
+
+
+if (FALSE) {
+  mlr3misc::rowwise_table(
+    ~mlr_id,            ~id,             ~name,
+    "surv.cindex",      "harrell_c",     "Harrell's C",
+    "surv.cindex",      "uno_c",         "Uno's C",
+    "surv.rcll",        "rcll",          "Right-Centered Log Loss",
+    "surv.graf",        "graf_proper",   "Graf Score (Proper)",
+    "surv.grad",        "graf_improper", "Graf Score (Improper)",
+    "surv.dcalib",      "dcalib",        "D-Calibration",
+    "surv.intlogloss",  "intlogloss",    "Integrated Log Loss",
+    "surv.logloss",     "logloss",       "Log Loss",
+    "surv.calib_alpha", "caliba",        "Van Houwelingen's Alpha"
+  )
 }
 
 #' Collect and save benchmark results
