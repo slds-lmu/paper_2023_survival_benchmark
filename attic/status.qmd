@@ -49,23 +49,50 @@ alljobs = collect_job_table(
 )
 
 alljobs[, time.running := as.numeric(time.running, unit = "secs")]
-
-alljobs |>
+job_completion = alljobs |>
   filter(!is.na(done)) |>
   arrange(done) |>
   mutate(
     k = row_number(),
     prop = k / nrow(alljobs)
-  ) |>
+  )
+
+job_completion |>
   ggplot(aes(x = done, y = prop)) +
-  geom_step(size = 2) +
-  scale_y_continuous(labels = scales::label_percent(), limits = c(0, 1)) +
+  geom_step(linewidth = 1.5) +
+  geom_smooth(method = "lm", color = "red", linetype = "dashed") +
+  scale_y_continuous(
+    breaks = seq(0, 1, .2),
+    labels = scales::label_percent(), 
+    limits = c(0, 1)
+  ) +
   scale_x_datetime(
     date_breaks = "1 day", date_labels = "%b %d",
   ) +
   labs(
     title = "Survival Benchmark Progress",
     subtitle = "Cumulative percentage of finished jobs over time",
+    x = "Date", y = "% of total jobs [5088]"
+  ) +
+  theme_minimal(base_size = 14)
+
+job_completion |>
+  filter(done >= lubridate::now() - lubridate::ddays(2)) |>
+  ggplot(aes(x = done, y = prop)) +
+  geom_step(linewidth = 1.5) +
+  geom_smooth(method = "lm", color = "red", linetype = "dashed", fullrange = TRUE) +
+  scale_y_continuous(
+    #breaks = seq(0, 1, .2),
+    labels = scales::label_percent(), 
+    #imits = c(0, 1)
+  ) +
+  scale_x_datetime(
+    date_breaks = "1 day", date_labels = "%b %d"
+    # limits = c(lubridate::now() - lubridate::ddays(2), lubridate::now() + lubridate::ddays(1))
+  ) +
+  labs(
+    title = "Survival Benchmark Progress",
+    subtitle = "Cumulative percentage of finished jobs over the past 48 hours",
     x = "Date", y = "% of total jobs [5088]"
   ) +
   theme_minimal(base_size = 14)
