@@ -4,7 +4,7 @@ source(file.path(root, "helpers.R"))
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
-settings = config::get()
+settings = config::get(config = "beartooth")
 
 
 ###################################################################################################
@@ -35,12 +35,13 @@ if (FALSE) {
 
 # Store eval measures for easier retrieval
 measures_eval = get_measures_eval()
+measures_eval_ids = mlr3misc::ids(measures_eval)
 
 collect_results(settings$reg_name, tuning_measure = "harrell_c", measures_eval = measures_eval, result_path = here::here("results"))
 collect_results(settings$reg_name, tuning_measure = "rcll", measures_eval = measures_eval, result_path = here::here("results"))
 
 bmr_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bmr_harrell_c.rds"))
-aggr_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "aggr_harrell_c.rds"))
+# aggr_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "aggr_harrell_c.rds"))
 bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
 
 # Quick check ---------------------------------------------------------------------------------
@@ -49,41 +50,41 @@ bmr_tab = bmr_harrell_c$aggregate(measures = list(), conditions = TRUE)
 bmr_tab[errors > 0,][, .(n = .N), by = .(task_id)]
 bmr_tab[errors > 0,][, .(n = .N), by = .(learner_id)]
 
-
 bma_harrell_c$friedman_posthoc(meas = measures_eval$harrell_c$id)
 
-mlr3viz::autoplot(bma_harrell_c, meas = measures_eval$harrell_c$id)
-mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id)
+mlr3viz::autoplot(bma_harrell_c, type = "mean", meas = measures_eval$harrell_c$id)
 mlr3viz::autoplot(bma_harrell_c, type = "box", meas = measures_eval$harrell_c$id)
 
+mlr3viz::autoplot(bma_harrell_c, type = "fn", meas = measures_eval$harrell_c$id)
 
-aggr_harrell_c |>
-  ggplot(aes(x = learner_id, y = harrell_c)) +
-  geom_boxplot()
-
-aggr_harrell_c |>
-  ggplot(aes(x = learner_id, y = graf_proper)) +
-  geom_boxplot()
+mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "nemenyi")
+mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "bd", baseline = "CPH")
 
 
-# resamplings_with_error = aggr_harrell_c[errors > 0, nr]
-# bma_harrell_c$resample_result(resamplings_with_error[1])$errors
+# Bulk-write all relevant plots ---------------------------------------------------------------
 
-# aggr_harrell_c[learner_id %in% c("XGBCox", "XGBAFT"), ]
+if (!fs::dir_exists(fs::path(result_path, settings$reg_name, "harrell_c"))) {
+  fs::dir_create(fs::path(result_path, settings$reg_name, "harrell_c"))
+}
 
-if (FALSE) {
-  ggplot(aggr, aes(x = learner_id, y = harrell_c)) +
-    facet_wrap(vars(task_id)) +
-    geom_boxplot() +
-    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-    theme_minimal(base_size = 14)
+for (measure_id in measures_eval_ids) {
+  for (type in c("mean", "box", "fn", "cd")) {
+    file_path = fs::path(result_path, settings$reg_name, "harrell_c", glue::glue("{measure_id}_{type}"))
+    print(file_path)
 
-  scores = bmr_harrell$score(measures_eval$rcll)
+    try({
+      p = mlr3viz::autoplot(bma_harrell_c, type = type, meas = measure_id) +
+        labs(
+          x = "Learner",
+          y = measures_eval[[measure_id]]$label,
+          caption = glue::glue("Tuning measure: Harrell's C")
+        ) +
+        theme_minimal(base_size = 16)
 
-  ggplot(scores, aes(x = learner_id, y = rcll)) +
-    facet_wrap(vars(task_id)) +
-    geom_boxplot() +
-    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-    theme_minimal()
+      ggsave(fs::path_ext_set(file_path, "png"), plot = p, width = 9, height = 6, bg = "white")
+      ggsave(fs::path_ext_set(file_path, "pdf"), plot = p, width = 9, height = 6, bg = "white")
+    })
+
+  }
 
 }
