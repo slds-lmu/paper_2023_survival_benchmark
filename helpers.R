@@ -297,6 +297,7 @@ reassemble_archives = function(
 
     data.table::data.table(t(components),
                archive = list(archive),
+               file = file,
                warnings_sum = sum(archive$warnings),
                errors_sum = sum(archive$errors))
   }))
@@ -305,7 +306,7 @@ reassemble_archives = function(
   archives = archives[!is.na(tune_measure), ]
   archives[, learner_id_long := NULL]
 
-  archives
+  archives[]
 
 }
 
