@@ -24,6 +24,10 @@ default:
     at_train: !expr 150 # of 168 max
     at_predict: !expr 12 # leave some headroom for job
 
+# For local disambiguation on other hosts
+beartooth:
+    reg_name: "registry_beartooth"
+
 # Lower budget, just checking everything works, close to "production"
 trial:
     reg_name: "registry_trial"
