@@ -231,6 +231,7 @@ collect_results = function(
   cli::cli_alert_info("Selected {nrow(selected_ids)} ids of which {nrow(done_ids)} are done ({done_perc}%)")
 
   path_bmr = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
+  path_bmr_tab = glue::glue("{result_path}/bmrtab_{tuning_measure}.rds")
   path_bma = glue::glue("{result_path}/bma_{tuning_measure}.rds")
   path_aggr = glue::glue("{result_path}/aggr_{tuning_measure}.rds")
 
@@ -243,6 +244,9 @@ collect_results = function(
     tictoc::toc()
 
     gc()
+
+    bmr_tab = bmr$aggregate(measures = list(), conditions = TRUE)
+    saveRDS(bmr_tab, path_bmr_tab)
 
     # benchmark result
     tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
