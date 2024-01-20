@@ -166,18 +166,15 @@ load_lrntab = function(path = here::here("attic", "learners.csv")) {
 
 get_measures_eval = function() {
   measures_eval = list(
-    msr("surv.cindex", id = "harrell_c", label = "Harrell's C"),
-    msr("surv.cindex", id = "uno_c", weight_meth = "G2", label = "Uno's C"),
-    msr("surv.rcll", id = "rcll", ERV = TRUE, label = "Right-Centered Log Loss (ERV)"),
-
-    msr("surv.graf", id = "graf_proper", proper = TRUE, ERV = TRUE, label = "Graf Score (Proper, ERV)"),
-    msr("surv.graf", id = "graf_improper", proper = FALSE, ERV = TRUE, label = "Graf Score (Improper, ERV)"),
-
-    msr("surv.dcalib", id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
-
-    msr("surv.intlogloss", id = "intlogloss", proper = TRUE, label = "Integrated Log Loss"),
-    msr("surv.logloss", id = "logloss", label = "Log Loss"),
-    msr("surv.calib_alpha", id = "caliba", label = "Van Houwelingen's Alpha")
+    msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
+    msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
+    msr("surv.rcll",        id = "rcll",       ERV = TRUE,         label = "Right-Centered Log Loss (ERV)"),
+    msr("surv.logloss",     id = "logloss",    ERV = TRUE,         label = "Log Loss (ERV)"),
+    msr("surv.intlogloss",  id = "intlogloss", ERV = TRUE, proper = TRUE, label = "Integrated Log Loss (Proper, ERV)"),
+    msr("surv.calib_alpha", id = "caliba",                         label = "Van Houwelingen's Alpha"),
+    msr("surv.dcalib",      id = "dcalib",     truncate = 10,      label = "D-Calibration (truncated)"),
+    msr("surv.graf",        id = "graf_proper",   proper = TRUE,   ERV = TRUE, label = "Graf Score (Proper, ERV)"),
+    msr("surv.graf",        id = "graf_improper", proper = FALSE,  ERV = TRUE, label = "Graf Score (Improper, ERV)")
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
   measures_eval
@@ -191,7 +188,7 @@ if (FALSE) {
     "surv.cindex",      "uno_c",         "Uno's C",
     "surv.rcll",        "rcll",          "Right-Centered Log Loss",
     "surv.graf",        "graf_proper",   "Graf Score (Proper)",
-    "surv.grad",        "graf_improper", "Graf Score (Improper)",
+    "surv.graf",        "graf_improper", "Graf Score (Improper)",
     "surv.dcalib",      "dcalib",        "D-Calibration",
     "surv.intlogloss",  "intlogloss",    "Integrated Log Loss",
     "surv.logloss",     "logloss",       "Log Loss",
