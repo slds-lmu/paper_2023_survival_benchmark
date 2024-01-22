@@ -214,7 +214,8 @@ collect_results = function(
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
     result_path = here::here("results"),
-    include_aggr = FALSE
+    include_aggr = FALSE,
+    id_filter = NULL
 ) {
 
   reg_dir = file.path(root, reg_name)
@@ -225,10 +226,15 @@ collect_results = function(
   cli::cli_alert_info("Storing results for '{tuning_measure}' in {fs::path_rel(result_path)}")
   if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
 
-  selected_ids = findTagged(tuning_measure, reg = reg)
-  done_ids = findDone(selected_ids)
+  selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
+  done_ids = batchtools::findDone(selected_ids)
   done_perc = round(100 * nrow(done_ids)/nrow(selected_ids), 3)
   cli::cli_alert_info("Selected {nrow(selected_ids)} ids of which {nrow(done_ids)} are done ({done_perc}%)")
+
+  if (!is.null(id_filter)) {
+    done_ids = ijoin(done_ids, id_filter)
+    cli::cli_alert_info("Filtering down to {nrow(done_ids)} ids")
+  }
 
   path_bmr = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
   path_bmr_tab = glue::glue("{result_path}/bmrtab_{tuning_measure}.rds")
@@ -348,6 +354,24 @@ reassemble_archives = function(
   archives[]
 
 }
+
+#' Perform global Friedman tests and collect results
+#'
+#' A thin wrapper around `BenchmarkAggr`'s `$friedman_test()` with some cleanup.
+#' @param bma A `BenchmarkAggr` object.
+#' @param measure_id A `character` vector of measure ids present in `bma`.
+#' @param digits `[3]` Passed to `format.pval`.
+#' @param conf.level `[0.95]` Passed to `format.val(..., eps = 1 - conf.level)`.
+aggr_friedman_global = function(bma, measure_id, digits = 3, conf.level = 0.95) {
+  res = data.table::rbindlist(lapply(measures_eval_ids, \(x) {
+    ret = broom::tidy(bma_harrell_c$friedman_test(meas = x))
+    ret$measure = x
+    ret[, c("measure", "statistic", "p.value", "parameter")]
+  }))
+
+  res[, p.value.fmt := format.pval(p.value, digits = 3, eps = 1 - conf.level)][]
+}
+
 
 # Utilities for job management ----------------------------------------------------------------
 
