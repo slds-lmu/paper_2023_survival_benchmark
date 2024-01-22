@@ -246,6 +246,8 @@ collect_results = function(
     gc()
 
     bmr_tab = bmr$aggregate(measures = list(), conditions = TRUE)
+    bmr_tab = data.table::as.data.table(bmr_tab)
+    bmr_tab[, resample_result := NULL]
     saveRDS(bmr_tab, path_bmr_tab)
 
     # benchmark result
