@@ -186,7 +186,7 @@ if (FALSE) {
     ~mlr_id,            ~id,             ~name,
     "surv.cindex",      "harrell_c",     "Harrell's C",
     "surv.cindex",      "uno_c",         "Uno's C",
-    "surv.rcll",        "rcll",          "Right-Centered Log Loss",
+    "surv.rcll",        "rcll",          "Right-Censored Log Loss",
     "surv.graf",        "graf_proper",   "Graf Score (Proper)",
     "surv.graf",        "graf_improper", "Graf Score (Improper)",
     "surv.dcalib",      "dcalib",        "D-Calibration",
