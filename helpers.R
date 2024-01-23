@@ -168,7 +168,7 @@ get_measures_eval = function() {
   measures_eval = list(
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
-    msr("surv.rcll",        id = "rcll",       ERV = TRUE,         label = "Right-Centered Log Loss (ERV)"),
+    msr("surv.rcll",        id = "rcll",       ERV = TRUE,         label = "Right-Censored Log Loss (ERV)"),
     msr("surv.logloss",     id = "logloss",    ERV = TRUE,         label = "Log Loss (ERV)"),
     msr("surv.intlogloss",  id = "intlogloss", ERV = TRUE, proper = TRUE, label = "Integrated Log Loss (Proper, ERV)"),
     msr("surv.calib_alpha", id = "caliba",                         label = "Van Houwelingen's Alpha"),
