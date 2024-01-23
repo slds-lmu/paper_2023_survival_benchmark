@@ -309,7 +309,8 @@ collect_results = function(
 #' @param result_path `here::here("results")`
 reassemble_archives = function(
     reg_dir,
-    result_path = here::here("results")
+    result_path = here::here("results"),
+    keep_logs = TRUE
   ) {
 
   archive_dir = here::here(reg_dir, "tuning_archives")
@@ -330,9 +331,11 @@ reassemble_archives = function(
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     archive = readRDS(file)
 
-    # Temp fix because objects became to large
-    # cli::cli_alert_info("Removing logs from archives!")
-    # archive[, log := NULL]
+    if (!keep_logs) {
+      # Temp fix because objects became to large
+      # cli::cli_alert_info("Removing logs from archives!")
+      archive[, log := NULL]
+    }
 
     components = fs::path_file(file) |>
       fs::path_ext_remove() |>
