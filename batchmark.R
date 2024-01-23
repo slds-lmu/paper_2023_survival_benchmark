@@ -404,7 +404,7 @@ learners = list(
     surv.xgboost.subsample = p_dbl(0.5, 1),
     surv.xgboost.colsample_bytree = p_dbl(0, 1),
     surv.xgboost.nrounds = p_int(10, 5000),
-    surv.xgboost.eta = p_dbl(0, 1, logscale = TRUE),
+    surv.xgboost.eta = p_dbl(1e-3, 1, logscale = TRUE),
     surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
   )
 
@@ -422,7 +422,7 @@ learners = list(
     surv.xgboost.subsample = p_dbl(0.5, 1),
     surv.xgboost.colsample_bytree = p_dbl(0, 1),
     surv.xgboost.nrounds = p_int(10, 5000),
-    surv.xgboost.eta = p_dbl(0, 1, logscale = TRUE),
+    surv.xgboost.eta = p_dbl(1e-3, 1, logscale = TRUE),
     surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide")),
     surv.xgboost.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
     surv.xgboost.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
