@@ -217,39 +217,13 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     tuner = tnr("random_search")
   }
 
-  callback_backup = callback_tuning("mlr3tuning.backup_archive",
-                                    on_optimization_end = callback_backup_impl)
-
-  # assemble learner_id, disambiguate XGBCox and XGBAFT
-  known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
-                     "surv.cv_glmnet", "surv.penalized", "surv.parametric", "surv.flexible",
-                     "surv.rfsrc", "surv.ranger", "surv.cforest", "surv.aorsf", "surv.rpart",
-                     "surv.mboost", "surv.cv_coxboost", "surv.xgboost", "surv.xgboost",
-                     "surv.svm")
-  pattern = paste0(known_learners, collapse = "|")
-  learner_id = stringr::str_extract(learner$id, pattern)
-  checkmate::assert_string(learner_id, min.chars = 7, pattern = "^surv")
-
-  if (learner_id == "surv.xgboost") {
-    learner_id = switch(learner$param_set$values$surv.xgboost.objective,
-                        `survival:cox` = "surv.xgboostcox",
-                        `survival:aft` = "surv.xgboostaft")
-   checkmate::assert_string(learner_id, min.chars = 15, pattern = "^surv\\.xgboost")
-  }
-
-  callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
-  callback_backup$state$learner_id = learner_id
-  callback_backup$state$tuning_measure = measure$id
-
-  callback_archive_logs = callback_tuning("mlr3tuning.archive_logs",
-                                          on_eval_before_archive = callback_archive_logs_impl)
 
   at = AutoTuner$new(
     learner = learner,
     search_space = search_space,
     resampling = resampling,
     # Measure will be set via global variable in loop
-    measure = measure,
+    measure = msr("surv.cindex", id = "harrell_c"),
     terminator = terminator,
     tuner = tuner,
     # Need tuning instance for archive, need archive to know if fallback was needed
@@ -258,8 +232,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     # Not needed: benchmark result of inner resamplings
     store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
-    store_models = settings$store$models,
-    callbacks = list(callback_backup, callback_archive_logs)
+    store_models = settings$store$models
   )
 
   # Also define a fallback learner on AutoTuner
@@ -287,225 +260,205 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   at
 }
 
-# Set tuning measures -----------------------------------------------------
-# Tuning measures are a subset of all measures, remaining measures are used
-# for evaluation (see overleaf Table 1)
-measures = list(
-  msr("surv.cindex", id = "harrell_c"),
-
-  # Added as graf alternative for now as per RS
-  msr("surv.rcll", id = "rcll")
-
-  # Excluding dcalib as it's not needed
-  # msr("surv.dcalib", id = "dcalib", truncate = Inf),
-
-  # If graf, then both
-  # msr("surv.graf", id = "graf_proper", proper = TRUE),
-  # msr("surv.graf", id = "graf_improper", proper = FALSE)
-)
-
 
 # Assemble learners -------------------------------------------------------
-for (measure in measures) {
-  learners = list(
-    KM = bl("surv.kaplan")
+learners = list(
+  KM = bl("surv.kaplan")
 
-    ,
+  ,
 
-    NL = bl("surv.nelson")
+  NL = bl("surv.nelson")
 
-    ,
+  ,
 
-    # survivalmodels::akritas
-    # https://raphaels1.github.io/survivalmodels/reference/akritas.html
-    AF = auto_tune(
-      bl("surv.akritas"),
-      surv.akritas.lambda = p_dbl(0, 1)
-    )
-
-    ,
-
-    CPH = bl("surv.coxph")
-
-    ,
-
-
-    GLM = auto_tune(
-      bl("surv.cv_glmnet", .encode = TRUE),
-      surv.cv_glmnet.alpha = p_dbl(0, 1)
-    )
-
-    ,
-
-    Pen = auto_tune(
-      bl("surv.penalized"),
-      surv.penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
-      surv.penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
-    )
-
-    ,
-
-    # Use grid search due to small + finite search space
-    # AFT version needs
-    # - to pass .form to bl() for distrcompositor
-    # - Tune distributions within range of what's sensible/discussed with RS
-    Par = auto_tune(
-      bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
-      surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
-      use_grid_search = TRUE
-    )
-
-    ,
-
-    # Use grid search due to small + finite search space
-    Flex = auto_tune(
-      bl("surv.flexible"),
-      surv.flexible.k = p_int(1, 10),
-      use_grid_search = TRUE
-    )
-
-    ,
-
-    RFSRC = auto_tune(
-      # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
-      # is set to a non-default value and we ensure both use 150 time points for evaluation
-      bl("surv.rfsrc", ntree = 1000, ntime = 150),
-      surv.rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
-      surv.rfsrc.mtry.ratio = p_dbl(0, 1),
-      surv.rfsrc.nodesize = p_int(1, 50),
-      surv.rfsrc.samptype = p_fct(c("swr", "swor")),
-      surv.rfsrc.sampsize.ratio = p_dbl(0, 1)
-    )
-
-    ,
-
-    RAN = auto_tune(
-      # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
-      bl("surv.ranger", num.trees = 1000, time.interest = 150),
-      surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
-      surv.ranger.mtry.ratio = p_dbl(0, 1),
-      surv.ranger.min.node.size = p_int(1, 50),
-      surv.ranger.replace = p_lgl(),
-      surv.ranger.sample.fraction = p_dbl(0, 1)
-    )
-
-    ,
-
-    CIF = auto_tune(
-      bl("surv.cforest", ntree = 1000),
-      surv.cforest.mtryratio = p_dbl(0, 1),
-      surv.cforest.minsplit = p_int(1, 50),
-      surv.cforest.mincriterion = p_dbl(0, 1),
-      surv.cforest.replace = p_lgl(),
-      surv.cforest.fraction = p_dbl(0, 1)
-    )
-
-    ,
-
-    ORSF = auto_tune(
-      bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
-      surv.aorsf.mtry_ratio = p_dbl(0, 1),
-      surv.aorsf.leaf_min_events = p_int(5, 50),
-      .extra_trafo = function(x, param_set) {
-        x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
-        x
-      }
-    )
-
-    ,
-
-    RRT = auto_tune(
-      bl("surv.rpart"),
-      surv.rpart.minbucket = p_int(5, 50),
-      use_grid_search = TRUE
-    )
-
-    ,
-
-    MBO = auto_tune(
-      bl("surv.mboost"),
-      surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
-      surv.mboost.mstop = p_int(10, 5000),
-      surv.mboost.nu = p_dbl(0, 0.1),
-      surv.mboost.baselearner = p_fct(c("bols", "btree"))
-    )
-
-    ,
-
-    # Does not use our inner resampling
-    CoxB = bl("surv.cv_coxboost",
-              penalty = "optimCoxBoostPenalty",
-              maxstepno = 5000,
-              # Number of inner tuning folds: analogous to other AutoTuners
-              K = settings$inner_folds,
-              .encode = TRUE)
-
-    ,
-
-    # XGB/cox needs new breslow estimator
-    XGBCox = auto_tune(
-      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
-         objective = "survival:cox",
-         .encode = TRUE, .estimator = "breslow"),
-      surv.xgboost.max_depth = p_int(1, 20),
-      surv.xgboost.subsample = p_dbl(0, 1),
-      surv.xgboost.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.nrounds = p_int(10, 5000),
-      surv.xgboost.eta = p_dbl(0, 1),
-      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
-    )
-
-    ,
-
-    # AFT version needs
-    # - Adjust objective accordingly to use aft
-    # - to pass .form to bl() for distrcompositor
-    # - Tune distributions (as per JZ)
-    XGBAFT = auto_tune(
-      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
-         objective = "survival:aft",
-         .encode = TRUE, .form = "aft"),
-      surv.xgboost.max_depth = p_int(1, 20),
-      surv.xgboost.subsample = p_dbl(0, 1),
-      surv.xgboost.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.nrounds = p_int(10, 5000),
-      surv.xgboost.eta = p_dbl(0, 1),
-      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide")),
-      surv.xgboost.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
-      surv.xgboost.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
-    )
-
-    ,
-
-    SSVM = auto_tune(
-      bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
-      surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
-      surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
-      surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
-      surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
-      .extra_trafo = function(x, param_set) {
-        x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
-        x$surv.svm.gamma = x$surv.svm.mu = NULL
-        x
-      }
-    )
-
+  # survivalmodels::akritas
+  # https://raphaels1.github.io/survivalmodels/reference/akritas.html
+  AF = auto_tune(
+    bl("surv.akritas"),
+    surv.akritas.lambda = p_dbl(0, 1)
   )
 
-  imap(learners, function(l, id) l$id = id)
+  ,
 
-  # custom grid design (with instantiated resamplings)
-  grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
-  grid$resampling = rep(resamplings, each = length(learners))
-  ids = batchmark(grid, store_models = settings$store$models)
-  addJobTags(ids, measure$id)
+  CPH = bl("surv.coxph")
 
-  # also tag jobs which have been skipped because they are not wrapped
-  # into a AutoTuner (and as such don't differ)
-  learners_skipped = ids(learners)[!map_lgl(learners, inherits, "AutoTuner")]
-  ids = findExperiments(algo.pars = learner_id %in% learners_skipped)
-  addJobTags(ids, measure$id)
-}
+  ,
+
+
+  GLM = auto_tune(
+    bl("surv.cv_glmnet", .encode = TRUE),
+    surv.cv_glmnet.alpha = p_dbl(0, 1)
+  )
+
+  ,
+
+  Pen = auto_tune(
+    bl("surv.penalized"),
+    surv.penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
+    surv.penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
+  )
+
+  ,
+
+  # Use grid search due to small + finite search space
+  # AFT version needs
+  # - to pass .form to bl() for distrcompositor
+  # - Tune distributions within range of what's sensible/discussed with RS
+  Par = auto_tune(
+    bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
+    surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
+    use_grid_search = TRUE
+  )
+
+  ,
+
+  # Use grid search due to small + finite search space
+  Flex = auto_tune(
+    bl("surv.flexible"),
+    surv.flexible.k = p_int(1, 10),
+    use_grid_search = TRUE
+  )
+
+  ,
+
+  RFSRC = auto_tune(
+    # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
+    # is set to a non-default value and we ensure both use 150 time points for evaluation
+    bl("surv.rfsrc", ntree = 500, ntime = 150,
+       splitrule = "logrank"),
+    surv.rfsrc.mtry.ratio = p_dbl(0.5, 1),
+    surv.rfsrc.nodesize = p_int(1, 50),
+    surv.rfsrc.samptype = p_fct(c("swr", "swor")),
+    surv.rfsrc.sampsize.ratio = p_dbl(0.5, 1)
+  )
+
+  ,
+
+  RAN = auto_tune(
+    # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
+    bl("surv.ranger", num.trees = 500, time.interest = 150,
+       splitrule = "logrank", replace = FALSE),
+    surv.ranger.mtry.ratio = p_dbl(0.5, 1),
+    surv.ranger.min.node.size = p_int(1, 50),
+    surv.ranger.sample.fraction = p_dbl(0.5, 1)
+  )
+
+  ,
+
+  CIF = auto_tune(
+    bl("surv.cforest", ntree = 500, replace = FALSE),
+    surv.cforest.mtryratio = p_dbl(0.5, 1),
+    surv.cforest.minsplit = p_int(1, 50),
+    surv.cforest.mincriterion = p_dbl(0, 1),
+    surv.cforest.fraction = p_dbl(0.5, 1)
+  )
+
+  ,
+
+  ORSF = auto_tune(
+    bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
+    surv.aorsf.mtry_ratio = p_dbl(0.5, 1),
+    surv.aorsf.leaf_min_events = p_int(5, 50),
+    .extra_trafo = function(x, param_set) {
+      x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
+      x
+    }
+  )
+
+  ,
+
+  RRT = auto_tune(
+    bl("surv.rpart"),
+    surv.rpart.minbucket = p_int(5, 50),
+    use_grid_search = TRUE
+  )
+
+  ,
+
+  MBO = auto_tune(
+    bl("surv.mboost"),
+    surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
+    surv.mboost.mstop = p_int(10, 5000),
+    surv.mboost.nu = p_dbl(0, 0.1),
+    surv.mboost.baselearner = p_fct(c("bols", "btree"))
+  )
+
+  ,
+
+  # Does not use our inner resampling
+  CoxB = bl("surv.cv_coxboost",
+            penalty = "optimCoxBoostPenalty",
+            maxstepno = 1000,
+            # Number of inner tuning folds: analogous to other AutoTuners
+            K = settings$inner_folds,
+            .encode = TRUE)
+
+  ,
+
+  # XGB/cox needs new breslow estimator
+  XGBCox = auto_tune(
+    bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
+       objective = "survival:cox",
+       .encode = TRUE, .estimator = "breslow"),
+    surv.xgboost.max_depth = p_int(1, 20),
+    surv.xgboost.subsample = p_dbl(0.5, 1),
+    surv.xgboost.colsample_bytree = p_dbl(0, 1),
+    surv.xgboost.nrounds = p_int(10, 5000),
+    surv.xgboost.eta = p_dbl(0, 1, logscale = TRUE),
+    surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
+  )
+
+  ,
+
+  # AFT version needs
+  # - Adjust objective accordingly to use aft
+  # - to pass .form to bl() for distrcompositor
+  # - Tune distributions (as per JZ)
+  XGBAFT = auto_tune(
+    bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
+       objective = "survival:aft",
+       .encode = TRUE, .form = "aft"),
+    surv.xgboost.max_depth = p_int(1, 20),
+    surv.xgboost.subsample = p_dbl(0.5, 1),
+    surv.xgboost.colsample_bytree = p_dbl(0, 1),
+    surv.xgboost.nrounds = p_int(10, 5000),
+    surv.xgboost.eta = p_dbl(0, 1, logscale = TRUE),
+    surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide")),
+    surv.xgboost.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
+    surv.xgboost.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
+  )
+
+  ,
+
+  SSVM = auto_tune(
+    bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
+    surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
+    surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
+    surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
+    surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
+    .extra_trafo = function(x, param_set) {
+      x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
+      x$surv.svm.gamma = x$surv.svm.mu = NULL
+      x
+    }
+  )
+
+)
+
+imap(learners, function(l, id) l$id = id)
+
+# custom grid design (with instantiated resamplings)
+grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
+grid$resampling = rep(resamplings, each = length(learners))
+ids = batchmark(grid, store_models = settings$store$models)
+addJobTags(ids, measure$id)
+
+# also tag jobs which have been skipped because they are not wrapped
+# into a AutoTuner (and as such don't differ)
+learners_skipped = ids(learners)[!map_lgl(learners, inherits, "AutoTuner")]
+ids = findExperiments(algo.pars = learner_id %in% learners_skipped)
+addJobTags(ids, measure$id)
+
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
 
