@@ -390,7 +390,7 @@ learners = list(
             penalty = "optimCoxBoostPenalty",
             maxstepno = 1000,
             # Number of inner tuning folds: analogous to other AutoTuners
-            K = settings$inner_folds,
+            K = 3,
             .encode = TRUE)
 
   ,
