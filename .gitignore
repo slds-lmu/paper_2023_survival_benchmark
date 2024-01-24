@@ -2,6 +2,7 @@ registry/*
 registry-*
 registry_*
 tmp/*
+*html
 # attic/
 ^tmp-*
 
