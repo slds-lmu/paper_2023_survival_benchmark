@@ -358,6 +358,44 @@ reassemble_archives = function(
 
 }
 
+#' Removing duplicate tuning archives
+#'
+#' When jobs are resubmitted, the previous tuning archive is not removed automatically,
+#' so the associated timestamp is used to identify the older archive and move it to
+#' a backup location.
+#' @param reg_dir
+#' @param result_path `here::here("results")`
+#' @param tmp_path `here::here("tmp", "archive-backup")`
+clean_duplicate_archives = function(reg_dir, result_path = here::here("results"),
+                                    tmp_path = here::here("tmp", "archive-backup")) {
+
+  if (!fs::dir_exists(tmp_path)) {
+    fs::dir_create(tmp_path)
+  }
+
+  archives = reassemble_archives(reg_dir, result_path = result_path, keep_logs = FALSE)
+
+  counts = archives[, .(n = .N), by = .(tune_measure, task_id, learner_id, iter_hash)]
+
+  archives = archives[counts, on = .(tune_measure, task_id, learner_id, iter_hash)]
+  archives = archives[n > 1, ]
+
+  if (nrow(archives) > 0) {
+    dupes = archives |>
+      dplyr::group_by(tune_measure, task_id, learner_id, iter_hash) |>
+      dplyr::filter(time_epoch == min(time_epoch))
+
+    cli::cli_alert_info("There are {nrow(dupes)} duplicates")
+    cli::cli_alert_danger("Moving files to {.path fs::path_rel(tmp_path)}")
+
+    fs::file_move(dupes$file, tmp_path)
+  } else {
+    cli::cli_alert_info("Found no duplicate archives")
+  }
+
+  cli::cli_alert_success("Done!")
+}
+
 #' Perform global Friedman tests and collect results
 #'
 #' A thin wrapper around `BenchmarkAggr`'s `$friedman_test()` with some cleanup.
