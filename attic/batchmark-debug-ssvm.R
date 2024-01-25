@@ -87,7 +87,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   if (.estimator == "breslow") cli::cli_alert_info("Using breslow estimator!")
 
   learner = lrn(key, ...)
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
+                 method = "mean", overwrite = FALSE, graph_learner = TRUE)
 
+  # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
+  fallback$predict_type = "crank"
   learner$predict_type = "crank"
 
   # 1. fixfactors ensures factor levels are the same during train and predict
@@ -129,6 +133,12 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
     ppl("distrcompositor", learner = learner, form = .form, estimator = .estimator, overwrite = FALSE) |>
     # Need to convert to GraphLearner
     as_learner()
+
+  graph_learner$predict_type = "crank"
+  if (TRUE) {
+    graph_learner$fallback = fallback
+    graph_learner$encapsulate = c(train = "callr", predict = "callr")
+  }
 
   graph_learner
 }
