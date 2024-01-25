@@ -11,6 +11,7 @@ mem_knl = 5457
 
 library("batchtools")
 library("mlr3batchmark")
+source(file.path(root, "helpers.R"))
 
 # Assumes batchmark.R is run beforehand
 reg_dir = file.path(root, settings$reg_name)
