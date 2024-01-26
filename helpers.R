@@ -499,6 +499,7 @@ collect_job_table = function(
 #' @example
 #' check_job_state()
 #' check_job_state(byvars = c("measure", "learner_id"))
+#' check_job_state(byvars = "")
 check_job_state = function(alljobs = NULL, byvars = "measure") {
   if (is.null(alljobs)) {
     alljobs = collect_job_table()
@@ -507,13 +508,19 @@ check_job_state = function(alljobs = NULL, byvars = "measure") {
   job_n = alljobs[, .(total = .N), by = byvars]
 
   state_tab = data.table::rbindlist(list(
-    alljobs[findDone(), .(n = .N, state = "done"), by = byvars][job_n, on = byvars],
-    alljobs[findRunning(), .(n = .N, state = "running"), by = byvars][job_n, on = byvars],
-    alljobs[findErrors(), .(n = .N, state = "errored"), by = byvars][job_n, on = byvars],
-    alljobs[findExpired(), .(n = .N, state = "expired"), by = byvars][job_n, on = byvars],
-    alljobs[findQueued(), .(n = .N, state = "queued"), by = byvars][job_n, on = byvars],
-    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars][job_n, on = byvars]
+    alljobs[findDone(), .(n = .N, state = "done"), by = byvars],
+    alljobs[findRunning(), .(n = .N, state = "running"), by = byvars],
+    alljobs[findErrors(), .(n = .N, state = "errored"), by = byvars],
+    alljobs[findExpired(), .(n = .N, state = "expired"), by = byvars],
+    alljobs[findQueued(), .(n = .N, state = "queued"), by = byvars],
+    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars]
   ))[!is.na(n), ]
+
+  if (byvars != "") {
+    state_tab = state_tab[job_n, on = byvars]
+  } else {
+    state_tab[, total := nrow(alljobs)]
+  }
 
   state_tab = state_tab[, perc := round(100 * n / total, 1)]
   state_tab = state_tab[, val := sprintf("%3.1f%% (%i)", perc, n)][]
