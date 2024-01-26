@@ -144,57 +144,78 @@ load_lrntab = function(path = here::here("attic", "learners.csv")) {
 #' Quickly recreate list of evaluation measures
 #'
 #' Define once, use everywhere.
-#
-#get_measures_eval = function() {
-#  measures_eval = list(
-#    msr("surv.cindex", id = "harrell_c"),
-#    msr("surv.cindex", id = "uno_c", weight_meth = "G2"),
-#    msr("surv.rcll", id = "rcll"),
-#
-#    msr("surv.graf", id = "graf_proper", proper = TRUE),
-#    msr("surv.graf", id = "graf_improper", proper = FALSE),
-#
-#    msr("surv.dcalib", id = "dcalib", truncate = Inf),
-#
-#    msr("surv.intlogloss", id = "intlogloss", proper = TRUE),
-#    msr("surv.logloss", id = "logloss"),
-#    msr("surv.calib_alpha", id = "caliba")
-#  )
-#  names(measures_eval) = mlr3misc::ids(measures_eval)
-#  measures_eval
-#}
-
 get_measures_eval = function() {
   measures_eval = list(
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
-    msr("surv.rcll",        id = "rcll",       ERV = TRUE,         label = "Right-Censored Log Loss (ERV)"),
-    msr("surv.logloss",     id = "logloss",    ERV = TRUE,         label = "Log Loss (ERV)"),
-    msr("surv.intlogloss",  id = "intlogloss", ERV = TRUE, proper = TRUE, label = "Integrated Log Loss (Proper, ERV)"),
-    msr("surv.calib_alpha", id = "caliba",                         label = "Van Houwelingen's Alpha"),
-    msr("surv.dcalib",      id = "dcalib",     truncate = 10,      label = "D-Calibration (truncated)"),
-    msr("surv.graf",        id = "graf_proper",   proper = TRUE,   ERV = TRUE, label = "Graf Score (Proper, ERV)"),
-    msr("surv.graf",        id = "graf_improper", proper = FALSE,  ERV = TRUE, label = "Graf Score (Improper, ERV)")
+
+    msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss"),
+    msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (ERV)"),
+
+    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Log Loss"),
+    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Log Loss (ERV)"),
+
+    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Integrated Log Loss (Proper)"),
+    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Integrated Log Loss (Proper, ERV)"),
+
+    msr("surv.calib_alpha", id = "caliba", label = "Van Houwelingen's Alpha"),
+
+    msr("surv.dcalib",      id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
+
+    msr("surv.graf",        id = "graf_proper",     proper = TRUE,   ERV = FALSE, label = "Graf Score (Proper)"),
+    msr("surv.graf",        id = "graf_proper_erv", proper = TRUE,   ERV = TRUE, label = "Graf Score (Proper, ERV)"),
+
+    msr("surv.graf",        id = "graf_improper",     proper = FALSE,  ERV = FALSE, label = "Graf Score (Improper)"),
+    msr("surv.graf",        id = "graf_improper_erv", proper = FALSE,  ERV = TRUE, label = "Graf Score (Improper, ERV)")
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
   measures_eval
 }
 
+#' Table of evaluation measures with metadata
+#'
+measures_tbl = function() {
+  msr_tbl = mlr3misc::rowwise_table(
+    ~mlr_id,            ~id,
+    "surv.cindex",      "harrell_c",
+    "surv.cindex",      "uno_c",
 
-if (FALSE) {
-  mlr3misc::rowwise_table(
-    ~mlr_id,            ~id,             ~name,
-    "surv.cindex",      "harrell_c",     "Harrell's C",
-    "surv.cindex",      "uno_c",         "Uno's C",
-    "surv.rcll",        "rcll",          "Right-Censored Log Loss",
-    "surv.graf",        "graf_proper",   "Graf Score (Proper)",
-    "surv.graf",        "graf_improper", "Graf Score (Improper)",
-    "surv.dcalib",      "dcalib",        "D-Calibration",
-    "surv.intlogloss",  "intlogloss",    "Integrated Log Loss",
-    "surv.logloss",     "logloss",       "Log Loss",
-    "surv.calib_alpha", "caliba",        "Van Houwelingen's Alpha"
+    "surv.rcll",        "rcll",
+    "surv.rcll",        "rcll_erv",
+
+    "surv.graf",        "graf_proper",
+    "surv.graf",        "graf_proper_erv",
+
+    "surv.graf",        "graf_improper",
+    "surv.graf",        "graf_improper_erv",
+
+    "surv.dcalib",      "dcalib",
+
+    "surv.intlogloss",  "intlogloss",
+    "surv.intlogloss",  "intlogloss_erv",
+
+    "surv.logloss",     "logloss",
+    "surv.logloss",     "logloss_erv",
+
+    "surv.calib_alpha", "caliba"
   )
+
+  measures_eval = get_measures_eval()
+  msr_tbl = data.table(
+    measure = measures_eval,
+    id = mlr3misc::ids(measures_eval)
+  )[msr_tbl, on = "id"]
+
+  msr_tbl[, label := vapply(measures_eval, \(x) x$label, "", USE.NAMES = FALSE)]
+  msr_tbl[, erv := grepl("_erv$", id)]
+  # minimize argument should be FALSE if measure is ERV or C-index (suffixes _erv or _c)
+  msr_tbl[, minimize := !(erv | grepl("_c$", id))]
+
+
+  msr_tbl
 }
+
+
 
 #' Collect and save benchmark results
 #'
@@ -400,12 +421,12 @@ clean_duplicate_archives = function(reg_dir, result_path = here::here("results")
 #'
 #' A thin wrapper around `BenchmarkAggr`'s `$friedman_test()` with some cleanup.
 #' @param bma A `BenchmarkAggr` object.
-#' @param measure_id A `character` vector of measure ids present in `bma`.
+#' @param measures_eval_ids A `character` vector of measure ids present in `bma`.
 #' @param digits `[3]` Passed to `format.pval`.
 #' @param conf.level `[0.95]` Passed to `format.val(..., eps = 1 - conf.level)`.
-aggr_friedman_global = function(bma, measure_id, digits = 3, conf.level = 0.95) {
+aggr_friedman_global = function(bma, measures_eval_ids, digits = 3, conf.level = 0.95) {
   res = data.table::rbindlist(lapply(measures_eval_ids, \(x) {
-    ret = broom::tidy(bma_harrell_c$friedman_test(meas = x))
+    ret = broom::tidy(bma$friedman_test(meas = x))
     ret$measure = x
     ret[, c("measure", "statistic", "p.value", "parameter")]
   }))
