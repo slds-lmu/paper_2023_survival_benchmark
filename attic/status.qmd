@@ -122,10 +122,12 @@ job_completion |>
 ### Currently running jobs
 
 ```{r}
-alljobs |> #[batchtools::findRunning()] |>
+alljobs[batchtools::findRunning()] |>
   arrange(desc(time.running)) |>
   select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
-  tablify()
+  reactable::reactable(
+    sortable = TRUE, filterable = TRUE, defaultPageSize = 20
+  )
 ```
 
 ## Tuning Measure
