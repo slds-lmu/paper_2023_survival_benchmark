@@ -119,6 +119,15 @@ job_completion |>
   tablify()
 ```
 
+### Currently running jobs
+
+```{r}
+alljobs |> #[batchtools::findRunning()] |>
+  arrange(desc(time.running)) |>
+  select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
+  tablify()
+```
+
 ## Tuning Measure
 
 ```{r}
