@@ -516,7 +516,7 @@ check_job_state = function(alljobs = NULL, byvars = "measure") {
     alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars]
   ))[!is.na(n), ]
 
-  if (byvars != "") {
+  if (identical(byvars, "")) {
     state_tab = state_tab[job_n, on = byvars]
   } else {
     state_tab[, total := nrow(alljobs)]
