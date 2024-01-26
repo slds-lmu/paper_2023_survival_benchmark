@@ -9,6 +9,9 @@ format:
    embed-resources: false
    code-fold: true
    fig-align: center
+   theme:
+     light: flatly
+     dark: darkly
 editor: source
 editor_options: 
   chunk_output_type: console
