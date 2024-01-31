@@ -73,11 +73,11 @@ Overall completion: **`r complete_n`** / `r nrow(alljobs)` (**`r complete_perc`%
 job_completion |>
   ggplot(aes(x = done, y = prop)) +
   geom_step(linewidth = 1.5) +
-  geom_smooth(color = "red", linetype = "dashed") +
   scale_y_continuous(
     breaks = seq(0, 1, .2),
     labels = scales::label_percent(), 
-    limits = c(0, 1)
+    limits = c(0, 1),
+    sec.axis = sec_axis(trans = \(x) x * nrow(alljobs))
   ) +
   scale_x_datetime(
     date_breaks = "3 days", 
@@ -92,13 +92,14 @@ job_completion |>
   theme_minimal(base_size = 14)
 
 job_completion |>
-  filter(done >= lubridate::now() - lubridate::ddays(2)) |>
+  filter(done >= lubridate::now() - lubridate::ddays(3)) |>
   ggplot(aes(x = done, y = prop)) +
   geom_step(linewidth = 1.5) +
   geom_smooth(method = "lm", color = "red", linetype = "dashed", fullrange = TRUE) +
   scale_y_continuous(
-    #breaks = seq(0, 1, .2),
+    #breaks = scales::pretty_breaks(),
     labels = scales::label_percent(), 
+    sec.axis = sec_axis(trans = \(x) x * nrow(alljobs))
     #imits = c(0, 1)
   ) +
   scale_x_datetime(
