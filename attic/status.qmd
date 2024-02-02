@@ -125,7 +125,7 @@ job_completion |>
 
 ### Currently running jobs
 
-```{r}
+```{r, eval=nrow(batchtools::findRunning()) > 0}
 alljobs[batchtools::findRunning()] |>
   arrange(desc(time.running)) |>
   select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
