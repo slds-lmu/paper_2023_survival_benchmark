@@ -239,7 +239,7 @@ collect_results = function(
     id_filter = NULL
 ) {
 
-  reg_dir = file.path(root, reg_name)
+  reg_dir = here::here(reg_name)
   reg = batchtools::loadRegistry(reg_dir, writeable = TRUE)
 
   cli::cli_alert_info("Using registry '{reg_name}'")
