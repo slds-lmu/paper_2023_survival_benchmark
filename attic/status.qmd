@@ -20,11 +20,10 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
-root = here::here()
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
 settings = config::get()
 
-source(file.path(root, "helpers.R"))
+source(here::here("helpers.R"))
 
 library(data.table)
 library(batchtools)
@@ -33,7 +32,7 @@ library(dplyr)
 library(ggplot2)
 
 # Assumes batchmark.R is run beforehand
-reg_dir = file.path(root, settings$reg_name)
+reg_dir = here::here(settings$reg_name)
 reg = loadRegistry(reg_dir, writeable = FALSE)
 
 tablify = function(x) {
