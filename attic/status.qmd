@@ -19,6 +19,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+options(TZ = "Europe/Berlin")
 
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
 settings = config::get()
@@ -64,9 +65,29 @@ job_completion = alljobs |>
 
 complete_n = nrow(job_completion)
 complete_perc = round(100 * complete_n / nrow(alljobs), 1)
+
+job_milestones = tibble::tribble(
+  ~type, ~first, ~last,
+  "submitted", min(alljobs$submitted, na.rm = TRUE), max(alljobs$submitted, na.rm = TRUE),
+  "started",   min(alljobs$started, na.rm = TRUE), max(alljobs$started, na.rm = TRUE),
+  "done",      min(alljobs$done, na.rm = TRUE), max(alljobs$done, na.rm = TRUE)
+)
+
+job_milestones = job_milestones |>
+  dplyr::mutate(
+    duration = round(difftime(last, first, units = "days"), 2),
+    days_since =  round(difftime(Sys.time(), last,units = "days"), 2)
+  )
 ```
 
-Overall completion: **`r complete_n`** / `r nrow(alljobs)` (**`r complete_perc`%**).
+Overall completion: **`r complete_n`** / `r nrow(alljobs)` (**`r complete_perc`%**).  
+
+```{r}
+job_milestones |> 
+  tablify()
+```
+
+
 
 ```{r job-completion}
 job_completion |>
@@ -91,7 +112,7 @@ job_completion |>
   theme_minimal(base_size = 14)
 
 job_completion |>
-  filter(done >= lubridate::now() - lubridate::ddays(3)) |>
+  filter(done >= lubridate::now() - lubridate::ddays(7)) |>
   ggplot(aes(x = done, y = prop)) +
   geom_step(linewidth = 1.5) +
   geom_smooth(method = "lm", color = "red", linetype = "dashed", fullrange = TRUE) +
