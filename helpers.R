@@ -211,8 +211,7 @@ measures_tbl = function() {
   # minimize argument should be FALSE if measure is ERV or C-index (suffixes _erv or _c)
   msr_tbl[, minimize := !(erv | grepl("_c$", id))]
 
-
-  msr_tbl
+  msr_tbl[]
 }
 
 
@@ -375,8 +374,13 @@ reassemble_archives = function(
   archives = archives[!is.na(tune_measure), ]
   archives[, learner_id_long := NULL]
 
-  archives[]
+  if (keep_logs) {
+    saveRDS(archives, fs::path(result_path, "archives-with-logs.rds"))
+  } else {
+    saveRDS(archives, fs::path(result_path, "archives-no-logs.rds"))
+  }
 
+  archives[]
 }
 
 #' Removing duplicate tuning archives

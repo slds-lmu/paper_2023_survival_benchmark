@@ -21,9 +21,12 @@ alljobs = collect_job_table(reg)
 result_path = here::here("results")
 
 # Reassembling tuning archives ----------------------------------------------------------------
-if (FALSE) {
-  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path)
-  archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
+if (!fs::file_exists(fs::path(result_path, "archives-with-logs.rds"))) {
+  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = TRUE)
+}
+
+if (!fs::file_exists(fs::path(result_path, "archives-no-logs.rds"))) {
+  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = FALSE)
 }
 
 # Reducing results ----------------------------------------------------------------------------
@@ -34,8 +37,8 @@ measures_eval = msr_tbl$measure
 measures_eval_ids = msr_tbl$id
 
 # Task ids where all jobs are done
-done_tasks = check_job_state(byvars = c("task_id"))[expired == "—"]$task_id
-done_task_ids = alljobs[task_id %in% done_tasks]
+# done_tasks = check_job_state(byvars = c("task_id"))[expired == "—"]$task_id
+# done_task_ids = alljobs[task_id %in% done_tasks]
 
 # Creating bmr and bma for jobs tuned with harrell's c and untuned/coxboost, saving to result_path
 collect_results(
