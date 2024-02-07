@@ -22,11 +22,17 @@ result_path = here::here("results")
 
 # Reassembling tuning archives ----------------------------------------------------------------
 if (!fs::file_exists(fs::path(result_path, "archives-with-logs.rds"))) {
+  cli::cli_inform("Reassembling tuning archives including logs")
+  tictoc::tic()
   archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = TRUE)
+  tictoc::toc()
 }
 
 if (!fs::file_exists(fs::path(result_path, "archives-no-logs.rds"))) {
+  cli::cli_inform("Reassembling tuning archives without logs")
+  tictoc::tic()
   archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = FALSE)
+  tictoc::toc()
 }
 
 # Reducing results ----------------------------------------------------------------------------
@@ -43,7 +49,7 @@ measures_eval_ids = msr_tbl$id
 # Creating bmr and bma for jobs tuned with harrell's c and untuned/coxboost, saving to result_path
 collect_results(
   reg_name = settings$reg_name,
-  id_filter = done_task_ids,
+  # id_filter = done_task_ids,
   tuning_measure = "harrell_c",
   measures_eval = measures_eval,
   result_path = here::here("results"),
@@ -52,7 +58,7 @@ collect_results(
 # Same for RCLL
 collect_results(
   reg_name = settings$reg_name,
-  id_filter = done_task_ids,
+  # id_filter = done_task_ids,
   tuning_measure = "rcll",
   measures_eval = measures_eval,
   result_path = here::here("results"),
