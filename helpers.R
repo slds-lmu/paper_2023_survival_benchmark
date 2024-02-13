@@ -42,6 +42,21 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
   tasktab
 }
 
+#' Load tasks as they were before resampling
+#'
+#' To just get the tasks as a named list of `data.table` objects
+load_task_data = function() {
+  files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
+  names = stringi::stri_sub(basename(files), 1, -5)
+  tasks = mlr3misc::named_list(names)
+
+  for (i in seq_along(files)) {
+    tasks[[i]] = readRDS(files[i])
+  }
+
+  tasks
+}
+
 #' mlr3tuning callback to save the tuning archive outside of the job.
 #'
 #' Avoid having to serialize the entire tuning instance, i.e. `store_tuning_instance = FALSE` can

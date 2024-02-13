@@ -159,18 +159,11 @@ Using global Schoenfeld test via `survival::coxph()` -> `survival::cox.zph()`.
 #| fig-height: 12
 #| fig-align: center
 
-# Load tasks as they were before resampling
-set.seed(settings$seed)
-files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
-names = stringi::stri_sub(basename(files), 1, -5)
-tasks = mlr3misc::named_list(names)
+tasks = load_task_data()
 
-for (i in seq_along(files)) {
-  tasks[[i]] = readRDS(files[i])
-}
-rm(files, names)
+# survival::cox.zph(survival::coxph(survival::Surv(time, status) ~ ., data = tasks$CarpenterFdaData))
+# survival::cox.zph(survival::coxph(survival::Surv(time, status) ~ ., data = tasks$hdfail))
 
-# survival::coxph(survival::Surv(time, status) ~ ., data = tasks$CarpenterFdaData)
 tab_ph_test_dt = function(tasks, task_id) {
   cli::cli_alert_info("Checking {task_id}")
   fit_cph = survival::coxph(survival::Surv(time, status) ~ ., data = tasks[[task_id]])
