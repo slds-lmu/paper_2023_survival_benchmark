@@ -141,6 +141,10 @@ load_lrntab = function(path = here::here("attic", "learners.csv")) {
   read.csv(path)
 }
 
+load_tasktab = function(path = here::here("attic", "tasktab.csv")) {
+  read.csv(path)
+}
+
 #' Quickly recreate list of evaluation measures
 #'
 #' Define once, use everywhere.
@@ -450,6 +454,16 @@ aggr_friedman_global = function(bma, measures_eval_ids, digits = 3, conf.level =
 
   res[, p.value.fmt := format.pval(p.value, digits = 3, eps = 1 - conf.level)][]
 }
+
+
+#' Check if scores are valid / invalid
+#'
+#' Validty in this case only meaning it's neither Inf, NA, nor NaN
+#' @param x `numeric()`
+is_valid = function(x) {
+  is.finite(x) & !is.na(x) & !is.nan(x)
+}
+is_invalid = function(x) !is_valid(x)
 
 
 # Utilities for job management ----------------------------------------------------------------
