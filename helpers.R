@@ -206,7 +206,7 @@ measures_tbl = function() {
     id = mlr3misc::ids(measures_eval)
   )[msr_tbl, on = "id"]
 
-  msr_tbl[, label := vapply(measures_eval, \(x) x$label, "", USE.NAMES = FALSE)]
+  msr_tbl[, label := vapply(msr_tbl$measure, \(x) x$label, "", USE.NAMES = FALSE)]
   msr_tbl[, erv := grepl("_erv$", id)]
   # minimize argument should be FALSE if measure is ERV or C-index (suffixes _erv or _c)
   msr_tbl[, minimize := !(erv | grepl("_c$", id))]
@@ -239,9 +239,9 @@ collect_results = function(
 ) {
 
   reg_dir = here::here(reg_name)
-  reg = batchtools::loadRegistry(reg_dir, writeable = TRUE)
+  reg = suppressWarnings(batchtools::loadRegistry(reg_dir, writeable = TRUE))
 
-  cli::cli_alert_info("Using registry '{reg_name}'")
+  cli::cli_alert_info("Using registry {.file '{reg_name}'}")
   result_path = fs::path(result_path, reg_name)
   cli::cli_alert_info("Storing results for '{tuning_measure}' in {fs::path_rel(result_path)}")
   if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
@@ -325,13 +325,26 @@ collect_results = function(
 }
 
 #' Collect tuning archives saved separately to disk via callback
-#' @param reg_dir
+#' @param reg_name
 #' @param result_path `here::here("results")`
 reassemble_archives = function(
-    reg_dir,
+    reg_name,
     result_path = here::here("results"),
     keep_logs = TRUE
   ) {
+
+  reg_dir = here::here(reg_name)
+
+  if (keep_logs) {
+    archive_path = fs::path(result_path, reg_name, "archives-with-logs.rds")
+  } else {
+    archive_path = fs::path(result_path, reg_name, "archives-no-logs.rds")
+  }
+
+  if (fs::file_exists(archive_path)) {
+    cli::cli_alert_inform("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
+    return(readRDS(archive_path))
+  }
 
   archive_dir = here::here(reg_dir, "tuning_archives")
   tuning_files = fs::dir_ls(archive_dir)
@@ -374,11 +387,8 @@ reassemble_archives = function(
   archives = archives[!is.na(tune_measure), ]
   archives[, learner_id_long := NULL]
 
-  if (keep_logs) {
-    saveRDS(archives, fs::path(result_path, "archives-with-logs.rds"))
-  } else {
-    saveRDS(archives, fs::path(result_path, "archives-no-logs.rds"))
-  }
+  saveRDS(archives, archive_path)
+
 
   archives[]
 }
@@ -388,9 +398,12 @@ reassemble_archives = function(
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,
 #' so the associated timestamp is used to identify the older archive and move it to
 #' a backup location.
-#' @param reg_dir
-#' @param result_path `here::here("results")`
-#' @param tmp_path `here::here("tmp", "archive-backup")`
+#' @param reg_dir Path to the registry (contaisn the archives).
+#' @param result_path `here::here("results")`.
+#' @param tmp_path `here::here("tmp", "archive-backup")`.
+#'
+#' @examples
+#' clean_duplicate_archives("registry")
 clean_duplicate_archives = function(reg_dir, result_path = here::here("results"),
                                     tmp_path = here::here("tmp", "archive-backup")) {
 

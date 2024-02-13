@@ -15,23 +15,23 @@ requireNamespace("mlr3extralearners")
 library(ggplot2)
 
 reg_dir = here::here(settings$reg_name)
-reg = loadRegistry(reg_dir, writeable = TRUE)
+reg = suppressWarnings(loadRegistry(reg_dir, writeable = TRUE))
 
 alljobs = collect_job_table(reg)
 result_path = here::here("results")
 
 # Reassembling tuning archives ----------------------------------------------------------------
-if (!fs::file_exists(fs::path(result_path, "archives-with-logs.rds"))) {
-  cli::cli_inform("Reassembling tuning archives including logs")
+if (!fs::file_exists(fs::path(result_path, settings$reg_name, "archives-with-logs.rds"))) {
+  cli::cli_alert_info("Reassembling tuning archives including logs")
   tictoc::tic()
-  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = TRUE)
+  archives = reassemble_archives(reg_name = settings$reg_name, result_path = result_path, keep_logs = TRUE)
   tictoc::toc()
 }
 
-if (!fs::file_exists(fs::path(result_path, "archives-no-logs.rds"))) {
-  cli::cli_inform("Reassembling tuning archives without logs")
+if (!fs::file_exists(fs::path(result_path, settings$reg_name, "archives-no-logs.rds"))) {
+  cli::cli_alert_info("Reassembling tuning archives without logs")
   tictoc::tic()
-  archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = FALSE)
+  archives = reassemble_archives(reg_name = settings$reg_name, result_path = result_path, keep_logs = FALSE)
   tictoc::toc()
 }
 
