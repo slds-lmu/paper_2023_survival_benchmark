@@ -165,6 +165,11 @@ tasks = load_task_data()
 # survival::cox.zph(survival::coxph(survival::Surv(time, status) ~ ., data = tasks$hdfail))
 
 tab_ph_test_dt = function(tasks, task_id) {
+  
+  if (length(task_id) > 1) {
+    return(data.table::rbindlist(lapply(task_id, \(x) tab_ph_test_dt(tasks, x))))
+  }
+  
   cli::cli_alert_info("Checking {task_id}")
   fit_cph = survival::coxph(survival::Surv(time, status) ~ ., data = tasks[[task_id]])
   
@@ -189,12 +194,14 @@ tab_ph_test_dt = function(tasks, task_id) {
   dt
 }
 
-global_dt = data.table::rbindlist(lapply(names(tasks), \(x) tab_ph_test_dt(tasks, x)))
+global_dt = tab_ph_test_dt(tasks, names(tasks))
 
 global_dt |>
   kbl(caption = "Global Schoenfeld Test") |>
   kable_styling() |>
-  row_spec(row = which(global_dt$p == "< 0.05"), bold = TRUE)
+  row_spec(row = which(global_dt$p == "< 0.05"), bold = TRUE) |>
+  row_spec(row = which(global_dt$p != "< 0.05"), color = "gray") |>
+  row_spec(row = which(is.na(global_dt$p)), color = "crimson")
 
 # tab_ph_test = function(tasks, task_id) {
 #   cli::cli_alert_info("Checking {task_id}")
