@@ -361,7 +361,7 @@ reassemble_archives = function(
   }
 
   if (fs::file_exists(archive_path)) {
-    cli::cli_alert_inform("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
+    cli::cli_alert_info("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
     return(readRDS(archive_path))
   }
 
@@ -380,7 +380,9 @@ reassemble_archives = function(
     .default = learners$learner_id_long
   )
 
+  cli::cli_progress_bar("Reading tunign archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
+    cli::cli_progress_update()
     archive = readRDS(file)
 
     if (!keep_logs) {
@@ -401,13 +403,13 @@ reassemble_archives = function(
                warnings_sum = sum(archive$warnings),
                errors_sum = sum(archive$errors))
   }))
+  cli::cli_progress_done()
 
   archives = archives[learners, on = "learner_id_long"]
   archives = archives[!is.na(tune_measure), ]
   archives[, learner_id_long := NULL]
 
   saveRDS(archives, archive_path)
-
 
   archives[]
 }
@@ -417,7 +419,7 @@ reassemble_archives = function(
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,
 #' so the associated timestamp is used to identify the older archive and move it to
 #' a backup location.
-#' @param reg_dir Path to the registry (contaisn the archives).
+#' @param reg_dir Path to the registry (contains the archives).
 #' @param result_path `here::here("results")`.
 #' @param tmp_path `here::here("tmp", "archive-backup")`.
 #'
