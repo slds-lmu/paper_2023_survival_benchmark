@@ -380,9 +380,9 @@ reassemble_archives = function(
     .default = learners$learner_id_long
   )
 
-  cli::cli_progress_bar("Reading tunign archives", total = length(tuning_files))
+  pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
-    cli::cli_progress_update()
+    cli::cli_progress_update(id = pb)
     archive = readRDS(file)
 
     if (!keep_logs) {
@@ -403,7 +403,7 @@ reassemble_archives = function(
                warnings_sum = sum(archive$warnings),
                errors_sum = sum(archive$errors))
   }))
-  cli::cli_progress_done()
+  cli::cli_progress_done(id = pb)
 
   archives = archives[learners, on = "learner_id_long"]
   archives = archives[!is.na(tune_measure), ]
