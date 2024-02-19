@@ -21,11 +21,10 @@ editor_options:
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 root = here::here()
 source(file.path(root, "helpers.R"))
-
-# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
-# See https://rstudio.github.io/config/articles/config.html
-cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
 settings = config::get(config = "beartooth")
+reg_dir = file.path(root, settings$reg_name)
+result_path = here::here("results")
+
 
 ###################################################################################################
 ### Packages
@@ -37,8 +36,6 @@ requireNamespace("mlr3extralearners")
 library(ggplot2)
 library(kableExtra)
 
-reg_dir = file.path(root, settings$reg_name)
-result_path = here::here("results")
 
 
 msr_tbl = measures_tbl()
@@ -84,7 +81,7 @@ plot_results = function(
       p = p +
         labs(
           title = measure_label,
-          subtitle = plot_type_label,
+          subtitle = if (type != "box") plot_type_label else NULL,
           x = NULL,
           y = measure_label,
           caption = glue::glue("Tuning measure: {tuning_measure_label}")
@@ -123,6 +120,20 @@ bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harr
 
 bma_rcll  = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
 bmrtab_rcll = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
+
+# Excluding SSVM results as there are no usable ones
+bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
+bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
+
+bma1 = bma_harrell_c$data
+bma1[, tuned := "harrell_c"]
+
+bma2 = bma_rcll$data
+bma2[, tuned := "rcll"]
+
+bma_full = rbind(bma1, bma2)
+rm(bma1, bma2)
+
 ```
 
 ## Metadata
@@ -279,43 +290,24 @@ bmrtab_harrell_c[errors > 0,][, .(n = .N), by = .(learner_id)] |>
 
 By substituting them with fixed bad scores
 
-- Graf Score (Improper) -> ?
-- Graf Score (Improper, ERV) -> ?
+- Graf Score (Improper) -> 1 (?)
+- Graf Score (Improper, ERV) -> 1 (?)
 - Alpha -> 10 (same as D-Calibration)
 
 ```{r}
-xdat = bma_harrell_c$data
+check_scores(bma_harrell_c) |>
+  kbl(caption = "Invalid scores, tuned on Harrell's C") |>
+  kable_styling()
 
-# Excluding SSVM results as there are no usable ones
-xdat = xdat[learner_id != "SSVM", ]
-xdat = xdat[, learner_id := factor(learner_id, levels = setdiff(levels(xdat$learner_id), "SSVM"))]
+check_scores(bma_rcll) |>
+  kbl(caption = "Invalid scores, tuned on RCLL") |>
+  kable_styling()
 
-invalid_tbl = lapply(names(xdat), \(x) {
-  tibble::tibble(
-    measure = x,
-    NA_n = sum(is.na(xdat[[x]]) & !is.nan(xdat[[x]])),
-    Inf_n = sum(is.infinite(xdat[[x]])),
-    NaN_n = sum(is.nan(xdat[[x]])),
-    total = NA_n + Inf_n + NaN_n
-  )
-}) |>
-  data.table::rbindlist(use.names = TRUE) |>
-  dplyr::filter(total > 0)
+bma_harrell_c = truncate_scores(bma_harrell_c, trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1)
+bma_rcll      = truncate_scores(bma_rcll,      trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1)
 
-invalid_tbl |>
-  tablify()
-
-is_valid = function(x) {
-  is.finite(x) & !is.na(x) & !is.nan(x)
-}
-
-xdat$caliba[!is_valid(xdat$caliba)] <- 10
-xdat$graf_improper[!is_valid(xdat$graf_improper)] <- 1
-xdat$graf_improper_erv[!is_valid(xdat$graf_improper_erv)] <- 1
-# max(xdat$graf_improper[is_valid(xdat$graf_improper)])
-
-bma_harrell_c = as_benchmark_aggr(xdat)
 saveRDS(bma_harrell_c, here::here("results/registry_beartooth/bma_clean_harrell_c.rds"))
+saveRDS(bma_rcll, here::here("results/registry_beartooth/bma_rcll.rds"))
 ```
 
 
@@ -326,7 +318,7 @@ Proportion of errors relative to total number of evaluations, i.e. `nrow()` of t
 ```{r get-archives}
 #| cache: true
 
-archives = reassemble_archives(reg_dir = reg_dir, result_path = result_path, keep_logs = FALSE)
+archives = reassemble_archives(reg_name = settings$reg_name, result_path = result_path, keep_logs = FALSE)
 archives[, archive_length := vapply(archive, nrow, 1)]
 #archive_errors = archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
 
@@ -348,6 +340,7 @@ archives[, .(errors_total = sum(errors_sum), evals_total = sum(archive_length)),
 ```{r}
 bma_harrell_c$data |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
+  dplyr::arrange(task_id, learner_id) |>
   reactable::reactable(
     sortable = TRUE, filterable = TRUE, searchable = TRUE
   )
@@ -365,7 +358,7 @@ aggr_friedman_harrell |>
 
 ### Mean + SE
 
-```{r meanse}
+```{r meanse-harrell-c}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
   plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c")
@@ -374,7 +367,7 @@ for (measure_id in measures_eval_ids) {
 
 ### Boxplots
 
-```{r boxplot}
+```{r boxplot-harrell-c}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
   plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
@@ -384,7 +377,7 @@ for (measure_id in measures_eval_ids) {
 
 ### Friedman-Nemenyi
 
-```{r friedman-nemenyi}
+```{r friedman-nemenyi-harrell-c}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
   if (measure_id %in% c("caliba")) next
@@ -394,10 +387,99 @@ for (measure_id in measures_eval_ids) {
 
 ### Critical Difference Plots: Nemenyi
 
-```{r critical-difference}
+```{r critical-difference-harrell-c}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
   if (measure_id %in% c("caliba")) next
   plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1.05)
 }
 ```
+
+
+## Tuned on: RCLL
+
+### Raw scores (`bma`)
+
+```{r}
+bma_rcll$data |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
+  dplyr::arrange(task_id, learner_id) |>
+  reactable::reactable(
+    sortable = TRUE, filterable = TRUE, searchable = TRUE
+  )
+```
+
+
+### Global Friedman Test
+
+```{r friedman-rcll}
+aggr_friedman_rcll = aggr_friedman_global(bma_rcll, measures_eval_ids = msr_tbl$id, conf.level = 0.95)
+
+aggr_friedman_rcll |>
+  tablify()
+```
+
+### Mean + SE
+
+```{r meanse-rcll}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll")
+}
+```
+
+### Boxplots
+
+```{r boxplot-rcll}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll")
+}
+
+```
+
+### Friedman-Nemenyi
+
+```{r friedman-nemenyi-rcll}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
+  plot_results(bma = bma_rcll, type = "fn", measure_id = measure_id, tuning_measure_id = "rcll")
+}
+```
+
+### Critical Difference Plots: Nemenyi
+
+```{r critical-difference-rcll}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
+  plot_results(bma = bma_rcll, type = "cd_n", measure_id = measure_id, tuning_measure_id = "rcll", ratio = 1.05)
+}
+```
+
+## Comparing Tning Measures
+
+```{r}
+ggplot(bma_full, aes(x = learner_id, y = rcll, color = tuned, fill = tuned)) +
+  geom_boxplot(alpha = 1/3) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+
+
+
+<!-- Last chunk to auto-trim CD plots while we're at it -->
+
+```{r trim-critical-diff}
+pngs = fs::dir_ls("analysis_files/figure-html/", glob = "*critical-diff*png")
+purrr::walk(pngs, \(x) {
+  magick::image_read(x) |>
+    magick::image_trim() |>
+    magick::image_write(path = x)
+})
+```
+
