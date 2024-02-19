@@ -120,6 +120,9 @@ tablify = function(x, caption = NULL) {
 
 bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
 bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harrell_c.rds"))
+
+bma_rcll  = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
+bmrtab_rcll = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
 ```
 
 ## Metadata
@@ -353,12 +356,6 @@ bma_harrell_c$data |>
 
 ### Global Friedman Test
 
-::: {.callout-warning}
-## Benchmark is not complete yet
-
-Statistical tests should not be considered valid until all results are in.
-:::
-
 ```{r friedman-harrell-c}
 aggr_friedman_harrell = aggr_friedman_global(bma_harrell_c, measures_eval_ids = msr_tbl$id, conf.level = 0.95)
 
@@ -390,6 +387,7 @@ for (measure_id in measures_eval_ids) {
 ```{r friedman-nemenyi}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
   plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
 ```
@@ -399,6 +397,7 @@ for (measure_id in measures_eval_ids) {
 ```{r critical-difference}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
   plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1.05)
 }
 ```
