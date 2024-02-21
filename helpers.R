@@ -1,3 +1,4 @@
+library(data.table)
 # Helpers run pre-benchmark -------------------------------------------------------------------
 
 #' Store instantiated resamplings as mlr3 resampling objects
@@ -455,24 +456,6 @@ clean_duplicate_archives = function(reg_dir, result_path = here::here("results")
   cli::cli_alert_success("Done!")
 }
 
-#' Perform global Friedman tests and collect results
-#'
-#' A thin wrapper around `BenchmarkAggr`'s `$friedman_test()` with some cleanup.
-#' @param bma A `BenchmarkAggr` object.
-#' @param measures_eval_ids A `character` vector of measure ids present in `bma`.
-#' @param digits `[3]` Passed to `format.pval`.
-#' @param conf.level `[0.95]` Passed to `format.val(..., eps = 1 - conf.level)`.
-aggr_friedman_global = function(bma, measures_eval_ids, digits = 3, conf.level = 0.95) {
-  res = data.table::rbindlist(lapply(measures_eval_ids, \(x) {
-    ret = broom::tidy(bma$friedman_test(meas = x))
-    ret$measure = x
-    ret[, c("measure", "statistic", "p.value", "parameter")]
-  }))
-
-  res[, p.value.fmt := format.pval(p.value, digits = 3, eps = 1 - conf.level)][]
-}
-
-
 #' Check if scores are valid / invalid
 #'
 #' Validty in this case only meaning it's neither Inf, NA, nor NaN
@@ -482,6 +465,63 @@ is_valid = function(x) {
 }
 is_invalid = function(x) !is_valid(x)
 
+check_scores = function(bma) {
+  xdat = bma$data
+
+  res = lapply(names(xdat), \(x) {
+    tibble::tibble(
+      measure = x,
+      NA_n = sum(is.na(xdat[[x]]) & !is.nan(xdat[[x]])),
+      Inf_n = sum(is.infinite(xdat[[x]])),
+      NaN_n = sum(is.nan(xdat[[x]])),
+      total = NA_n + Inf_n + NaN_n
+    )
+  }) |>
+    data.table::rbindlist(use.names = TRUE)
+
+  res[total > 0, ]
+}
+
+truncate_scores = function(bma, trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1) {
+  xdat = data.table::copy(bma$data)
+
+  xdat$caliba[!is_valid(xdat$caliba)] <- trunc_caliba
+  xdat$caliba[xdat$caliba > 10] <- trunc_caliba
+  xdat$graf_improper[!is_valid(xdat$graf_improper)] <- trunc_graf_improper
+  xdat$graf_improper_erv[!is_valid(xdat$graf_improper_erv)] <- trunc_graf_improper_erv
+
+  mlr3benchmark::as_benchmark_aggr(xdat)
+}
+
+remove_results = function(bma, learner_id_exclude = "SSVM") {
+  xdat = data.table::copy(bma$data)
+
+  xdat = xdat[xdat[["learner_id"]] != learner_id_exclude, ]
+  xdat = xdat[, learner_id := factor(learner_id, levels = setdiff(levels(xdat$learner_id), learner_id_exclude))]
+
+  mlr3benchmark::as_benchmark_aggr(xdat)
+}
+
+rename_learners = function(bma) {
+  xdat = data.table::copy(bma$data)
+  learner_levels = levels(xdat$learner_id)
+
+  xdat[, learner_id := dplyr::case_when(
+    learner_id == "AF" ~ "AK",
+    learner_id == "NL" ~ "NA",
+    TRUE ~ learner_id
+  )]
+
+  learner_levels = dplyr::case_when(
+    learner_levels == "AF" ~ "AK",
+    learner_levels == "NL" ~ "NA",
+    TRUE ~ learner_levels
+  )
+
+  xdat[, learner_id := factor(learner_id, levels = learner_levels)]
+
+  mlr3benchmark::as_benchmark_aggr(xdat)
+}
 
 # Utilities for job management ----------------------------------------------------------------
 

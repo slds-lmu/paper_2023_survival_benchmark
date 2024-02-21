@@ -51,7 +51,6 @@ plot_results = function(
   measure_label = msr_tbl[id == measure_id, label]
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
   
-  
   plot_type_label = switch(
     type,
     mean = "Mean ± SE",
@@ -116,14 +115,17 @@ tablify = function(x, caption = NULL) {
 # bmr_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bmr_harrell_c.rds"))
 
 bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
-bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harrell_c.rds"))
+bma_rcll       = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
 
-bma_rcll  = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
-bmrtab_rcll = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
+bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harrell_c.rds"))
+bmrtab_rcll      = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
 
 # Excluding SSVM results as there are no usable ones
 bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
 bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
+
+bma_harrell_c = rename_learners(bma_harrell_c)
+bma_rcll      = rename_learners(bma_rcll)
 
 bma1 = bma_harrell_c$data
 bma1[, tuned := "harrell_c"]
@@ -316,8 +318,6 @@ saveRDS(bma_rcll, here::here("results/registry_beartooth/bma_rcll.rds"))
 Proportion of errors relative to total number of evaluations, i.e. `nrow()` of the associated tuning archives.
 
 ```{r get-archives}
-#| cache: true
-
 archives = reassemble_archives(reg_name = settings$reg_name, result_path = result_path, keep_logs = FALSE)
 archives[, archive_length := vapply(archive, nrow, 1)]
 #archive_errors = archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
@@ -333,9 +333,13 @@ archives[, .(errors_total = sum(errors_sum), evals_total = sum(archive_length)),
 
 # Eval Measures
 
-## Tuned on: Harrell's C
+Scores are separated by tuning measure (Harrell's C and RCLL).
 
 ### Raw scores (`bma`)
+
+::: {.panel-tabset}
+
+#### Harrell's C
 
 ```{r}
 bma_harrell_c$data |>
@@ -346,59 +350,7 @@ bma_harrell_c$data |>
   )
 ```
 
-
-### Global Friedman Test
-
-```{r friedman-harrell-c}
-aggr_friedman_harrell = aggr_friedman_global(bma_harrell_c, measures_eval_ids = msr_tbl$id, conf.level = 0.95)
-
-aggr_friedman_harrell |>
-  tablify()
-```
-
-### Mean + SE
-
-```{r meanse-harrell-c}
-#| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c")
-}
-```
-
-### Boxplots
-
-```{r boxplot-harrell-c}
-#| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
-}
-
-```
-
-### Friedman-Nemenyi
-
-```{r friedman-nemenyi-harrell-c}
-#| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba")) next
-  plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c")
-}
-```
-
-### Critical Difference Plots: Nemenyi
-
-```{r critical-difference-harrell-c}
-#| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba")) next
-  plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1.05)
-}
-```
-
-
-## Tuned on: RCLL
-
-### Raw scores (`bma`)
+#### RCLL
 
 ```{r}
 bma_rcll$data |>
@@ -409,17 +361,44 @@ bma_rcll$data |>
   )
 ```
 
+::: 
 
 ### Global Friedman Test
 
-```{r friedman-rcll}
-aggr_friedman_rcll = aggr_friedman_global(bma_rcll, measures_eval_ids = msr_tbl$id, conf.level = 0.95)
+::: {.panel-tabset}
 
-aggr_friedman_rcll |>
+#### Harrell's C
+
+
+```{r friedman-harrell-c}
+bma_harrell_c$friedman_test(p.adjust.method = "holm") |>
   tablify()
 ```
 
+#### RCLL
+
+```{r friedman-rcll}
+bma_rcll$friedman_test(p.adjust.method = "holm") |>
+  tablify()
+```
+
+::: 
+
 ### Mean + SE
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+
+```{r meanse-harrell-c}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c")
+}
+```
+
+#### RCLL
 
 ```{r meanse-rcll}
 #| fig-width: 10
@@ -428,7 +407,24 @@ for (measure_id in measures_eval_ids) {
 }
 ```
 
+::: 
+
 ### Boxplots
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+
+```{r boxplot-harrell-c}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
+}
+
+```
+
+#### RCLL
 
 ```{r boxplot-rcll}
 #| fig-width: 10
@@ -438,7 +434,24 @@ for (measure_id in measures_eval_ids) {
 
 ```
 
+:::
+
 ### Friedman-Nemenyi
+
+::: {.panel-tabset}
+
+
+#### Harrell's C
+
+```{r friedman-nemenyi-harrell-c}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
+  plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c")
+}
+```
+
+#### RCLL
 
 ```{r friedman-nemenyi-rcll}
 #| fig-width: 10
@@ -448,7 +461,25 @@ for (measure_id in measures_eval_ids) {
 }
 ```
 
+:::
+
 ### Critical Difference Plots: Nemenyi
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+
+```{r critical-difference-harrell-c}
+#| fig-width: 10
+for (measure_id in measures_eval_ids) {
+  if (measure_id %in% c("caliba")) next
+  plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1.05)
+}
+```
+
+
+#### RCLL
 
 ```{r critical-difference-rcll}
 #| fig-width: 10
@@ -457,6 +488,12 @@ for (measure_id in measures_eval_ids) {
   plot_results(bma = bma_rcll, type = "cd_n", measure_id = measure_id, tuning_measure_id = "rcll", ratio = 1.05)
 }
 ```
+
+::: 
+
+
+
+
 
 ## Comparing Tning Measures
 
