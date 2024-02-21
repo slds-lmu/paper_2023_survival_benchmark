@@ -4,3 +4,4 @@ code/*.R
 registry/*
 registry*
 attic/_dependencies.R
+analysis.qmd

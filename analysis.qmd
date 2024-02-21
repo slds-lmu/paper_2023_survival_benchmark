@@ -71,8 +71,8 @@ plot_results = function(
       
       p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
         labs(
-          caption = glue::glue("Tuning measure: {tuning_measure_label}
-                               Evaluation measure: {measure_label}")
+          caption = glue::glue("Evaluation measure: {measure_label}
+                               Tuning measure: {tuning_measure_label}")
         )
     } else {
       p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
@@ -507,12 +507,13 @@ ggplot(bma_full, aes(x = learner_id, y = rcll, color = tuned, fill = tuned)) +
 ```
 
 
-
-
 <!-- Last chunk to auto-trim CD plots while we're at it -->
 
-```{r trim-critical-diff}
-pngs = fs::dir_ls("analysis_files/figure-html/", glob = "*critical-diff*png")
+```{r trim-critical-diff, eval = requireNamespace("magick", quietly = TRUE)}
+# This requires the magick package which is purposefully excluded from renv.lock 
+# as it was not easily installable on the cluster due to the libmagick dependency
+
+pngs = fs::dir_ls(knitr::opts_chunk$get()$fig.path, glob = "*critical-diff*png")
 purrr::walk(pngs, \(x) {
   magick::image_read(x) |>
     magick::image_trim() |>
