@@ -1858,14 +1858,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.5.8",
+      "Version": "0.6.0",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "930d8b0a3b460ef8286d53670a4389fdd241bfe7",
+      "RemoteSha": "ed6c351cfa2241b481d4dff61daf50aac33d3bb7",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1882,7 +1882,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "34e1fdce161f70b9b5174a10e368adf8"
+      "Hash": "32c3783020383689967cd4fc0d9e421c"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
