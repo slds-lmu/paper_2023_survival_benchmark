@@ -172,21 +172,22 @@ get_measures_eval = function() {
     msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss"),
     msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (ERV)"),
 
-    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Log Loss"),
-    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Log Loss (ERV)"),
+    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Negative Log-Likelihood"),
+    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Negative Log-Likelihood (ERV)"),
 
-    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Integrated Log Loss (Proper)"),
-    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Integrated Log Loss (Proper, ERV)"),
+    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Integrated Log-Likelihood (Proper)"),
+    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Integrated Log-Likelihood (Proper, ERV)"),
 
-    msr("surv.calib_alpha", id = "caliba", label = "Van Houwelingen's Alpha"),
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
+    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha (Difference Method)"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
 
-    msr("surv.graf",        id = "graf_proper",     proper = TRUE,   ERV = FALSE, label = "Graf Score (Proper)"),
-    msr("surv.graf",        id = "graf_proper_erv", proper = TRUE,   ERV = TRUE, label = "Graf Score (Proper, ERV)"),
+    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Integrated Brier Score (Proper)"),
+    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Integrated Brier Score (Proper, ERV)"),
 
-    msr("surv.graf",        id = "graf_improper",     proper = FALSE,  ERV = FALSE, label = "Graf Score (Improper)"),
-    msr("surv.graf",        id = "graf_improper_erv", proper = FALSE,  ERV = TRUE, label = "Graf Score (Improper, ERV)")
+    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Brier Score (Improper)"),
+    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Brier Score (Improper, ERV)")
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
   measures_eval
@@ -203,11 +204,11 @@ measures_tbl = function() {
     "surv.rcll",        "rcll",
     "surv.rcll",        "rcll_erv",
 
-    "surv.graf",        "graf_proper",
-    "surv.graf",        "graf_proper_erv",
+    "surv.brier",       "brier_proper",
+    "surv.brier",       "brier_proper_erv",
 
-    "surv.graf",        "graf_improper",
-    "surv.graf",        "graf_improper_erv",
+    "surv.brier",       "brier_improper",
+    "surv.brier",       "brier_improper_erv",
 
     "surv.dcalib",      "dcalib",
 
@@ -217,7 +218,8 @@ measures_tbl = function() {
     "surv.logloss",     "logloss",
     "surv.logloss",     "logloss_erv",
 
-    "surv.calib_alpha", "caliba"
+    "surv.calib_alpha", "caliba_ratio",
+    "surv.calib_alpha", "caliba_diff"
   )
 
   measures_eval = get_measures_eval()
@@ -254,35 +256,39 @@ collect_results = function(
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
     result_path = here::here("results"),
-    include_aggr = FALSE,
+    # include_aggr = FALSE,
     id_filter = NULL
 ) {
 
   reg_dir = here::here(reg_name)
   reg = suppressWarnings(batchtools::loadRegistry(reg_dir, writeable = TRUE))
 
-  cli::cli_alert_info("Using registry {.file '{reg_name}'}")
+  cli::cli_alert_info("Using registry {.file {reg_name}}")
   result_path = fs::path(result_path, reg_name)
-  cli::cli_alert_info("Storing results for '{tuning_measure}' in {fs::path_rel(result_path)}")
+  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(result_path)}")
   if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
 
   selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
   done_ids = batchtools::findDone(selected_ids)
   done_perc = round(100 * nrow(done_ids)/nrow(selected_ids), 3)
-  cli::cli_alert_info("Selected {nrow(selected_ids)} ids of which {nrow(done_ids)} are done ({done_perc}%)")
+  cli::cli_alert_info("Found {nrow(selected_ids)} job ids of which {nrow(done_ids)} are done ({done_perc}%)")
 
   if (!is.null(id_filter)) {
     done_ids = ijoin(done_ids, id_filter)
     cli::cli_alert_info("Filtering down to {nrow(done_ids)} ids")
   }
 
-  path_bmr = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
+  path_bmr     = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
   path_bmr_tab = glue::glue("{result_path}/bmrtab_{tuning_measure}.rds")
-  path_bma = glue::glue("{result_path}/bma_{tuning_measure}.rds")
-  path_aggr = glue::glue("{result_path}/aggr_{tuning_measure}.rds")
+  path_bma     = glue::glue("{result_path}/bma_{tuning_measure}.rds")
+  # path_aggr    = glue::glue("{result_path}/aggr_{tuning_measure}.rds")
+
+  if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab)))) {
+    return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
+  }
 
   if (!file.exists(path_bmr)) {
-    tictoc::tic(msg = glue::glue("Reducing results: {tuning_measure}"))
+    tictoc::tic(msg = glue::glue("Reducing results ({tuning_measure})"))
     bmr = reduceResultsBatchmark(
       ids = done_ids,
       store_backends = TRUE, reg = reg
@@ -297,26 +303,29 @@ collect_results = function(
     saveRDS(bmr_tab, path_bmr_tab)
 
     # benchmark result
-    tictoc::tic(msg = glue::glue("Saving bmr: {tuning_measure}"))
+    tictoc::tic(msg = glue::glue("Saving bmr ({tuning_measure})"))
     saveRDS(bmr, file = path_bmr)
     tictoc::toc()
+
   } else if (!fs::file_exists(path_bma) | !fs::file_exists(path_aggr)) {
-    tictoc::tic(msg = glue::glue("Reading bmr from disk: {tuning_measure}"))
+
+    cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
+    tictoc::tic(msg = glue::glue("Reading bmr:"))
     bmr = readRDS(path_bmr)
     tictoc::toc()
-  } else {
-    cli::cli_alert_success("bmr, bma and aggr already exist!")
+
   }
 
   gc()
 
   # bma via mlr3benchmark
   if (!fs::file_exists(path_bma)) {
-    tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing results: {tuning_measure}"))
+    cli::cli_alert_info("as_benchmark_aggr'ing results ({tuning_measure})")
+    tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing:"))
     bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
     tictoc::toc()
 
-    tictoc::tic(msg = glue::glue("Saving bma: {tuning_measure}"))
+    tictoc::tic(msg = glue::glue("Saving bma ({tuning_measure})"))
     saveRDS(bma, path_bma)
     tictoc::toc()
   } else {
@@ -326,20 +335,20 @@ collect_results = function(
   gc()
 
   # Aggr is probably optional and also takes a while to create
-  if (include_aggr) {
-    if (!fs::file_exists(path_aggr)) {
-      # benchmark$aggregate
-      tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
-      aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
-      tictoc::toc()
-
-      tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
-      saveRDS(aggr, path_aggr)
-      tictoc::toc()
-    } else {
-      cli::cli_alert_success("aggr already saved!")
-    }
-  }
+  # if (include_aggr) {
+  #   if (!fs::file_exists(path_aggr)) {
+  #     # benchmark$aggregate
+  #     tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
+  #     aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
+  #     tictoc::toc()
+  #
+  #     tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
+  #     saveRDS(aggr, path_aggr)
+  #     tictoc::toc()
+  #   } else {
+  #     cli::cli_alert_success("aggr already saved!")
+  #   }
+  # }
 
 
 }

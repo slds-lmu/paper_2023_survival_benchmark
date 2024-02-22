@@ -51,8 +51,7 @@ collect_results(
   reg_name = settings$reg_name,
   # id_filter = done_task_ids,
   tuning_measure = "harrell_c",
-  measures_eval = measures_eval,
-  result_path = here::here("results"),
+  measures_eval = measures_eval
 )
 
 # Same for RCLL
@@ -60,6 +59,5 @@ collect_results(
   reg_name = settings$reg_name,
   # id_filter = done_task_ids,
   tuning_measure = "rcll",
-  measures_eval = measures_eval,
-  result_path = here::here("results"),
+  measures_eval = measures_eval
 )
