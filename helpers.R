@@ -309,7 +309,7 @@ collect_results = function(
     saveRDS(bmr, file = path_bmr)
     tictoc::toc()
 
-  } else if (!fs::file_exists(path_bma) | !fs::file_exists(path_aggr)) {
+  } else if (!fs::file_exists(path_bma)) {
 
     cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
     tictoc::tic(msg = glue::glue("Reading bmr"))
