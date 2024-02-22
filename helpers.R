@@ -260,8 +260,10 @@ collect_results = function(
     id_filter = NULL
 ) {
 
+  tictoc::tic("The whole shebang")
+
   reg_dir = here::here(reg_name)
-  reg = suppressWarnings(batchtools::loadRegistry(reg_dir, writeable = TRUE))
+  reg = suppressWarnings(suppressMessages(batchtools::loadRegistry(reg_dir, writeable = TRUE)))
 
   cli::cli_alert_info("Using registry {.file {reg_name}}")
   result_path = fs::path(result_path, reg_name)
@@ -310,7 +312,7 @@ collect_results = function(
   } else if (!fs::file_exists(path_bma) | !fs::file_exists(path_aggr)) {
 
     cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
-    tictoc::tic(msg = glue::glue("Reading bmr:"))
+    tictoc::tic(msg = glue::glue("Reading bmr"))
     bmr = readRDS(path_bmr)
     tictoc::toc()
 
@@ -321,18 +323,17 @@ collect_results = function(
   # bma via mlr3benchmark
   if (!fs::file_exists(path_bma)) {
     cli::cli_alert_info("as_benchmark_aggr'ing results ({tuning_measure})")
-    tictoc::tic(msg = glue::glue("as_benchmark_aggr'ing:"))
+    tictoc::tic(msg = "as_benchmark_aggr'ing")
     bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
     tictoc::toc()
 
-    tictoc::tic(msg = glue::glue("Saving bma ({tuning_measure})"))
+    cli::cli_alert_info("Saving bma ({tuning_measure})")
     saveRDS(bma, path_bma)
-    tictoc::toc()
   } else {
     cli::cli_alert_success("bma already saved!")
   }
 
-  gc()
+  tictoc::toc()
 
   # Aggr is probably optional and also takes a while to create
   # if (include_aggr) {
