@@ -533,6 +533,94 @@ rename_learners = function(bma) {
   mlr3benchmark::as_benchmark_aggr(xdat)
 }
 
+
+tablify = function(x, caption = NULL, ...) {
+  x |>
+    kableExtra::kbl(caption = caption, booktabs = TRUE, ...) |>
+    kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
+}
+
+#' BenchmarkAggr plot wrapper
+#'
+#' Unified interface for various autoplot.BenchmarkAggr types.
+#'
+#' @param bma (`BenchmarkAggr`)
+#' @param type One of `"mean", "box", "fn"` or `"cd_n"` for Critical Differences (Nemenyi) or
+#'   `"cd_bd"` for Critical Differences with baseline comparison
+#' @param measure_id
+#' @param tuning_measure_id
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_results = function(
+    bma, type = "box", measure_id = "harrell_c", tuning_measure_id = "harrell_c",
+    exclude_learners = "",
+    ...
+) {
+
+  measure_label = msr_tbl[id == measure_id, label]
+  tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
+
+  if (type %in% c("box", "mean")) {
+    xdat = bma$data
+    bma = mlr3benchmark::as_benchmark_aggr(xdat[learner_id %nin% exclude_learners, ])
+  }
+
+  plot_type_label = switch(
+    type,
+    mean = "Mean ± SE",
+    box = "Boxplot",
+    fn = "Post-hoc Friedman-Nemenyi",
+    cd_n = "Critical Differences (Nemenyi)",
+    cd_bd = "Critical Differences (Baseline)"
+  )
+
+  minimize = msr_tbl[id == measure_id, minimize]
+  is_erv = msr_tbl[id == measure_id, erv]
+
+  if (type %in% c("cd_n", "cd_bd") & !is_erv) {
+
+    test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
+
+    # cli::cli_alert_info("Performing type {type} and measure {measure_id} and test {test}, minimize = {minimize}")
+
+    p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
+      labs(
+        caption = glue::glue("Evaluation measure: {measure_label}
+                             Tuning measure: {tuning_measure_label}")
+      )
+  } else {
+    p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
+
+    p = p +
+      labs(
+        title = measure_label,
+        subtitle = if (type != "box") plot_type_label else NULL,
+        x = NULL,
+        y = measure_label,
+        caption = glue::glue("Tuning measure: {tuning_measure_label}")
+      )
+  }
+
+  if (type %in% c("box", "mean")) {
+    p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    p = p + theme_minimal(base_size = 15)
+  }
+
+  if (type == "fn") {
+    p = p + theme(
+      axis.text.x = element_text(angle = 90),
+      axis.text.y = element_text(angle = 0)
+    )
+  }
+
+  print(p)
+
+}
+
 # Utilities for job management ----------------------------------------------------------------
 
 

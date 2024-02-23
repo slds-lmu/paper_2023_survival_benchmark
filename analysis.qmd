@@ -43,72 +43,6 @@ msr_tbl = measures_tbl()
 measures_eval_ids = msr_tbl$id
 lrntab = load_lrntab()
 tasktab = load_tasktab()
-
-plot_results = function(
-    bma, type = "box", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ...
-    ) {
-  
-  measure_label = msr_tbl[id == measure_id, label]
-  tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
-  
-  plot_type_label = switch(
-    type,
-    mean = "Mean ± SE",
-    box = "Boxplot",
-    fn = "Post-hoc Friedman-Nemenyi",
-    cd_n = "Critical Differences (Nemenyi)",
-    cd_bd = "Critical Differences (Baseline KM)"
-  )
-  
-  minimize = msr_tbl[id == measure_id, minimize]
-  is_erv = msr_tbl[id == measure_id, erv]
-
-  try({
-    
-    if (type %in% c("cd_n", "cd_bd") & !is_erv) {
-      
-      test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
-      
-      p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
-        labs(
-          caption = glue::glue("Evaluation measure: {measure_label}
-                               Tuning measure: {tuning_measure_label}")
-        )
-    } else {
-      p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
-      
-      p = p +
-        labs(
-          title = measure_label,
-          subtitle = if (type != "box") plot_type_label else NULL,
-          x = NULL,
-          y = measure_label,
-          caption = glue::glue("Tuning measure: {tuning_measure_label}")
-        )
-    }
-  
-    if (type %in% c("box", "mean")) {
-      p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
-      p = p + theme_minimal(base_size = 15)
-    }
-    
-    if (type == "fn") {
-      p = p + theme(
-        axis.text.x = element_text(angle = 90),
-        axis.text.y = element_text(angle = 0)
-      )
-    }
-    
-    print(p)
-  }, silent = TRUE)
-}
-
-tablify = function(x, caption = NULL) {
-  x |>
-    kableExtra::kbl(caption = caption) |>
-    kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
-}
-
 ```
 
 ```{r setup-read}
@@ -473,8 +407,8 @@ for (measure_id in measures_eval_ids) {
 ```{r critical-difference-harrell-c}
 #| fig-width: 10
 for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba")) next
-  plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1.05)
+  if (grepl("^caliba", measure_id)) next
+  plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1)
 }
 ```
 
@@ -492,10 +426,7 @@ for (measure_id in measures_eval_ids) {
 ::: 
 
 
-
-
-
-## Comparing Tning Measures
+## Comparing Tuning Measures
 
 ```{r}
 ggplot(bma_full, aes(x = learner_id, y = rcll, color = tuned, fill = tuned)) +
