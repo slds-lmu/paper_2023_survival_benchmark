@@ -35,12 +35,6 @@ library(ggplot2)
 # Assumes batchmark.R is run beforehand
 reg_dir = here::here(settings$reg_name)
 reg = loadRegistry(reg_dir, writeable = FALSE)
-
-tablify = function(x, caption = NULL, ...) {
-  x |>
-    kbl(caption = caption, ...) |>
-    kable_styling(bootstrap_options = c("striped", "hover"))
-}
 ```
 
 # Current Job Status
