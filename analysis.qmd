@@ -52,8 +52,8 @@ bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harr
 bmrtab_rcll      = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
 
 # Excluding SSVM results as there are no usable ones
-bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM", task_id_exclude = "patient")
-bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM", task_id_exclude = "patient")
+bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
+bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
 
 bma_harrell_c = rename_learners(bma_harrell_c)
 bma_rcll      = rename_learners(bma_rcll)

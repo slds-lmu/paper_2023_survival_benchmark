@@ -292,16 +292,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-
-  # Added as graf alternative for now as per RS
   msr("surv.rcll", id = "rcll")
-
-  # Excluding dcalib as it's not needed
-  # msr("surv.dcalib", id = "dcalib", truncate = Inf),
-
-  # If graf, then both
-  # msr("surv.graf", id = "graf_proper", proper = TRUE),
-  # msr("surv.graf", id = "graf_improper", proper = FALSE)
 )
 
 
