@@ -178,16 +178,19 @@ get_measures_eval = function() {
     msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Integrated Log-Likelihood (Proper)"),
     msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Integrated Log-Likelihood (Proper, ERV)"),
 
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
-    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha (Difference Method)"),
-
-    msr("surv.dcalib",      id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
 
     msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Integrated Brier Score (Proper)"),
     msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Integrated Brier Score (Proper, ERV)"),
 
     msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Brier Score (Improper)"),
-    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Brier Score (Improper, ERV)")
+    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Brier Score (Improper, ERV)"),
+
+    msr("surv.dcalib",      id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
+
+    # msr("surv.calib_alpha", id = "caliba", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
+    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha (Difference Method)")
+
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
   measures_eval
@@ -197,29 +200,29 @@ get_measures_eval = function() {
 #'
 measures_tbl = function() {
   msr_tbl = mlr3misc::rowwise_table(
-    ~mlr_id,            ~id,
-    "surv.cindex",      "harrell_c",
-    "surv.cindex",      "uno_c",
+    ~mlr_id,            ~id,           ~type,
+    "surv.cindex",      "harrell_c",   "Discrimination",
+    "surv.cindex",      "uno_c",       "Discrimination",
 
-    "surv.rcll",        "rcll",
-    "surv.rcll",        "rcll_erv",
+    "surv.rcll",        "rcll",       "Scoring Rule",
+    "surv.rcll",        "rcll_erv",   "Scoring Rule",
 
-    "surv.brier",       "brier_proper",
-    "surv.brier",       "brier_proper_erv",
+    "surv.intlogloss",  "intlogloss",     "Scoring Rule",
+    "surv.intlogloss",  "intlogloss_erv", "Scoring Rule",
 
-    "surv.brier",       "brier_improper",
-    "surv.brier",       "brier_improper_erv",
+    "surv.logloss",     "logloss",     "Scoring Rule",
+    "surv.logloss",     "logloss_erv", "Scoring Rule",
 
-    "surv.dcalib",      "dcalib",
+    "surv.brier",       "brier_proper",     "Scoring Rule",
+    "surv.brier",       "brier_proper_erv", "Scoring Rule",
 
-    "surv.intlogloss",  "intlogloss",
-    "surv.intlogloss",  "intlogloss_erv",
+    "surv.brier",       "brier_improper",      "Scoring Rule",
+    "surv.brier",       "brier_improper_erv",  "Scoring Rule",
 
-    "surv.logloss",     "logloss",
-    "surv.logloss",     "logloss_erv",
-
-    "surv.calib_alpha", "caliba_ratio",
-    "surv.calib_alpha", "caliba_diff"
+    "surv.dcalib",      "dcalib",        "Calibration",
+    "surv.calib_alpha", "caliba_ratio",  "Calibration",
+    "surv.calib_alpha", "caliba_diff",   "Calibration"
+    # "surv.calib_alpha", "caliba",
   )
 
   measures_eval = get_measures_eval()
@@ -229,9 +232,15 @@ measures_tbl = function() {
   )[msr_tbl, on = "id"]
 
   msr_tbl[, label := vapply(msr_tbl$measure, \(x) x$label, "", USE.NAMES = FALSE)]
-  msr_tbl[, erv := grepl("_erv$", id)]
+  # ERV is either a logical param or not present --> implies ERV = FALSE
+  msr_tbl[, erv := vapply(measure, \(x) isTRUE(x$param_set$values$ERV), logical(1), USE.NAMES = FALSE)]
   # minimize argument should be FALSE if measure is ERV or C-index (suffixes _erv or _c)
-  msr_tbl[, minimize := !(erv | grepl("_c$", id))]
+  # msr_tbl[, erv := grepl("_erv$", id)]
+  # msr_tbl[, minimize := !(erv | grepl("_c$", id))]
+
+  # Minimize is taken from measure-encoded value, but overridden if ERV = TRUE as ERV can't be minimized
+  msr_tbl[, minimize := vapply(measure, \(x) x$minimize, logical(1), USE.NAMES = FALSE)]
+  msr_tbl[, minimize := fifelse(erv, FALSE, minimize)]
 
   msr_tbl[]
 }
@@ -492,21 +501,17 @@ check_scores = function(bma) {
   res[total > 0, ]
 }
 
-truncate_scores = function(bma, trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1) {
+
+remove_results = function(bma,
+                          learner_id_exclude = "SSVM",
+                          task_id_exclude = "patient"
+) {
   xdat = data.table::copy(bma$data)
-
-  xdat$caliba[!is_valid(xdat$caliba)] <- trunc_caliba
-  xdat$caliba[xdat$caliba > 10] <- trunc_caliba
-  xdat$graf_improper[!is_valid(xdat$graf_improper)] <- trunc_graf_improper
-  xdat$graf_improper_erv[!is_valid(xdat$graf_improper_erv)] <- trunc_graf_improper_erv
-
-  mlr3benchmark::as_benchmark_aggr(xdat)
-}
-
-remove_results = function(bma, learner_id_exclude = "SSVM") {
-  xdat = data.table::copy(bma$data)
-
   xdat = xdat[xdat[["learner_id"]] != learner_id_exclude, ]
+  xdat = xdat[xdat[["task_id"]] != task_id_exclude, ]
+
+
+  xdat = xdat[, task_id := factor(task_id, levels = setdiff(levels(xdat$task_id), task_id_exclude))]
   xdat = xdat[, learner_id := factor(learner_id, levels = setdiff(levels(xdat$learner_id), learner_id_exclude))]
 
   mlr3benchmark::as_benchmark_aggr(xdat)
@@ -514,7 +519,6 @@ remove_results = function(bma, learner_id_exclude = "SSVM") {
 
 rename_learners = function(bma) {
   xdat = data.table::copy(bma$data)
-  learner_levels = levels(xdat$learner_id)
 
   xdat[, learner_id := dplyr::case_when(
     learner_id == "AF" ~ "AK",
@@ -522,13 +526,10 @@ rename_learners = function(bma) {
     TRUE ~ learner_id
   )]
 
-  learner_levels = dplyr::case_when(
-    learner_levels == "AF" ~ "AK",
-    learner_levels == "NL" ~ "NA",
-    TRUE ~ learner_levels
-  )
+  learner_order = c("KM", "NA", "AK", "CPH", "GLM", "Pen", "Par", "Flex", "RFSRC",
+                    "RAN", "CIF", "ORSF", "RRT", "MBO", "CoxB", "XGBCox", "XGBAFT")
 
-  xdat[, learner_id := factor(learner_id, levels = learner_levels)]
+  xdat[, learner_id := factor(learner_id, levels = learner_order)]
 
   mlr3benchmark::as_benchmark_aggr(xdat)
 }
@@ -561,12 +562,13 @@ plot_results = function(
     ...
 ) {
 
+  checkmate::assert_subset(type, choices = c("mean", "box", "fn", "cd_n", "cd_bd"))
   measure_label = msr_tbl[id == measure_id, label]
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
 
   if (type %in% c("box", "mean")) {
     xdat = bma$data
-    bma = mlr3benchmark::as_benchmark_aggr(xdat[learner_id %nin% exclude_learners, ])
+    bma = mlr3benchmark::as_benchmark_aggr(xdat[!(learner_id %in% exclude_learners), ])
   }
 
   plot_type_label = switch(
@@ -575,24 +577,23 @@ plot_results = function(
     box = "Boxplot",
     fn = "Post-hoc Friedman-Nemenyi",
     cd_n = "Critical Differences (Nemenyi)",
-    cd_bd = "Critical Differences (Baseline)"
+    cd_bd = "Critical Differences (Bonferroni-Dunn)"
   )
 
   minimize = msr_tbl[id == measure_id, minimize]
-  is_erv = msr_tbl[id == measure_id, erv]
-
-  if (type %in% c("cd_n", "cd_bd") & !is_erv) {
+# browser()
+  if (type %in% c("cd_n", "cd_bd")) {
 
     test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
 
-    # cli::cli_alert_info("Performing type {type} and measure {measure_id} and test {test}, minimize = {minimize}")
+    #cli::cli_alert_info("Performing type {type} and measure {measure_id} and test {test}, minimize = {minimize}")
 
     p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
       labs(
         caption = glue::glue("Evaluation measure: {measure_label}
                              Tuning measure: {tuning_measure_label}")
       )
-  } else {
+  } else if (type %in% c("mean", "box", "fn")) {
     p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
 
     p = p +
@@ -603,11 +604,14 @@ plot_results = function(
         y = measure_label,
         caption = glue::glue("Tuning measure: {tuning_measure_label}")
       )
+  } else {
+    mlr3misc::stopf("Unknown type %s", type)
   }
 
   if (type %in% c("box", "mean")) {
     p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
     p = p + theme_minimal(base_size = 15)
+    p = p + theme(plot.background = element_rect(fill = "transparent", color = NA))
   }
 
   if (type == "fn") {
@@ -619,6 +623,53 @@ plot_results = function(
 
   print(p)
 
+}
+
+# Color palette for learner groups
+palette_groups = RColorBrewer::brewer.pal(5, "Dark2")
+names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
+
+#' Title
+#'
+#' @param xdf
+#' @param eval_measure
+#' @param tuning_measure
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' plot_aggr_ph(bma, tuning_measure = "harrell_c")
+plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
+                        learners_exclude = NULL, tasks_exclude = NULL) {
+  checkmate::assert_data_table(xdf)
+  checkmate::assert_subset(c("tuned", "p"), choices = colnames(xdf))
+  checkmate::assert_subset(eval_measure, colnames(xdf))
+  checkmate::assert_subset(tuning_measure, unique(xdf[["tuned"]]))
+
+  xdf |>
+    dplyr::filter(tuned == tuning_measure) |>
+    dplyr::filter(!(eval_measure %in% c("harrell_c", "uno_c")) | !(learner_id %in% c("KM", "NA"))) |>
+    ggplot(aes(x = learner_id, y = .data[[eval_measure]], color = p, fill = p)) +
+    facet_grid(cols = vars(learner_group), scales = "free_x", space = "free_x") +
+    geom_boxplot(alpha = 1/4, key_glyph = "rect") +
+    #scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"), direction = -1) +
+    labs(
+      title = msr_tbl[id == eval_measure, label],
+      subtitle = paste("Performance separated by PH violation.",
+                       "Based on uncorrected p < 0.05 of global Schoenfeld test per task", sep = "\n"),
+      caption = glue::glue("Tuned on {msr_tbl[id == tuning_measure, label]}"),
+      x = NULL, y = msr_tbl[id == eval_measure, label],
+      color = NULL, fill = NULL
+    ) +
+    theme_minimal(base_size = 15, base_family = "Fira Sans") +
+    theme(
+      legend.position = "top",
+      panel.background = element_rect(fill = "transparent", color = NA),
+      panel.grid.major.x = element_blank(),
+      plot.title.position = "plot"
+    )
 }
 
 # Utilities for job management ----------------------------------------------------------------
