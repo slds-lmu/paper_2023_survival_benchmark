@@ -78,6 +78,19 @@ summary(hdfail$time)
 save_data(hdfail)
 
 
+# KMsurv::kidtran -----------------------------------------------------------------------------
+
+kidtran <- mlr3misc::load_dataset("kidtran", "KMsurv") |>
+  mutate(time = as.numeric(time),
+         status = delta,
+         genderF = as.integer(gender - 1),
+         raceBlack = as.integer(race - 1),
+         age = as.numeric(age)
+  ) |>
+  select(-obs, -delta, -gender, -race)
+
+save_data(kidtran)
+
 # KMsurv::std -------------------------------------------------------------
 # data from Section 1.12 in Klein and Moeschberger (1997)
 
