@@ -380,6 +380,11 @@ reassemble_archives = function(
     archive_path = fs::path(result_path, reg_name, "archives-no-logs.rds")
   }
 
+  if (!fs::dir_exists(fs::path_dir(archive_path))) {
+    fs::path_dir(archive_path) |>
+      fs::dir_create(recurse = TRUE)
+  }
+
   if (fs::file_exists(archive_path)) {
     cli::cli_alert_info("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
     return(readRDS(archive_path))
