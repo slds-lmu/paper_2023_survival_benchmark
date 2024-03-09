@@ -452,7 +452,7 @@ clean_duplicate_archives = function(reg_dir, result_path = here::here("results")
     fs::dir_create(tmp_path)
   }
 
-  archives = reassemble_archives(reg_dir, result_path = result_path, keep_logs = FALSE)
+  archives = reassemble_archives(fs::path_file(reg_dir), result_path = result_path, keep_logs = FALSE)
 
   counts = archives[, .(n = .N), by = .(tune_measure, task_id, learner_id, iter_hash)]
 
