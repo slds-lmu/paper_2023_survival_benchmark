@@ -36,6 +36,7 @@ requireNamespace("mlr3extralearners")
 library(ggplot2)
 library(kableExtra)
 
+result_path = here::here("results", settings$reg_name)
 msr_tbl = measures_tbl()
 measures_eval_ids = msr_tbl$id
 lrntab = load_lrntab()
@@ -43,52 +44,16 @@ tasktab = load_tasktab()
 ```
 
 ```{r setup-read}
-# bmr_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bmr_harrell_c.rds"))
+bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
+bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
 
-bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
-bma_rcll       = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
+bmrtab_harrell_c = readRDS(fs::path(result_path, "bmrtab_harrell_c.rds"))
+bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
 
-bmrtab_harrell_c = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harrell_c.rds"))
-bmrtab_rcll      = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
-
-# Excluding SSVM results as there are no usable ones
-bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
-bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
-
-bma_harrell_c = rename_learners(bma_harrell_c)
-bma_rcll      = rename_learners(bma_rcll)
-
-
-saveRDS(bma_harrell_c, here::here("results/registry_beartooth/bma_clean_harrell_c.rds"))
-saveRDS(bma_rcll, here::here("results/registry_beartooth/bma_clean_rcll.rds"))
+bma = readRDS(fs::path(result_path, "bma_full.rds"))
 ```
 
 
-```{r}
-bma1 = copy(bma_harrell_c$data)
-bma1[, tuned := "harrell_c"]
-
-bma2 = copy(bma_rcll$data)
-bma2[, tuned := "rcll"]
-
-bma = rbind(bma1, bma2)
-rm(bma1, bma2)
-
-bma = bma |>
-  dplyr::mutate(
-    learner_group = dplyr::case_match(learner_id,
-      c("KM", "NA", "AK") ~ "Baseline",
-      c("CPH", "GLM", "Pen", "Par", "Flex") ~ "Classical",
-      c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
-      c("MBO", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
-      .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
-    )#,
-    #learner_id = factor(learner_id, levels = c(setdiff(levels(learner_id), "AK"), "AK"))
-  )
-
-# Technically not a bma anymore but useful nonetheless
-saveRDS(bma, here::here("results/registry_beartooth/bma_full.rds"))
-```
 
 ## Metadata
 
@@ -238,6 +203,36 @@ plot_aggr_ph(bmatemp, eval_measure = "brier_improper", tuning_measure = "rcll")
 plot_aggr_ph(bmatemp, eval_measure = "brier_proper", tuning_measure = "rcll")
 ```
 
+#### Censoring Dependence
+
+Fitting a logistic regression model on the status indicator (`status ~ .`) and counting the number of significant (`p < 0.05`) coefficients per task.  
+
+- `p` number of features before model
+- `n_coefs` number of coefficients in model, *including* intercept and dummy-encoded variables
+- `n_signif` number of coefficients with `p < 0.05`
+- `signif_prop` = `n_signif / n_coefs` in %
+
+```{r task-censmods}
+censmods = data.table::rbindlist(lapply(names(tasks), \(task_id) {
+  coef_tbl = glm(status ~ ., data = tasks[[task_id]], family = "binomial") |>
+    broom::tidy()
+  
+  data.frame(
+    task_id = task_id,
+    p = ncol(tasks[[task_id]]) - 2,
+    n_coefs = nrow(coef_tbl),
+    n_signif = sum(coef_tbl$p.value < 0.05)
+  )
+  
+}))
+
+censmods |> 
+  dplyr::mutate(signif_prop = 100 * round(n_signif / n_coefs, 3)) |>
+  dplyr::arrange(-xtfrm(signif_prop)) |>
+  tablify()
+
+```
+
 
 ## Completed jobs
 
@@ -261,11 +256,11 @@ bma_harrell_c$data[, .(n = .N), by = .(task_id)] |>
 
 ### Based on outer resampling folds
 
-```{r sanity-check}
-# bmrtab_harrell_c |> 
-#   knitr::kable() |> 
-#   kableExtra::kable_styling()
- 
+::: {.panel-tabset}
+
+#### Harrel's C
+
+```{r sanity-check-harrell}
 bmrtab_harrell_c[errors > 0,] |> 
   tablify()
 
@@ -274,8 +269,23 @@ bmrtab_harrell_c[errors > 0,][, .(n = .N), by = .(task_id)] |>
 
 bmrtab_harrell_c[errors > 0,][, .(n = .N), by = .(learner_id)] |> 
   tablify()
-
 ```
+
+#### RCLL
+
+```{r sanity-check-rcll}
+bmrtab_rcll[errors > 0,] |> 
+  tablify()
+
+bmrtab_rcll[errors > 0,][, .(n = .N), by = .(task_id)] |> 
+  tablify()
+
+bmrtab_rcll[errors > 0,][, .(n = .N), by = .(learner_id)] |> 
+  tablify()
+```
+
+
+:::
 
 <!-- ### Imputing invalid values in `bma` -->
 
@@ -526,6 +536,17 @@ for (measure_id in measures_eval_ids) {
 ```
 
 ::: 
+
+
+## Calibration
+
+```{r}
+bma[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
+
+ggplot(bma, aes(y = learner_id, x = dcalib_p, fill = dcalib_p > 0.05)) +
+  facet_wrap(tuned ~ task_id) +
+  geom_boxplot()
+```
 
 
 ## Comparing Tuning Measures

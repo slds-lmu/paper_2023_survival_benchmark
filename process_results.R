@@ -61,3 +61,33 @@ collect_results(
   tuning_measure = "rcll",
   measures_eval = measures_eval
 )
+
+
+# Post-processing -----------------------------------------------------------------------------
+bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
+bma_rcll       = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
+
+# Excluding SSVM results as there are no usable ones
+bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
+bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
+
+# For consistency and disambiguation of some abbreviations
+bma_harrell_c = rename_learners(bma_harrell_c)
+bma_rcll      = rename_learners(bma_rcll)
+
+
+saveRDS(bma_harrell_c, file = fs::path(result_path, settings$reg_name, "bma_clean_harrell_c.rds"))
+saveRDS(bma_rcll,      file = fs::path(result_path, settings$reg_name, "bma_clean_rcll.rds"))
+
+# Adding all aggregated scores for both tuning measures to a simple DT
+# and add additional metadata for grouping
+bma = combine_bma(bma_harrell_c, bma_rcll) |>
+  add_learner_groups()
+
+# Coarse manual checks to ensure roughly the correct shape
+checkmate::assert_true(length(unique(bma$task_id)) == 32)
+checkmate::assert_true(length(unique(bma$learner_id)) == 17)
+checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "rcll"))
+
+# Technically not a bma anymore but useful nonetheless
+saveRDS(bma, file = fs::path(result_path, settings$reg_name,  "bma_full.rds"))

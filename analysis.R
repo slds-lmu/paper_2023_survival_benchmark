@@ -16,7 +16,7 @@ result_path = here::here("results")
 
 # Store eval measures for easier retrieval
 msr_tbl = measures_tbl()
-measures_eval = msr_tbl$measure
+measures_eval = get_measures_eval()
 measures_eval_ids = msr_tbl$id
 
 # Restoring from disk for further processing
@@ -24,20 +24,34 @@ bmr_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bmr_harrell_c
 bmrtab_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_harrell_c.rds"))
 bma_harrell_c  = readRDS(fs::path(result_path, settings$reg_name, "bma_harrell_c.rds"))
 
+bmrtab_rcll  = readRDS(fs::path(result_path, settings$reg_name, "bmrtab_rcll.rds"))
+bma_rcll  = readRDS(fs::path(result_path, settings$reg_name, "bma_rcll.rds"))
+
+bma  = readRDS(fs::path(result_path, settings$reg_name, "bma_full.rds"))
+
+
+# scores = bmr_harrell_c$score(measures_eval$harrell_c)
+scores = bmr_harrell_c$score(msr("surv.rcll"))
+
 # Quick check ---------------------------------------------------------------------------------
 bmrtab_harrell_c[errors > 0,][, .(n = .N), by = .(task_id)]
 bmrtab_harrell_c[errors > 0,][, .(n = .N), by = .(learner_id)]
 
 bma_harrell_c$friedman_posthoc(meas = measures_eval$harrell_c$id)
 
-mlr3viz::autoplot(bma_harrell_c, type = "mean", meas = measures_eval$harrell_c$id)
-mlr3viz::autoplot(bma_harrell_c, type = "box", meas = measures_eval$harrell_c$id)
+autoplot(bma_harrell_c, type = "mean", meas = measures_eval$harrell_c$id)
+autoplot(bma_harrell_c, type = "box", meas = measures_eval$harrell_c$id)
 
-mlr3viz::autoplot(bma_harrell_c, type = "fn", meas = measures_eval$harrell_c$id)
+autoplot(bma_harrell_c, type = "fn", meas = measures_eval$harrell_c$id)
 
-mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "nemenyi")
-mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "nemenyi", ratio = 1/3)
-mlr3viz::autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "bd", baseline = "CPH")
+autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "nemenyi", ratio = 1)
+autoplot(bma_clean_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "nemenyi", ratio = 1)
+
+autoplot(bma_harrell_c, type = "cd", meas = measures_eval$harrell_c$id, test = "bd", baseline = "CPH", ratio = 1)
+
+plot_results(bma_clean_harrell_c, measure_id = "harrell_c", exclude_learners = c("KM", "NA"))
+
+plot_results(bma_clean_harrell_c, measure_id = "logloss", exclude_learners = "")
 
 # Bulk-write all relevant plots ---------------------------------------------------------------
 
@@ -74,3 +88,9 @@ for (measure_id in measures_eval_ids) {
 
   }
 }
+
+
+# Tables
+
+bma
+

@@ -265,7 +265,7 @@ collect_results = function(
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
     result_path = here::here("results"),
-    # include_aggr = FALSE,
+    include_scores = FALSE,
     id_filter = NULL
 ) {
 
@@ -292,7 +292,7 @@ collect_results = function(
   path_bmr     = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
   path_bmr_tab = glue::glue("{result_path}/bmrtab_{tuning_measure}.rds")
   path_bma     = glue::glue("{result_path}/bma_{tuning_measure}.rds")
-  # path_aggr    = glue::glue("{result_path}/aggr_{tuning_measure}.rds")
+  path_scores  = glue::glue("{result_path}/scores_{tuning_measure}.rds")
 
   if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab)))) {
     return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
@@ -344,21 +344,20 @@ collect_results = function(
 
   tictoc::toc()
 
-  # Aggr is probably optional and also takes a while to create
-  # if (include_aggr) {
-  #   if (!fs::file_exists(path_aggr)) {
-  #     # benchmark$aggregate
-  #     tictoc::tic(msg = glue::glue("$aggregate'ing bmr: {tuning_measure}"))
-  #     aggr = bmr$aggregate(measures = measures_eval, conditions = TRUE)
-  #     tictoc::toc()
-  #
-  #     tictoc::tic(msg = glue::glue("Saving aggr: {tuning_measure}"))
-  #     saveRDS(aggr, path_aggr)
-  #     tictoc::toc()
-  #   } else {
-  #     cli::cli_alert_success("aggr already saved!")
-  #   }
-  # }
+  # scores is probably optional and also takes a while to create
+  if (include_scores) {
+    if (!fs::file_exists(path_scores)) {
+      tictoc::tic(msg = glue::glue("$score'ing bmr: {tuning_measure}"))
+      scores = bmr$score(measures = measures_eval, conditions = TRUE)
+      tictoc::toc()
+
+      tictoc::tic(msg = glue::glue("Saving scores: {tuning_measure}"))
+      saveRDS(scores, path_scores)
+      tictoc::toc()
+    } else {
+      cli::cli_alert_success("scores already saved!")
+    }
+  }
 
 
 }
@@ -508,12 +507,20 @@ check_scores = function(bma) {
 
 
 remove_results = function(bma,
-                          learner_id_exclude = "SSVM",
-                          task_id_exclude = "patient"
+                          learner_id_exclude = NULL,
+                          task_id_exclude = NULL
 ) {
   xdat = data.table::copy(bma$data)
-  xdat = xdat[xdat[["learner_id"]] != learner_id_exclude, ]
-  xdat = xdat[xdat[["task_id"]] != task_id_exclude, ]
+  if (!is.null(learner_id_exclude)) {
+    checkmate::assert_subset(learner_id_exclude, as.character(xdat[["learner_id"]]))
+
+    xdat = xdat[xdat[["learner_id"]] != learner_id_exclude, ]
+  }
+
+  if (!is.null(task_id_exclude)) {
+    checkmate::assert_subset(task_id_exclude, as.character(xdat[["task_id"]]))
+    xdat = xdat[xdat[["task_id"]] != task_id_exclude, ]
+  }
 
 
   xdat = xdat[, task_id := factor(task_id, levels = setdiff(levels(xdat$task_id), task_id_exclude))]
@@ -539,6 +546,40 @@ rename_learners = function(bma) {
   mlr3benchmark::as_benchmark_aggr(xdat)
 }
 
+combine_bma = function(bma_harrell_c, bma_rcll) {
+  checkmate::assert_class(bma_harrell_c, classes = "BenchmarkAggr")
+  checkmate::assert_class(bma_rcll, classes = "BenchmarkAggr")
+
+  bma1 = data.table::copy(bma_harrell_c$data)
+  bma1[, tuned := "harrell_c"]
+
+  bma2 = data.table::copy(bma_rcll$data)
+  bma2[, tuned := "rcll"]
+
+  data.table::rbindlist(list(bma1, bma2))
+}
+
+add_learner_groups = function(bma) {
+  if (checkmate::test_class(bma, classes = "BenchmarkAggr")) {
+    bma = data.table::copy(bma$data)
+  } else {
+    checkmate::assert_data_table(bma)
+  }
+
+  bma |>
+    dplyr::mutate(
+      learner_group = dplyr::case_match(
+        learner_id,
+        c("KM", "NA", "AK") ~ "Baseline",
+        c("CPH", "GLM", "Pen", "Par", "Flex") ~ "Classical",
+        c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
+        c("MBO", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
+        .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
+      )
+    )
+}
+
+
 
 tablify = function(x, caption = NULL, ...) {
   x |>
@@ -561,6 +602,10 @@ tablify = function(x, caption = NULL, ...) {
 #' @export
 #'
 #' @examples
+#' plot_results(bma_harrell_c, type = "box")
+#' plot_results(bma_harrell_c, type = "mean")
+#' plot_results(bma_harrell_c, type = "fn")
+#' plot_results(bma_harrell_c, type = "cd_n", ratio = 1)
 plot_results = function(
     bma, type = "box", measure_id = "harrell_c", tuning_measure_id = "harrell_c",
     exclude_learners = "",
@@ -572,6 +617,7 @@ plot_results = function(
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
 
   if (type %in% c("box", "mean")) {
+    if (inherits(bma, "BenchmarkAggr")) xdat = bma$data else xdat = bma
     xdat = bma$data
     bma = mlr3benchmark::as_benchmark_aggr(xdat[!(learner_id %in% exclude_learners), ])
   }
@@ -634,14 +680,17 @@ plot_results = function(
 palette_groups = RColorBrewer::brewer.pal(5, "Dark2")
 names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 
-#' Title
+plot_bmadt = function() {
+
+}
+
+#' Boxplot of scores separated by violation of PH assumption
 #'
-#' @param xdf
-#' @param eval_measure
-#' @param tuning_measure
+#' @param xdf A `data.table` as contained in a `BenchmarkAggr`'s `$data` slot.
+#' @param eval_measure E.g. `"harrell_c"`.
+#' @param tuning_measure E.g. `"harrell_c"`.
 #'
 #' @return
-#' @export
 #'
 #' @examples
 #' plot_aggr_ph(bma, tuning_measure = "harrell_c")
