@@ -318,7 +318,7 @@ collect_results = function(
     saveRDS(bmr, file = path_bmr)
     tictoc::toc()
 
-  } else if (!fs::file_exists(path_bma)) {
+  } else if (!fs::file_exists(path_bma) | (!fs::file_exists(path_scores) & include_scores)) {
 
     cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
     tictoc::tic(msg = glue::glue("Reading bmr"))
@@ -342,8 +342,6 @@ collect_results = function(
     cli::cli_alert_success("bma already saved!")
   }
 
-  tictoc::toc()
-
   # scores is probably optional and also takes a while to create
   if (include_scores) {
     if (!fs::file_exists(path_scores)) {
@@ -359,7 +357,7 @@ collect_results = function(
     }
   }
 
-
+  tictoc::toc()
 }
 
 #' Collect tuning archives saved separately to disk via callback
