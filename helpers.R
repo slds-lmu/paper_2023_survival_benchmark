@@ -294,7 +294,7 @@ collect_results = function(
   path_bma     = glue::glue("{result_path}/bma_{tuning_measure}.rds")
   path_scores  = glue::glue("{result_path}/scores_{tuning_measure}.rds")
 
-  if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab)))) {
+  if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab))) & (fs::file_exists(path_scores) | !include_scores)) {
     return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
   }
 
