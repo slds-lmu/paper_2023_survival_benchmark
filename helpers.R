@@ -7,7 +7,7 @@ library(data.table)
 #' @param resampling Object of class `Resampling`, has to be instantiated.
 #' @param task_name String to use as file name.
 save_resampling = function(resampling, task_name) {
-  if (!dir.exists(here::here("resamplings"))) dir.create(here::here("resamplings"))
+  ensure_directory(here::here("resamplings"))
   stopifnot(resampling$is_instantiated)
 
   file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
@@ -68,9 +68,7 @@ load_task_data = function() {
 callback_backup_impl = function(callback, context) {
 
   # Ensure the folder containing tuning archives exists
-  if (!fs::dir_exists(callback$state$path_dir)) {
-    fs::dir_create(callback$state$path_dir)
-  }
+  ensure_directory(callback$state$path_dir)
 
   task_id = context$instance$objective$task$id
   # We don't have the outer resampling iter number so hashing
@@ -277,7 +275,7 @@ collect_results = function(
   cli::cli_alert_info("Using registry {.file {reg_name}}")
   result_path = fs::path(result_path, reg_name)
   cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(result_path)}")
-  if (!fs::dir_exists(result_path)) fs::dir_create(result_path)
+  ensure_directory(result_path)
 
   selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
   done_ids = batchtools::findDone(selected_ids)
@@ -362,11 +360,11 @@ collect_results = function(
   tictoc::toc()
 }
 
-#' Score bmr with a single measure and store results
+#' Score bmr with a measure and store results
 #'
 #' @param reg_name Registry name
 #' @param tuning_measure
-#' @param measure A single MeasureSurv
+#' @param measure One or a list of `MeasureSurv`s
 #' @param result_path `here::here("results")`
 #'
 #' @return
@@ -381,34 +379,39 @@ score_bmr = function(
     result_path = here::here("results")
   ) {
 
-  checkmate::assert_class(measure, "MeasureSurv")
+  if (!is.list(measure)) measure = list(measure)
+  sapply(measure, checkmate::assert_class, "MeasureSurv")
 
   path_bmr = fs::path(result_path, reg_name, glue::glue("bmr_{tuning_measure}.rds"))
-  path_scores = fs::path(result_path, reg_name, tuning_measure, "scores", glue::glue("scores_{measure$id}.rds"))
-
-  if (fs::dir_exists(fs::path_dir(path_scores))) {
-    fs::dir_create(fs::path_dir(path_scores), recurse = TRUE)
-  }
 
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
   bmr = readRDS(path_bmr)
 
-  cli::cli_alert_info("$score'ing results with {measure$id} ({tuning_measure})")
-  tictoc::tic(msg ="$score'ing")
-  scores = bmr$score(measures = measure, conditions = TRUE)
-  tictoc::toc()
+  for (m in measure) {
+    path_scores = fs::path(result_path, reg_name, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
+    ensure_directory(fs::path_dir(path_scores))
 
-  # Trimming some fat
-  scores = as.data.table(scores)
-  scores[, task := NULL]
-  scores[, resampling := NULL]
-  scores[, learner := NULL]
-  scores[, resampling := NULL]
-  scores[, prediction := NULL]
+    if (fs::file_exists(path_scores)) {
+      cli::cli_alert_warning("{fs::path_file(path_scores)} already exists!")
+      next
+    }
 
-  tictoc::tic(msg = "Saving scores")
-  saveRDS(scores, path_scores)
-  tictoc::toc()
+    cli::cli_alert_info("$score'ing results with {m$id} ({tuning_measure})")
+    tictoc::tic(msg ="$score'ing")
+    scores = bmr$score(measures = m, conditions = TRUE)
+    tictoc::toc()
+
+    # Trimming some fat
+    scores = as.data.table(scores)
+    scores[, task := NULL]
+    scores[, resampling := NULL]
+    scores[, learner := NULL]
+    scores[, resampling := NULL]
+    scores[, prediction := NULL]
+
+    tictoc::tic(msg = "Saving scores")
+    saveRDS(scores, path_scores)
+  }
 }
 
 #' Collect tuning archives saved separately to disk via callback
@@ -912,4 +915,15 @@ aggr_result_sizes = function(ids = batchtools::findDone(), by = "learner_id") {
   jobs_done = unwrap(getJobTable())[findDone(), ]
   jobs_done = jobs_done[res_size, ]
   jobs_done[, .(avg_size = mean(size)), by = by][]
+}
+
+
+# Misc utils ----------------------------------------------------------------------------------
+
+ensure_directory = function(x) {
+  if (!fs::dir_exists(x)) {
+    fs::dir_create(x, recurse = TRUE)
+  }
+
+  fs::dir_exists(x)
 }
