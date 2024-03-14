@@ -380,7 +380,7 @@ score_bmr = function(
   }
 
   pb = cli::cli_progress_bar("Scoring", total = length(measure))
-  future.apply::future_lapply(measures, \(m) {
+  future.apply::future_lapply(measure, \(m) {
     cli::cli_progress_update(id = pb)
     path_scores = fs::path(settings$result_path, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
     ensure_directory(fs::path_dir(path_scores))
@@ -440,7 +440,7 @@ aggr_bmr = function(
   }
 
   pb = cli::cli_progress_bar("Scoring", total = length(measure))
-  future.apply::future_lapply(measures, \(m) {
+  future.apply::future_lapply(measure, \(m) {
     cli::cli_progress_update(id = pb)
     path_aggr = fs::path(settings$result_path, tuning_measure, "aggr", glue::glue("aggr_{m$id}.rds"))
     ensure_directory(fs::path_dir(path_aggr))
