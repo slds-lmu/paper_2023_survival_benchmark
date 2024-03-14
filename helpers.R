@@ -247,9 +247,7 @@ measures_tbl = function() {
 
 #' Collect and save benchmark results
 #'
-# @param reg Registry, defaulting to `getDefaultRegistry()`.
-#' @param reg_name Name of registry, e.g. `"registry"`.
-#'   Used to load the registry with `writeable = TRUE` to collect results.
+#' @param settings `config::get()` for registry names, paths, ...
 #' @param tuning_measure E.g. "harrell_c"
 #' @param measures_eval List of mlr3 measures used for evaluation
 #' @param result_path `here::here("results")`, where to store results.
@@ -259,23 +257,22 @@ measures_tbl = function() {
 #'
 #' @examples
 collect_results = function(
-    reg_name,
+    settings,
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
-    result_path = here::here("results"),
     include_scores = FALSE,
     id_filter = NULL
 ) {
 
   tictoc::tic("The whole shebang")
 
-  reg_dir = here::here(reg_name)
-  reg = suppressWarnings(suppressMessages(batchtools::loadRegistry(reg_dir, writeable = TRUE)))
+  reg = suppressWarnings(suppressMessages(batchtools::loadRegistry(
+    settings$reg_dir, writeable = TRUE
+  )))
 
-  cli::cli_alert_info("Using registry {.file {reg_name}}")
-  result_path = fs::path(result_path, reg_name)
-  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(result_path)}")
-  ensure_directory(result_path)
+  cli::cli_alert_info("Using registry {.file {settings$reg_name}}")
+  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(settings$result_path)}")
+  ensure_directory(settings$result_path)
 
   selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
   done_ids = batchtools::findDone(selected_ids)
@@ -287,10 +284,10 @@ collect_results = function(
     cli::cli_alert_info("Filtering down to {nrow(done_ids)} ids")
   }
 
-  path_bmr     = glue::glue("{result_path}/bmr_{tuning_measure}.rds")
-  path_bmr_tab = glue::glue("{result_path}/bmrtab_{tuning_measure}.rds")
-  path_bma     = glue::glue("{result_path}/bma_{tuning_measure}.rds")
-  path_scores  = glue::glue("{result_path}/scores_{tuning_measure}.rds")
+  path_bmr     = glue::glue("{settings$result_path}/bmr_{tuning_measure}.rds")
+  path_bmr_tab = glue::glue("{settings$result_path}/bmrtab_{tuning_measure}.rds")
+  path_bma     = glue::glue("{settings$result_path}/bma_{tuning_measure}.rds")
+  path_scores  = glue::glue("{settings$result_path}/scores_{tuning_measure}.rds")
 
   if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab))) & (fs::file_exists(path_scores) | !include_scores)) {
     return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
@@ -300,7 +297,8 @@ collect_results = function(
     tictoc::tic(msg = glue::glue("Reducing results ({tuning_measure})"))
     bmr = reduceResultsBatchmark(
       ids = done_ids,
-      store_backends = TRUE, reg = reg
+      store_backends = TRUE,
+      reg = reg
     )
     tictoc::toc()
 
@@ -316,7 +314,7 @@ collect_results = function(
     saveRDS(bmr, file = path_bmr)
     tictoc::toc()
 
-  } else if (!fs::file_exists(path_bma) | (!fs::file_exists(path_scores) & include_scores)) {
+  } else if (!fs::file_exists(path_bma)) {
 
     cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
     tictoc::tic(msg = glue::glue("Reading bmr"))
@@ -340,55 +338,51 @@ collect_results = function(
     cli::cli_alert_success("bma already saved!")
   }
 
-  # scores is probably optional and also takes a while to create
-  if (include_scores) {
-    if (!fs::file_exists(path_scores)) {
-      cli::cli_alert_info("$score'ing results ({tuning_measure})")
-
-      tictoc::tic(msg ="$score'ing")
-      scores = bmr$score(measures = measures_eval, conditions = TRUE)
-      tictoc::toc()
-
-      tictoc::tic(msg = glue::glue("Saving scores: {tuning_measure}"))
-      saveRDS(scores, path_scores)
-      tictoc::toc()
-    } else {
-      cli::cli_alert_success("scores already saved!")
-    }
-  }
-
   tictoc::toc()
 }
 
 #' Score bmr with a measure and store results
 #'
-#' @param reg_name Registry name
+#' While collect_results() creates the bmr and bma,
+#' it's probably useful to separately store aggregates and scores
+#' which makes it easier to re-score with certain measures without
+#' having to apply all measures again.
+#'
+#' @param settings `config::get()`
 #' @param tuning_measure
 #' @param measure One or a list of `MeasureSurv`s
-#' @param result_path `here::here("results")`
-#'
-#' @return
-#' @export
-#'
+#' @param nthreads (`1`) Parallelize using forking with `plan("multicore")`.
+#'   **Does not work on Windows or in RStudio**
+
 #' @examples
-#' score_bmr("registry_beartooth", "harrell_c", msr("surv.rcll"), "results")
+#' score_bmr(config::get(), "harrell_c",  msr("surv.rcll"))
 score_bmr = function(
-    reg_name,
+    settings = config::get(),
     tuning_measure = "harrell_c",
     measure,
-    result_path = here::here("results")
-  ) {
+    nthreads = 1
+) {
 
   if (!is.list(measure)) measure = list(measure)
   sapply(measure, checkmate::assert_class, "MeasureSurv")
+  checkmate::assert_int(nthreads, lower = 1, upper = future::availableCores())
 
-  path_bmr = fs::path(result_path, reg_name, glue::glue("bmr_{tuning_measure}.rds"))
+  path_bmr = fs::path(settings$result_path, glue::glue("bmr_{tuning_measure}.rds"))
+  checkmate::assert_file_exists(path_bmr)
 
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
   bmr = readRDS(path_bmr)
 
-  for (m in measure) {
-    path_scores = fs::path(result_path, reg_name, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
+  if (nthreads > 1 & length(measure) > 0) {
+    future::plan("multicore", workers = nthreads)
+  } else {
+    future::plan("sequential")
+  }
+
+  pb = cli::cli_progress_bar("Scoring", total = length(measure))
+  future.apply::future_lapply(measures, \(m) {
+    cli::cli_progress_update(id = pb)
+    path_scores = fs::path(settings$result_path, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
     ensure_directory(fs::path_dir(path_scores))
 
     if (fs::file_exists(path_scores)) {
@@ -402,52 +396,103 @@ score_bmr = function(
     tictoc::toc()
 
     # Trimming some fat
-    scores = as.data.table(scores)
-    scores[, task := NULL]
-    scores[, resampling := NULL]
-    scores[, learner := NULL]
-    scores[, resampling := NULL]
-    scores[, prediction := NULL]
-
-    tictoc::tic(msg = "Saving scores")
+    scores = data.table::setDT(scores)
+    scores = mlr3misc::remove_named(
+      scores, c("task", "resampling", "learner", "prediction")
+    )
     saveRDS(scores, path_scores)
+  }, future.seed = NULL)
+
+  cli::cli_progress_done(id = pb)
+}
+
+#' Aggregate bmr with a measure and store results
+#'
+#' @param settings `config::get()`
+#' @param tuning_measure
+#' @param measure One or a list of `MeasureSurv`s
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' aggr_bmr(config::get(), "harrell_c", msr("surv.rcll"))
+aggr_bmr = function(
+    settings = config::get(),
+    tuning_measure = "harrell_c",
+    measure,
+    nthreads = 1
+) {
+
+  if (!is.list(measure)) measure = list(measure)
+  sapply(measure, checkmate::assert_class, "MeasureSurv")
+
+  path_bmr = fs::path(settings$result_path, glue::glue("bmr_{tuning_measure}.rds"))
+  checkmate::assert_file_exists(path_bmr)
+
+  cli::cli_alert_info("Reading bmr ({tuning_measure})")
+  bmr = readRDS(path_bmr)
+
+  if (nthreads > 1 & length(measure) > 0) {
+    future::plan("multicore", workers = nthreads)
+  } else {
+    future::plan("sequential")
   }
+
+  pb = cli::cli_progress_bar("Scoring", total = length(measure))
+  future.apply::future_lapply(measures, \(m) {
+    cli::cli_progress_update(id = pb)
+    path_aggr = fs::path(settings$result_path, tuning_measure, "aggr", glue::glue("aggr_{m$id}.rds"))
+    ensure_directory(fs::path_dir(path_aggr))
+
+    if (fs::file_exists(path_aggr)) {
+      cli::cli_alert_warning("{fs::path_file(path_aggr)} already exists!")
+      next
+    }
+
+    cli::cli_alert_info("$aggregate'ing results with {m$id} ({tuning_measure})")
+    tictoc::tic(msg ="$aggregate'ing")
+    aggr = bmr$aggregate(measures = m, conditions = TRUE)
+    tictoc::toc()
+
+    # Trimming some fat
+    aggr = data.table::setDT(aggr)
+    aggr = mlr3misc::remove_named(aggr, c("resample_result"))
+    saveRDS(aggr, path_aggr)
+  }, future.seed = NULL)
+
+  cli::cli_progress_done(id = pb)
 }
 
 #' Collect tuning archives saved separately to disk via callback
-#' @param reg_name
-#' @param result_path `here::here("results")`
+#' @param settings `config::get()` for result paths
+#' @param keep_logs [`TRUE`] Whether to keep the logs, which drastically increases the size
+#' of the resulting object in memory and on disk
 reassemble_archives = function(
-    reg_name,
-    result_path = here::here("results"),
+    settings = config::get(),
     keep_logs = TRUE
   ) {
 
-  reg_dir = here::here(reg_name)
-
   if (keep_logs) {
-    archive_path = fs::path(result_path, reg_name, "archives-with-logs.rds")
+    archive_path = fs::path(settings$result_path, "archives-with-logs.rds")
   } else {
-    archive_path = fs::path(result_path, reg_name, "archives-no-logs.rds")
+    archive_path = fs::path(settings$result_path, "archives-no-logs.rds")
   }
 
-  if (!fs::dir_exists(fs::path_dir(archive_path))) {
-    fs::path_dir(archive_path) |>
-      fs::dir_create(recurse = TRUE)
-  }
+  ensure_directory(fs::path_dir(archive_path))
 
   if (fs::file_exists(archive_path)) {
     cli::cli_alert_info("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
     return(readRDS(archive_path))
   }
 
-  archive_dir = here::here(reg_dir, "tuning_archives")
+  archive_dir = fs::path(settings$reg_dir, "tuning_archives")
   tuning_files = fs::dir_ls(archive_dir)
   if (length(tuning_files) == 0) {
     cli::cli_abort("No tuning archives found in {fs::path_rel(archive_dir)}!")
   }
 
-  learners = read.csv(here::here("attic", "learners.csv"))
+  learners = load_lrntab()
   learners = learners[, c("learner_id", "learner_id_long")]
 
   learners$learner_id_long = dplyr::case_when(
@@ -473,11 +518,13 @@ reassemble_archives = function(
     components = components[[1]]
     names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
 
-    data.table::data.table(t(components),
-               archive = list(archive),
-               file = file,
-               warnings_sum = sum(archive$warnings),
-               errors_sum = sum(archive$errors))
+    data.table::data.table(
+      t(components),
+      archive = list(archive),
+      file = file,
+      warnings_sum = sum(archive$warnings),
+      errors_sum = sum(archive$errors)
+    )
   }))
   cli::cli_progress_done(id = pb)
 
@@ -495,20 +542,22 @@ reassemble_archives = function(
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,
 #' so the associated timestamp is used to identify the older archive and move it to
 #' a backup location.
-#' @param reg_dir Path to the registry (contains the archives).
-#' @param result_path `here::here("results")`.
+#' @param settings `config::get()`
 #' @param tmp_path `here::here("tmp", "archive-backup")`.
 #'
 #' @examples
-#' clean_duplicate_archives("registry")
-clean_duplicate_archives = function(reg_dir, result_path = here::here("results"),
-                                    tmp_path = here::here("tmp", "archive-backup")) {
+#' clean_duplicate_archives(config::get())
+clean_duplicate_archives = function(
+  settings,
+  tmp_path = here::here("tmp", "archive-backup")
+) {
 
   if (!fs::dir_exists(tmp_path)) {
     fs::dir_create(tmp_path)
   }
+  ensure_directory(tmp_path)
 
-  archives = reassemble_archives(fs::path_file(reg_dir), result_path = result_path, keep_logs = FALSE)
+  archives = reassemble_archives(settings, keep_logs = FALSE)
 
   counts = archives[, .(n = .N), by = .(tune_measure, task_id, learner_id, iter_hash)]
 
