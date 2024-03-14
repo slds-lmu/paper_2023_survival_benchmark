@@ -1,6 +1,8 @@
 # Default config: Should become production mode
 default:
   reg_name: "registry"
+  reg_dir: !expr here::here(reg_name)
+  result_path: !expr here::here("results", reg_name)
   seed: 123
   outer_folds: 5
   inner_folds: 3
