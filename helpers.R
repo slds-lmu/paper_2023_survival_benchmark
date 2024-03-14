@@ -345,7 +345,9 @@ collect_results = function(
   # scores is probably optional and also takes a while to create
   if (include_scores) {
     if (!fs::file_exists(path_scores)) {
-      tictoc::tic(msg = glue::glue("$score'ing bmr: {tuning_measure}"))
+      cli::cli_alert_info("$score'ing results ({tuning_measure})")
+
+      tictoc::tic(msg ="$score'ing")
       scores = bmr$score(measures = measures_eval, conditions = TRUE)
       tictoc::toc()
 
@@ -357,6 +359,55 @@ collect_results = function(
     }
   }
 
+  tictoc::toc()
+}
+
+#' Score bmr with a single measure and store results
+#'
+#' @param reg_name Registry name
+#' @param tuning_measure
+#' @param measure A single MeasureSurv
+#' @param result_path `here::here("results")`
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' score_bmr("registry_beartooth", "harrell_c", msr("surv.rcll"), "results")
+score_bmr = function(
+    reg_name,
+    tuning_measure = "harrell_c",
+    measure,
+    result_path = here::here("results")
+  ) {
+
+  checkmate::assert_class(measure, "MeasureSurv")
+
+  path_bmr = fs::path(result_path, reg_name, glue::glue("bmr_{tuning_measure}.rds"))
+  path_scores = fs::path(result_path, reg_name, tuning_measure, "scores", glue::glue("scores_{measure$id}.rds"))
+
+  if (fs::dir_exists(fs::path_dir(path_scores))) {
+    fs::dir_create(fs::path_dir(path_scores), recurse = TRUE)
+  }
+
+  cli::cli_alert_info("Reading bmr ({tuning_measure})")
+  bmr = readRDS(path_bmr)
+
+  cli::cli_alert_info("$score'ing results with {measure$id} ({tuning_measure})")
+  tictoc::tic(msg ="$score'ing")
+  scores = bmr$score(measures = measure, conditions = TRUE)
+  tictoc::toc()
+
+  # Trimming some fat
+  scores = as.data.table(scores)
+  scores[, task := NULL]
+  scores[, resampling := NULL]
+  scores[, learner := NULL]
+  scores[, resampling := NULL]
+  scores[, prediction := NULL]
+
+  tictoc::tic(msg = "Saving scores")
+  saveRDS(scores, path_scores)
   tictoc::toc()
 }
 
