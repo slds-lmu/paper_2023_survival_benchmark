@@ -387,7 +387,7 @@ score_bmr = function(
 
     if (fs::file_exists(path_scores)) {
       cli::cli_alert_warning("{fs::path_file(path_scores)} already exists!")
-      next
+      return()
     }
 
     cli::cli_alert_info("$score'ing results with {m$id} ({tuning_measure})")
@@ -447,7 +447,7 @@ aggr_bmr = function(
 
     if (fs::file_exists(path_aggr)) {
       cli::cli_alert_warning("{fs::path_file(path_aggr)} already exists!")
-      next
+      return()
     }
 
     cli::cli_alert_info("$aggregate'ing results with {m$id} ({tuning_measure})")
@@ -508,7 +508,6 @@ reassemble_archives = function(
 
     if (!keep_logs) {
       # Temp fix because objects became to large
-      # cli::cli_alert_info("Removing logs from archives!")
       archive[, log := NULL]
     }
 
@@ -552,9 +551,6 @@ clean_duplicate_archives = function(
   tmp_path = here::here("tmp", "archive-backup")
 ) {
 
-  if (!fs::dir_exists(tmp_path)) {
-    fs::dir_create(tmp_path)
-  }
   ensure_directory(tmp_path)
 
   archives = reassemble_archives(settings, keep_logs = FALSE)
@@ -582,7 +578,7 @@ clean_duplicate_archives = function(
 
 #' Check if scores are valid / invalid
 #'
-#' Validty in this case only meaning it's neither Inf, NA, nor NaN
+#' Validity in this case only meaning it's neither Inf, NA, nor NaN
 #' @param x `numeric()`
 is_valid = function(x) {
   is.finite(x) & !is.na(x) & !is.nan(x)
@@ -606,11 +602,11 @@ check_scores = function(bma) {
   res[total > 0, ]
 }
 
-
 remove_results = function(bma,
                           learner_id_exclude = NULL,
                           task_id_exclude = NULL
 ) {
+  checkmate::assert_class(bma, classes = "BenchmarkAggr")
   xdat = data.table::copy(bma$data)
   if (!is.null(learner_id_exclude)) {
     checkmate::assert_subset(learner_id_exclude, as.character(xdat[["learner_id"]]))
@@ -631,6 +627,8 @@ remove_results = function(bma,
 }
 
 rename_learners = function(bma) {
+  checkmate::assert_class(bma, classes = "BenchmarkAggr")
+
   xdat = data.table::copy(bma$data)
 
   xdat[, learner_id := dplyr::case_when(
