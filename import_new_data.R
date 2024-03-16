@@ -226,7 +226,7 @@ save_data(liver)
 #
 # save_data(livmet)
 
-# MRsurv::FTR.data --------------------------------------------------------
+# RISCA::dataFTR --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the reference
 # sample constituted by first transplant recipients (FTR).
 
@@ -238,7 +238,7 @@ dataFTR <- mlr3misc::load_dataset("dataFTR", "RISCA") |>
 
 save_data(dataFTR)
 
-# MRsurv::STR.data --------------------------------------------------------
+# RISCA::dataSTR --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the relative
 # sample constituted by second transplant recipients (STR).
 
