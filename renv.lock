@@ -1756,9 +1756,14 @@
     },
     "mlr3benchmark": {
       "Package": "mlr3benchmark",
-      "Version": "0.1.6",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.1.6-9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3benchmark",
+      "RemoteRef": "fix_bd_plot",
+      "RemoteSha": "d70a9ebeffe2f77c332d48c2d32401e8067c6f1d",
       "Requirements": [
         "R",
         "R6",
@@ -1767,7 +1772,7 @@
         "ggplot2",
         "mlr3misc"
       ],
-      "Hash": "9b26dd574cc36cbe6fe71d832dad039a"
+      "Hash": "555d410ae9502fad3938deef4492bd31"
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
@@ -2527,9 +2532,12 @@
     "renv": {
       "Package": "renv",
       "Version": "1.0.5",
-      "OS_type": null,
+      "Source": "Repository",
       "Repository": "CRAN",
-      "Source": "Repository"
+      "Requirements": [
+        "utils"
+      ],
+      "Hash": "32c3f93e8360f667ca5863272ec8ba6a"
     },
     "reshape2": {
       "Package": "reshape2",
