@@ -28,7 +28,7 @@ library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
 # Create Registry ---------------------------------------------------------
-reg_dir = file.path(root, settings$reg_name)
+reg_dir = settings$reg_dir
 
 if (dir.exists(reg_dir)) {
   cli::cli_alert_danger("Deleting existing registry \"{settings$reg_name}\"!")
@@ -37,12 +37,12 @@ if (dir.exists(reg_dir)) {
 
 cli::cli_alert_info("Creating new registry \"{settings$reg_name}\"!")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
-  packages = c("mlr3", "mlr3proba"), source = file.path(root, "helpers.R"))
+  packages = c("mlr3", "mlr3proba"), source = here::here(root, "helpers.R"))
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(settings$seed)
-files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
-names = stringi::stri_sub(basename(files), 1, -5)
+files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
+names = fs::path_ext_remove(fs::path_file(files))
 tasks = resamplings = mlr3misc::named_list(names)
 
 for (i in seq_along(files)) {
@@ -237,7 +237,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
    checkmate::assert_string(learner_id, min.chars = 15, pattern = "^surv\\.xgboost")
   }
 
-  callback_backup$state$path_dir = fs::path(reg_dir, "tuning_archives")
+  callback_backup$state$path_dir = fs::path(settings$reg_dir, "tuning_archives")
   callback_backup$state$learner_id = learner_id
   callback_backup$state$tuning_measure = measure$id
 
