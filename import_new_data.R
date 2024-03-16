@@ -270,18 +270,19 @@ save_data(uis)
 # year: recode to factor date
 # age + agegrp can both stay
 
-# Required to print year column in DDmonYY format for year extraction
-library(relsurv)
+# Year column in class 'date' DDmonYY format for year extraction
 
 rdata <- mlr3misc::load_dataset("rdata", "relsurv") |>
   rename(status = cens) |>
   mutate(
     # Extract 2 digit year from date of diagnosis
-    year = stringr::str_extract(as.character(year), "\\d{2}$"),
+    year = stringr::str_extract(date:::as.character.date(year), "\\d{2}$"),
     year = factor(year),
     # recode sex from 1,2 to 0,1 for consistency
     sex = sex - 1
-  )
+  ) |>
+  # Redudant variable, grouped version of agre
+  select(-agegr)
 
 # Sanity check to ensure year recoding worked
 stopifnot(length(unique(rdata$year)) == 5)
