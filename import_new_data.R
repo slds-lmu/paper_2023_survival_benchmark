@@ -8,6 +8,9 @@ save_data <- function(x, path = here::here("code/data/")) {
   path_file_csv <- paste0(path, xname, ".csv")
   message("Saving ", xname, " at ", path_file_rds, " and ", path_file_csv)
 
+  checkmate::assert_integerish(x[["status"]], lower = 0, upper = 1)
+  checkmate::assert_numeric(x[["time"]], lower = 0)
+
   x_nomiss <- na.omit(x)
 
   if (nrow(x) - nrow(x_nomiss) > 0) {
@@ -23,6 +26,25 @@ save_data <- function(x, path = here::here("code/data/")) {
   saveRDS(x_nomiss, file = path_file_rds)
   write.csv(x_nomiss, file = path_file_csv, row.names = FALSE)
 }
+
+
+# dynpred::ova --------------------------------------------------------------------------------
+
+ova <- mlr3misc::load_dataset("ova", "dynpred") |>
+  mutate(
+    time = tyears,
+    status = as.integer(d),
+    Broders = factor(Broders),
+    FIGOIII = as.integer(FIGO == "III"),
+    Ascites = factor(Ascites),
+    # Remove > < symbols as they can cause issues
+    Diam = stringr::str_replace(Diam, ">", "gt"),
+    Diam = stringr::str_replace(Diam, "<", "lt"),
+    Diam = factor(Diam)
+  ) |>
+  select(-tyears, -d, -FIGO, -id)
+
+save_data(ova)
 
 # eha::child --------------------------------------------------------------
 # Children born in Skellefteå, Sweden, 1850-1884, are followed fifteen years
@@ -336,3 +358,15 @@ e1684 <- mlr3misc::load_dataset("e1684", "smcure") |>
   rename(time = FAILTIME, status = FAILCENS)
 
 save_data(e1684)
+
+# survival::lung ------------------------------------------------------------------------------
+lung = survival::lung |>
+  mutate(
+    sex = factor(if_else(sex == 1, "M", "F")),
+    ph.ecog = as.integer(ph.ecog),
+    inst = factor(inst),
+    status = status - 1
+  ) |>
+  tibble::remove_rownames()
+
+save_data(lung)
