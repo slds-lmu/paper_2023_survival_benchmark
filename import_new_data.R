@@ -303,7 +303,7 @@ rdata <- mlr3misc::load_dataset("rdata", "relsurv") |>
     # recode sex from 1,2 to 0,1 for consistency
     sex = sex - 1
   ) |>
-  # Redudant variable, grouped version of agre
+  # Redundant variable, grouped version of age
   select(-agegr)
 
 # Sanity check to ensure year recoding worked
