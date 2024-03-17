@@ -183,10 +183,10 @@ get_measures_eval = function() {
     msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Brier Score (Improper)"),
     msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Brier Score (Improper, ERV)"),
 
-    msr("surv.dcalib",      id = "dcalib", truncate = 10, label = "D-Calibration (truncated)"),
+    msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration (truncated)"),
 
     # msr("surv.calib_alpha", id = "caliba", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha (truncated)"),
     msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha (Difference Method)")
 
   )
