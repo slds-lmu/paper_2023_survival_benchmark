@@ -11,11 +11,10 @@ mem_knl = 5457
 
 library("batchtools")
 library("mlr3batchmark")
-source(file.path(root, "helpers.R"))
+source(here::here("helpers.R"))
 
 # Assumes batchmark.R is run beforehand
-reg_dir = file.path(root, settings$reg_name)
-reg = loadRegistry(settings$reg, writeable = TRUE)
+reg = loadRegistry(settings$reg_dir, writeable = FALSE)
 
 # Expecting 576 task (32) x learner (19) combinations, 5 outer folds (except "veteran"), 2 tuning measures
 print(summarizeExperiments(by = c("task_id", "learner_id")))
