@@ -317,8 +317,8 @@ bmrtab_rcll[errors > 0,][, .(n = .N), by = .(learner_id)] |>
 Proportion of errors relative to total number of evaluations, i.e. `nrow()` of the associated tuning archives.
 
 ```{r get-archives}
-archives = reassemble_archives(reg_name = settings$reg_name, result_path = result_path, keep_logs = FALSE)
-archives[, archive_length := vapply(archive, nrow, 1)]
+archives = reassemble_archives(settings = settings, keep_logs = FALSE)
+archives[, archive_length := vapply(archive, nrow, integer(1))]
 #archive_errors = archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
 
 archives[, .(errors_total = sum(errors_sum), evals_total = sum(archive_length)), by = .(tune_measure, learner_id)] |>

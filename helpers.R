@@ -295,7 +295,7 @@ collect_results = function(
 
   if (!file.exists(path_bmr)) {
     tictoc::tic(msg = glue::glue("Reducing results ({tuning_measure})"))
-    bmr = reduceResultsBatchmark(
+    bmr = mlr3batchmark::reduceResultsBatchmark(
       ids = done_ids,
       store_backends = TRUE,
       reg = reg
@@ -373,7 +373,7 @@ score_bmr = function(
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
   bmr = readRDS(path_bmr)
 
-  if (nthreads > 1 & length(measure) > 0) {
+  if (nthreads > 1 & length(measure) > 1) {
     future::plan("multicore", workers = nthreads)
   } else {
     future::plan("sequential")
@@ -433,7 +433,7 @@ aggr_bmr = function(
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
   bmr = readRDS(path_bmr)
 
-  if (nthreads > 1 & length(measure) > 0) {
+  if (nthreads > 1 & length(measure) > 1) {
     future::plan("multicore", workers = nthreads)
   } else {
     future::plan("sequential")
@@ -482,7 +482,7 @@ reassemble_archives = function(
   ensure_directory(fs::path_dir(archive_path))
 
   if (fs::file_exists(archive_path)) {
-    cli::cli_alert_info("Archives allready aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
+    cli::cli_alert_info("Archives already aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
     return(readRDS(archive_path))
   }
 
@@ -506,9 +506,15 @@ reassemble_archives = function(
     cli::cli_progress_update(id = pb)
     archive = readRDS(file)
 
+
     if (!keep_logs) {
       # Temp fix because objects became to large
       archive[, log := NULL]
+    } else {
+      # Including the fallback log at all was a mistake
+      mlr3misc::walk(archive$log, \(log) {
+        mlr3misc::remove_named(log, "fallback_log")
+      })
     }
 
     components = fs::path_file(file) |>
