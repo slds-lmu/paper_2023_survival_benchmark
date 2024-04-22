@@ -803,7 +803,7 @@
       "RemoteUsername": "xoopR",
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
-      "RemoteSha": "1854b22b53da6ff09939f99f4f7f4cc0d54b3660",
+      "RemoteSha": "a7c01f7166f67ebbfdc8bec4b5625ab911af85c4",
       "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
@@ -815,7 +815,7 @@
         "set6",
         "stats"
       ],
-      "Hash": "3f1c391e64ea0e504c86c512c794e7d9"
+      "Hash": "6d7ceaf2e49cad791dc060906806d45a"
     },
     "doParallel": {
       "Package": "doParallel",
@@ -1863,14 +1863,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.6.0",
+      "Version": "0.6.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "ed6c351cfa2241b481d4dff61daf50aac33d3bb7",
+      "RemoteSha": "56e33e9f2c247d0a04f14d2d068a73e61f25b391",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1887,7 +1887,7 @@
         "survival",
         "survivalmodels"
       ],
-      "Hash": "32c3783020383689967cd4fc0d9e421c"
+      "Hash": "3c24341ba5a74c5464d677035cc2ac85"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2532,10 +2532,12 @@
     "renv": {
       "Package": "renv",
       "Version": "1.0.7",
-      "OS_type": null,
-      "NeedsCompilation": "no",
+      "Source": "Repository",
       "Repository": "CRAN",
-      "Source": "Repository"
+      "Requirements": [
+        "utils"
+      ],
+      "Hash": "397b7b2a265bc5a7a06852524dabae20"
     },
     "reshape2": {
       "Package": "reshape2",
