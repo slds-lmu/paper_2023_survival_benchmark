@@ -3,5 +3,8 @@
 code/*.R
 registry/*
 registry*
+registries*
+results
 attic/_dependencies.R
 analysis.qmd
+tmp
