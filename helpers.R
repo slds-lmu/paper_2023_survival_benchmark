@@ -167,27 +167,28 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
-    msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss"),
-    msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (ERV)"),
+    msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
+    msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
 
-    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Negative Log-Likelihood"),
-    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Negative Log-Likelihood (ERV)"),
+    # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
+    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
+    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
 
-    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Integrated Log-Likelihood (Proper)"),
-    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Integrated Log-Likelihood (Proper, ERV)"),
+    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [Proper]"),
+    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [Proper, ERV]"),
 
 
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Integrated Brier Score (Proper)"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Integrated Brier Score (Proper, ERV)"),
+    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Integrated Survial Brier Score (ISBS) [Proper]"),
+    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Integrated Survial Brier Score (ISBS) [Proper, ERV]"),
 
-    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Brier Score (Improper)"),
-    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Brier Score (Improper, ERV)"),
+    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survial Brier Score (ISBS)"),
+    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survial Brier Score (ISBS) [ERV]"),
 
-    msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration (truncated)"),
+    msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
     # msr("surv.calib_alpha", id = "caliba", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha (truncated)"),
-    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha (Difference Method)")
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha"),
+    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
