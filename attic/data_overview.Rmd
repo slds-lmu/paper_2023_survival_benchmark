@@ -24,7 +24,7 @@ library(data.table)
 # pkg := pycox for the pycox datasets
 datasets <- c(
   #"APtools::mayo",
-  "dynpred::ALL",
+  #"dynpred::ALL",
   "dynpred::ova",
   "dynpred::wbc1",
   "eha::child", 
