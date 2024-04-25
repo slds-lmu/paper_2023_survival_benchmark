@@ -61,7 +61,7 @@ bma = readRDS(fs::path(result_path, "bma_full.rds"))
 
 Special cases for learners:
 
-- `internal_cv` learners like `glmnet` and `CoxBoost` internally use a cross validation. CB is not tuned on the inner folds at all and uses its own method.
+- `internal_cv` learners like `glmnet` and `CoxBoost` internally use a cross validation. CoxB is not tuned on the inner folds at all and uses its own method. 
 - `encode`/`scale` learners need factor encoding or scaling as part of the preprocessing pipeline
 - `grid` learners have such small tuning spaces that a grid search is preferable
 
@@ -337,7 +337,6 @@ Scores are separated by tuning measure (Harrell's C and RCLL).
 ### Exclusions
 
 - Learner `SSVM` is excluded due to persistent technical issues that we could not resolve
-- Task `patient` is excluded as it turned out to be simulated and having 100% administrative censoring
 
 ### Raw scores (`bma`)
 
@@ -399,7 +398,7 @@ bma_rcll$friedman_test(p.adjust.method = "holm") |>
 
 ```{r meanse-harrell-c}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
   plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
 ```
@@ -408,7 +407,7 @@ for (measure_id in measures_eval_ids) {
 
 ```{r meanse-rcll}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
+for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
   plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll")
 }
 ```
@@ -424,7 +423,7 @@ for (measure_id in measures_eval_ids) {
 
 ```{r boxplot-harrell-c}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
   plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
 
@@ -434,7 +433,7 @@ for (measure_id in measures_eval_ids) {
 
 ```{r boxplot-rcll}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
+for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
   plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll")
 }
 
@@ -457,8 +456,7 @@ Not sure if we are actually interested in these plots but they are here for comp
 
 ```{r friedman-nemenyi-harrell-c}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba")) next
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
   plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
 ```
@@ -467,8 +465,7 @@ for (measure_id in measures_eval_ids) {
 
 ```{r friedman-nemenyi-rcll}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba")) next
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   plot_results(bma = bma_rcll, type = "fn", measure_id = measure_id, tuning_measure_id = "rcll")
 }
 ```
@@ -486,23 +483,14 @@ for (measure_id in measures_eval_ids) {
 
 ```{r critical-difference-harrell-c}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba_ratio")) next
-  if (msr_tbl[id == measure_id, erv]) next
-  plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1)
-}
+plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = 1)
 ```
-
 
 #### RCLL
 
 ```{r critical-difference-nemenyi-rcll}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba_ratio")) next
-  if (msr_tbl[id == measure_id, erv]) next
-  plot_results(bma = bma_rcll, type = "cd_n", measure_id = measure_id, tuning_measure_id = "rcll", ratio = 1)
-}
+plot_results(bma = bma_rcll, type = "cd_n", measure_id = "rcll", tuning_measure_id = "rcll", ratio = 1)
 ```
 
 ::: 
@@ -517,22 +505,14 @@ Using Cox (`CPH`) as baseline.
 
 ```{r critical-difference-baseline-diff-harrell-c}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba_ratio")) next
-  if (msr_tbl[id == measure_id, erv]) next
-  plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = measure_id, tuning_measure_id = "harrell_c", ratio = 1, baseline = "CPH")
-}
+plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = 1, baseline = "CPH")
 ```
 
 #### RCLL
 
 ```{r critical-difference-baseline-diff-rcll}
 #| fig-width: 10
-for (measure_id in measures_eval_ids) {
-  if (measure_id %in% c("caliba_ratio")) next
-  if (msr_tbl[id == measure_id, erv]) next
-  plot_results(bma = bma_rcll, type = "cd_bd", measure_id = measure_id, tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
-}
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
 ```
 
 ::: 
@@ -540,12 +520,43 @@ for (measure_id in measures_eval_ids) {
 
 ## Calibration
 
+Calculating p-valued for D-Calibration as `pchisq(score, 10 - 1, lower.tail = FALSE)`.
+
+TODO: Not sure how to multiplicity-adjust these p-values, i.e. for a simple Bonferroni-adjustment,
+multiply `p` by `n_learners`, `n_tasks`, `n_learners * n_tasks`?
+Unclear how we phrase this hypothesis as this is generally more of a "screening" type plot.
+
 ```{r}
+#| fig-width: 10
+#| fig-height: 12
 bma[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
 
-ggplot(bma, aes(y = learner_id, x = dcalib_p, fill = dcalib_p > 0.05)) +
-  facet_wrap(tuned ~ task_id) +
-  geom_boxplot()
+for (tuned_on in c("harrell_c", "rcll")) {
+  p = ggplot(bma[tuned == tuned_on], aes(y = learner_id, x = dcalib_p, fill = dcalib_p < 0.05)) +
+    facet_wrap(vars(task_id), ncol = 8) +
+    geom_point(shape = 22) +
+    geom_vline(xintercept = 0.05, color = "#E41A1C", linetype = "dotted") +
+    scale_x_continuous(
+      breaks = c(0.05, 1), limits = c(0, 1)
+    ) +
+    scale_fill_brewer(palette = "Set1", aesthetics = c("color", "fill")) +
+    labs(
+      title = "D-Calibration p-values by task and learner",
+      subtitle = glue::glue("Models tuned on {msr_tbl[id == tuned_on, label]}"),
+      x = "p-value", y = NULL, color = NULL, fill = "p < 0.05 (unadjusted)"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      plot.title.position = "plot",
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      panel.spacing.x = unit(5, "mm"),
+      panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+    )
+    
+    print(p)
+}
 ```
 
 
@@ -554,12 +565,51 @@ ggplot(bma, aes(y = learner_id, x = dcalib_p, fill = dcalib_p > 0.05)) +
 This is still a very WIP "Not sure how and what to look at specifically here"
 
 ```{r}
-ggplot(bma, aes(x = learner_id, y = rcll, color = tuned, fill = tuned)) +
-  geom_boxplot(alpha = 1/3) +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
-  theme_minimal() +
-  theme(legend.position = "top")
+
+for (eval_measure in c("harrell_c", "rcll")) {
+  p1 = ggplot(bma, aes(x = learner_id, y = .data[[eval_measure]], color = tuned, fill = tuned)) +
+    geom_boxplot(alpha = 1/3) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    scale_color_brewer(
+      palette = "Dark2", 
+      labels = \(x) vapply(x, \(y) msr_tbl[id == y, label], ""),
+      aesthetics = c("color", "fill")
+    ) +
+    labs(
+      title = "Comparison of aggregated performance depending on tuning measure",
+      subtitle = glue::glue("Evaluation Metric: {msr_tbl[id == eval_measure, label]}"),
+      x = NULL, y = msr_tbl[id == eval_measure, label],
+      color = "Tuning Measure", fill = "Tuning Measure"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title.position = "plot",
+      legend.position = "bottom"
+    )
+  
+  p2 = bma |> 
+    tidyr::pivot_wider(
+      id_cols = c("learner_id", "task_id"), 
+      names_from = "tuned", values_from = tidyselect::all_of(eval_measure)
+    ) |>
+    dplyr::mutate(diff = harrell_c - rcll) |>
+    ggplot(aes(y = learner_id, x = diff)) +
+    geom_boxplot() +
+    labs(
+      title = "Difference in performance by tuning measure",
+      subtitle = glue::glue("Evaluation Metric: {msr_tbl[id == eval_measure, label]}"),
+      caption = "Using performance resulting from tuning on Harrell's C as reference",
+      x = NULL, y = glue::glue("Difference in {msr_tbl[id == eval_measure, label]}")
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title.position = "plot"
+    )
+  
+  print(p1)
+  print(p2)
+}
+
 ```
 
 
