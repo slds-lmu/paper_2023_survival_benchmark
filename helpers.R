@@ -1,3 +1,5 @@
+cli::cli_alert_info("Loading helpers.R")
+
 library(data.table)
 # Helpers run pre-benchmark -------------------------------------------------------------------
 
