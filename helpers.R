@@ -14,10 +14,52 @@ save_resampling = function(resampling, task_name) {
 
   file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
   write.csv(resampling$instance, file_csv, row.names = FALSE)
-
-  # file_rds <- here::here("resamplings", paste0(task_name, ".rds"))
-  # saveRDS(resampling, file_rds)
 }
+
+#' Reconstruct a Resampling object from stored resampling CSV
+#'
+#' Using tasks-specific resampling stored at `resampling_dir`
+#'
+#' @param task (`mlr3proba::TaskSurv`) Task object where `$id` is expected to correspond to
+#'   `<resampling_dir>/<task_id>.csv` file.
+#' @param resampling_dir (`here::here("resamplings")`) Path of folder containing resampling CSVs.
+#'
+#' @return Object of class `mlr3::ResamplingCustomCV` reconstructing the stored resampling folds.
+#'
+#' @examples
+#'
+#' data = readRDS("code/data/cost.rds")
+#' task = as_task_surv(data, target = "time", event = "status", id = "cost")
+#' task$set_col_roles("status", add_to = "stratum")
+#'
+#' create_resampling_from_csv(task)
+create_resampling_from_csv = function(task, resampling_dir = here::here("resamplings")) {
+
+  mlr3::assert_task(task, task_type = "surv")
+
+  resampling_csv_path = fs::path(resampling_dir, task$id, ext = "csv")
+  checkmate::assert_file_exists(resampling_csv_path)
+
+  # Read stored resampling, sort by row_id for easier assignment of folds in row_id order
+  resampling_csv = as.data.table(read.csv(resampling_csv_path))
+  resampling_csv = resampling_csv[order(resampling_csv$row_id), ]
+
+  # Create new custom CV, using stored folds
+  custom_cv = rsmp("custom_cv")
+  folds = resampling_csv$fold[order(resampling_csv$row_id)]
+  custom_cv$instantiate(task, f = factor(folds))
+
+  # Sanity check that custom CV is identical to stored resampling
+  resampling_reconstructed = data.table::rbindlist(lapply(names(custom_cv$instance), \(i) {
+    data.frame(row_id = custom_cv$instance[[i]], fold = as.integer(i))
+  }))
+  resampling_reconstructed = resampling_reconstructed[order(resampling_reconstructed$row_id), ]
+
+  stopifnot(all.equal(resampling_csv, resampling_reconstructed))
+
+  custom_cv
+}
+
 
 #' Store additional data fro tasks
 #'
