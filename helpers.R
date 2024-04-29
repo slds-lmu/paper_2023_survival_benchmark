@@ -174,12 +174,12 @@ get_measures_eval = function() {
     msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
     msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
 
-    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [Proper]"),
-    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [Proper, ERV]"),
+    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
+    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
 
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Integrated Survial Brier Score (ISBS) [Proper]"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Integrated Survial Brier Score (ISBS) [Proper, ERV]"),
+    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survial Brier Score (RISBS)"),
+    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survial Brier Score (RISBS) [ERV]"),
 
     msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survial Brier Score (ISBS)"),
     msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survial Brier Score (ISBS) [ERV]"),
