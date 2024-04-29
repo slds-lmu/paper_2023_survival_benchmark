@@ -23,6 +23,9 @@ options(
   batchtools.progress = FALSE
 )
 
+# Load script with helpers here to ensure its contents are available always
+source("helpers.R")
+
 # Make renv pick up learner dependencies
 if (FALSE) {
   library("survival")
