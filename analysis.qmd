@@ -7,6 +7,7 @@ format:
   html:
     code-fold: true
     toc: true
+    toc-expand: 2
     toc-depth: 5
     embed-resources: false
     fig-align: center
@@ -287,31 +288,6 @@ bmrtab_rcll[errors > 0,][, .(n = .N), by = .(learner_id)] |>
 
 :::
 
-<!-- ### Imputing invalid values in `bma` -->
-
-<!-- By substituting them with fixed bad scores -->
-
-<!-- - Graf Score (Improper) -> 1 (?) -->
-<!-- - Graf Score (Improper, ERV) -> 1 (?) -->
-<!-- - Alpha -> 10 (same as D-Calibration) -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- check_scores(bma_harrell_c) |> -->
-<!--   kbl(caption = "Invalid scores, tuned on Harrell's C") |> -->
-<!--   kable_styling() -->
-
-<!-- check_scores(bma_rcll) |> -->
-<!--   kbl(caption = "Invalid scores, tuned on RCLL") |> -->
-<!--   kable_styling() -->
-
-<!-- bma_harrell_c = truncate_scores(bma_harrell_c, trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1) -->
-<!-- bma_rcll      = truncate_scores(bma_rcll,      trunc_caliba = 10, trunc_graf_improper = 1, trunc_graf_improper_erv = 1) -->
-
-<!-- saveRDS(bma_harrell_c, here::here("results/registry_beartooth/bma_clean_harrell_c.rds")) -->
-<!-- saveRDS(bma_rcll, here::here("results/registry_beartooth/bma_clean_rcll.rds")) -->
-<!-- ``` -->
-
-
 ### Errors from tuning archives
 
 Proportion of errors relative to total number of evaluations, i.e. `nrow()` of the associated tuning archives.
@@ -329,8 +305,7 @@ archives[, .(errors_total = sum(errors_sum), evals_total = sum(archive_length)),
   tablify()
 ```
 
-
-# Results by Eval Measures
+## Results by Eval Measures
 
 Scores are separated by tuning measure (Harrell's C and RCLL).
 
