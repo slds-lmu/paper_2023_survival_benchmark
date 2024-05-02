@@ -512,10 +512,12 @@ aggr_bmr = function(
 #' Collect tuning archives saved separately to disk via callback
 #' @param settings `config::get()` for result paths
 #' @param keep_logs [`TRUE`] Whether to keep the logs, which drastically increases the size
-#' of the resulting object in memory and on disk
+#'   of the resulting object in memory and on disk
+#' @param ignore_cache [`FALSE`] Whether to ignore a cached result and reassemble from scratch
 reassemble_archives = function(
     settings = config::get(),
-    keep_logs = TRUE
+    keep_logs = TRUE,
+    ignore_cache = FALSE
   ) {
 
   if (keep_logs) {
@@ -527,8 +529,12 @@ reassemble_archives = function(
   ensure_directory(fs::path_dir(archive_path))
 
   if (fs::file_exists(archive_path)) {
-    cli::cli_alert_info("Archives already aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
-    return(readRDS(archive_path))
+    if (!ignore_cache) {
+      cli::cli_alert_info("Archives already aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
+      return(readRDS(archive_path))
+    } else {
+      cli::cli_alert_info("Ignoring that {.file {fs::path_rel(archive_path)} is already present, overwriting...")
+    }
   }
 
   archive_dir = fs::path(settings$reg_dir, "tuning_archives")
