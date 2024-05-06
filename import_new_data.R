@@ -370,3 +370,14 @@ lung = survival::lung |>
   tibble::remove_rownames()
 
 save_data(lung)
+
+# survival::nafld1 ----------------------------------------------------------------------------
+nafld1 = survival::nafld1 |>
+  mutate(
+    sex = factor(if_else(male == 0, "F", "M")),
+    # Convert time (days) to whole weeks to reduce number of unique time points
+    time = round(futime / 7)
+  ) |>
+  select(-male, -case.id, -futime, -id)
+
+save_data(nafld1)
