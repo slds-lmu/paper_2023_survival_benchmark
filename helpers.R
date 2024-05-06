@@ -3,23 +3,25 @@ cli::cli_alert_info("Loading helpers.R")
 library(data.table)
 # Helpers run pre-benchmark -------------------------------------------------------------------
 
-#' Store instantiated resamplings as mlr3 resampling objects
-#' and as portable CSV files to `here::here("resamplings"`)
+#' Store instantiated resamplings as portable CSV files to `here::here("resamplings"`)
 #'
 #' @param resampling Object of class `Resampling`, has to be instantiated.
-#' @param task_name String to use as file name.
-save_resampling = function(resampling, task_name) {
-  ensure_directory(here::here("resamplings"))
+#' @param task (`mlr3proba::TaskSurv`) Task object where `$id` will correspond to
+#'   `<resampling_dir>/<task_id>.csv` file.
+#' @param resampling_dir (`here::here("resamplings")`) Path of folder containing resampling CSVs.
+save_resampling = function(resampling, task, resampling_dir = here::here("resamplings")) {
+  ensure_directory(resampling_dir)
+  mlr3::assert_resampling(resampling, instantiated = TRUE)
+  mlr3::assert_task(task, task_type = "surv")
   stopifnot(resampling$is_instantiated)
 
-  file_csv <- here::here("resamplings", paste0(task_name, ".csv"))
+  file_csv <- fs::path(resampling_dir, task$id, ext = "csv")
   write.csv(resampling$instance, file_csv, row.names = FALSE)
 }
 
 #' Reconstruct a Resampling object from stored resampling CSV
 #'
-#' Using tasks-specific resampling stored at `resampling_dir`
-#'
+#' Using tasks-specific resampling stored at `resampling_dir`.
 #' @param task (`mlr3proba::TaskSurv`) Task object where `$id` is expected to correspond to
 #'   `<resampling_dir>/<task_id>.csv` file.
 #' @param resampling_dir (`here::here("resamplings")`) Path of folder containing resampling CSVs.
@@ -27,14 +29,12 @@ save_resampling = function(resampling, task_name) {
 #' @return Object of class `mlr3::ResamplingCustomCV` reconstructing the stored resampling folds.
 #'
 #' @examples
-#'
 #' data = readRDS("code/data/cost.rds")
 #' task = as_task_surv(data, target = "time", event = "status", id = "cost")
 #' task$set_col_roles("status", add_to = "stratum")
 #'
 #' create_resampling_from_csv(task)
 create_resampling_from_csv = function(task, resampling_dir = here::here("resamplings")) {
-
   mlr3::assert_task(task, task_type = "surv")
 
   resampling_csv_path = fs::path(resampling_dir, task$id, ext = "csv")

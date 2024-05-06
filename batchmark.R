@@ -55,14 +55,14 @@ for (i in seq_along(files)) {
   if (identical(c(settings$outer_folds, settings$inner_folds), c(1, 1))) {
     folds = 1
     resampling = rsmp("holdout", ratio = 4/5)$instantiate(task)
-  } else {
-    # normal CV
+  } else { # normal CV
+    # For reproduction purposes, remove the following lines which create/store the resamplings...
     folds = min(floor(task$nrow / settings$min_obs), settings$outer_folds)
     resampling = rsmp("cv", folds = folds)$instantiate(task)
-
     stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$min_obs))
-
-    save_resampling(resampling, names[i])
+    save_resampling(resampling, task, resampling_dir = here::here("resamplings"))
+    # ...and uncomment the following to restore the resampling from disk
+    # resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
   }
 
   tasks[[i]] = task
