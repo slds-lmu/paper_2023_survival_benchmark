@@ -36,15 +36,14 @@ requireNamespace("mlr3extralearners")
 # requires PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
 library(ggplot2)
 library(kableExtra)
+library(dplyr)
 
 result_path = here::here("results", settings$reg_name)
 msr_tbl = measures_tbl()
 measures_eval_ids = msr_tbl$id
 lrntab = load_lrntab()
 tasktab = load_tasktab()
-```
 
-```{r setup-read}
 bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
 bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
 
@@ -53,8 +52,6 @@ bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
 
 bma = readRDS(fs::path(result_path, "bma_full.rds"))
 ```
-
-
 
 ## Metadata
 
@@ -174,13 +171,12 @@ Naively assuming p < 0.05 indicates PH violation definitely and using that as a 
 #| fig-width: 8
 #| fig-height: 7
 #| fig-align: center
+#| cache: true
+
 bma = bma[global_dt[, .(task_id, p, admin_cens)], on = "task_id"][, p := fifelse(p < 0.05, "No PH", "PH")]
-
 # scale_color_manual(values = palette, aesthetics = c("color", "fill"), guide = guide_legend(keywidth = 2)) +
-
 plot_aggr_ph(bma, eval_measure = "harrell_c", tuning_measure = "harrell_c")
 plot_aggr_ph(bma, eval_measure = "uno_c", tuning_measure = "harrell_c")
-
 
 plot_aggr_ph(bma, eval_measure = "brier_improper", tuning_measure = "rcll")
 plot_aggr_ph(bma, eval_measure = "brier_proper", tuning_measure = "rcll")
@@ -192,13 +188,13 @@ Same but also grouped by "is administrative censoring the majority or minority o
 #| fig-width: 8
 #| fig-height: 7
 #| fig-align: center
+#| cache: true
+
 bmatemp = bma |>
   dplyr::mutate(p = glue::glue("{p} / {admin_cens} admin. cens."))
 
-
 plot_aggr_ph(bmatemp, eval_measure = "harrell_c", tuning_measure = "harrell_c")
 plot_aggr_ph(bmatemp, eval_measure = "uno_c", tuning_measure = "harrell_c")
-
 
 plot_aggr_ph(bmatemp, eval_measure = "brier_improper", tuning_measure = "rcll")
 plot_aggr_ph(bmatemp, eval_measure = "brier_proper", tuning_measure = "rcll")
@@ -214,6 +210,8 @@ Fitting a logistic regression model on the status indicator (`status ~ .`) and c
 - `signif_prop` = `n_signif / n_coefs` in %
 
 ```{r task-censmods}
+#| cache: true
+#| 
 censmods = data.table::rbindlist(lapply(names(tasks), \(task_id) {
   coef_tbl = glm(status ~ ., data = tasks[[task_id]], family = "binomial") |>
     broom::tidy()
@@ -231,7 +229,6 @@ censmods |>
   dplyr::mutate(signif_prop = 100 * round(n_signif / n_coefs, 3)) |>
   dplyr::arrange(-xtfrm(signif_prop)) |>
   tablify()
-
 ```
 
 
@@ -293,6 +290,7 @@ bmrtab_rcll[errors > 0,][, .(n = .N), by = .(learner_id)] |>
 Proportion of errors relative to total number of evaluations, i.e. `nrow()` of the associated tuning archives.
 
 ```{r get-archives}
+#| cache: true
 archives = reassemble_archives(settings = settings, keep_logs = FALSE)
 archives[, archive_length := vapply(archive, nrow, integer(1))]
 #archive_errors = archives[errors_sum > 0, c("tune_measure", "task_id", "learner_id", "errors_sum")]
@@ -321,6 +319,7 @@ Scores are separated by tuning measure (Harrell's C and RCLL).
 
 ```{r}
 #| column: page
+#| 
 bma_harrell_c$data |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
   dplyr::arrange(task_id, learner_id) |>
@@ -456,7 +455,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
 #### Harrell's C
 
 
-```{r critical-difference-harrell-c}
+```{r critical-difference-nemenyi-harrell-c}
 #| fig-width: 10
 plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = 1)
 ```
@@ -466,6 +465,8 @@ plot_results(bma = bma_harrell_c, type = "cd_n", measure_id = "harrell_c", tunin
 ```{r critical-difference-nemenyi-rcll}
 #| fig-width: 10
 plot_results(bma = bma_rcll, type = "cd_n", measure_id = "rcll", tuning_measure_id = "rcll", ratio = 1)
+
+plot_results(bma = bma_rcll, type = "cd_n", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = 1)
 ```
 
 ::: 
@@ -488,10 +489,11 @@ plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuni
 ```{r critical-difference-baseline-diff-rcll}
 #| fig-width: 10
 plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
+
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
 ```
 
-::: 
-
+:::
 
 ## Calibration
 
@@ -501,24 +503,34 @@ TODO: Not sure how to multiplicity-adjust these p-values, i.e. for a simple Bonf
 multiply `p` by `n_learners`, `n_tasks`, `n_learners * n_tasks`?
 Unclear how we phrase this hypothesis as this is generally more of a "screening" type plot.
 
-```{r}
+```{r dcalibration-heatmap}
 #| fig-width: 10
-#| fig-height: 12
+#| fig-height: 8
+
 bma[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
+# bma[, dcalib_p_bh := p.adjust(dcalib_p, method = "holm")]
 
 for (tuned_on in c("harrell_c", "rcll")) {
-  p = ggplot(bma[tuned == tuned_on], aes(y = learner_id, x = dcalib_p, fill = dcalib_p < 0.05)) +
-    facet_wrap(vars(task_id), ncol = 8) +
-    geom_point(shape = 22) +
-    geom_vline(xintercept = 0.05, color = "#E41A1C", linetype = "dotted") +
-    scale_x_continuous(
-      breaks = c(0.05, 1), limits = c(0, 1)
-    ) +
-    scale_fill_brewer(palette = "Set1", aesthetics = c("color", "fill")) +
+  p = ggplot(bma[tuned == tuned_on], 
+        aes(x = forcats::fct_reorder(learner_id, dcalib_p), 
+          y = forcats::fct_rev(task_id), 
+          fill = dcalib_p)) +
+    geom_tile(color = "#EEEEEE") +
+    # scale_fill_manual(values = c(`TRUE` = "red", `FALSE` = "blue"), labels = c(`TRUE` = "Signif.", `FALSE` = "Not Signif.")) +
+    scale_fill_viridis_c(breaks = seq(0, 1, .1)) +
+    guides(
+      x = guide_axis(n.dodge = 2), 
+      fill = guide_colorbar(
+        title.vjust = .8,
+        barwidth = unit(200, "pt")
+    )) +
     labs(
       title = "D-Calibration p-values by task and learner",
-      subtitle = glue::glue("Models tuned on {msr_tbl[id == tuned_on, label]}"),
-      x = "p-value", y = NULL, color = NULL, fill = "p < 0.05 (unadjusted)"
+      subtitle = glue::glue(
+        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
+        "Learners ordered by average p-value"
+      ),
+      y = "Task", x = "Learner", color = NULL, fill = "p-value"
     ) +
     theme_minimal() +
     theme(
@@ -529,42 +541,106 @@ for (tuned_on in c("harrell_c", "rcll")) {
       panel.spacing.x = unit(5, "mm"),
       panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
     )
-    
-    print(p)
+
+  print(p)
+
+}
+
+```
+
+## Alpha-Calibration
+
+```{r calib-alpha-ratio-plot}
+
+for (tuned_on in c("harrell_c", "rcll")) {
+  p = ggplot(bma[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
+    geom_point() +
+    geom_vline(xintercept = 1) +
+    scale_x_log10() +
+    labs(
+      title = "Alpha-Calibration by task and learner",
+      subtitle = glue::glue(
+        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
+        "Values close to 1 indicate reasonable calibration"
+      ),
+      y = "Learner", x = "Alpha (log10)"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      plot.title.position = "plot",
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank()
+      # panel.spacing.x = unit(5, "mm"),
+      # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+    )
+
+  print(p)
+
 }
 ```
 
+
+## Calibration Table
+
+```{r calibration-table}
+#| eval: false
+
+for (tuned_on in c("harrell_c", "rcll")) {
+  result_tab = bma[tuned == tuned_on, .(learner_id, task_id, dcalib, dcalib_p, caliba_ratio, caliba_diff)]
+
+  new_names = vapply(names(result_tab), \(x) {
+                if (!(x %in% msr_tbl$id)) return(x) else msr_tbl[id == x, label]
+              }, FUN.VALUE = "", USE.NAMES = FALSE)
+  names(result_tab) = new_names
+
+  groupings = table(result_tab$task_id)
+
+  result_tab |>
+   mutate(across(where(is.numeric), \(x) round(x, 3))) |>
+   #arrange(learner_id, task_id) |>
+   select(-task_id) |>
+   kableExtra::kbl(booktabs = TRUE, col.names = c(learner_id = "")) |>
+   kableExtra::kable_styling() |>
+   kableExtra::group_rows(group_label = names(groupings), index = groupings) |>
+   print()
+}
+
+```
 
 ## Comparing Tuning Measures
 
 This is still a very WIP "Not sure how and what to look at specifically here"
 
-```{r}
+```{r tune-measure-comp}
+#| cache: true
 
 for (eval_measure in c("harrell_c", "rcll")) {
   p1 = ggplot(bma, aes(x = learner_id, y = .data[[eval_measure]], color = tuned, fill = tuned)) +
-    geom_boxplot(alpha = 1/3) +
-    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-    scale_color_brewer(
-      palette = "Dark2", 
-      labels = \(x) vapply(x, \(y) msr_tbl[id == y, label], ""),
-      aesthetics = c("color", "fill")
-    ) +
-    labs(
-      title = "Comparison of aggregated performance depending on tuning measure",
-      subtitle = glue::glue("Evaluation Metric: {msr_tbl[id == eval_measure, label]}"),
-      x = NULL, y = msr_tbl[id == eval_measure, label],
-      color = "Tuning Measure", fill = "Tuning Measure"
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title.position = "plot",
-      legend.position = "bottom"
-    )
+  geom_boxplot(alpha = 1/3) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_color_brewer(
+    palette = "Dark2", 
+    labels = function(x) {
+      vapply(x, function(y) {msr_tbl[id == y, label]}, FUN.VALUE = character(1))
+    },
+    aesthetics = c("color", "fill")
+  ) +
+  labs(
+    title = "Comparison of aggregated performance depending on tuning measure",
+    subtitle = glue::glue("Evaluation Metric: {msr_tbl[id == eval_measure, label]}"),
+    x = NULL, y = msr_tbl[id == eval_measure, label],
+    color = "Tuning Measure", fill = "Tuning Measure"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    legend.position = "bottom"
+  )
   
-  p2 = bma |> 
+  p2 = bma |>
     tidyr::pivot_wider(
-      id_cols = c("learner_id", "task_id"), 
+      id_cols = c("learner_id", "task_id"),
       names_from = "tuned", values_from = tidyselect::all_of(eval_measure)
     ) |>
     dplyr::mutate(diff = harrell_c - rcll) |>
@@ -580,25 +656,70 @@ for (eval_measure in c("harrell_c", "rcll")) {
     theme(
       plot.title.position = "plot"
     )
-  
+
   print(p1)
   print(p2)
 }
+```
+
+Complete aggregated results table
+
+```{r aggr-table}
+
+
+tab_input = bma |>
+  select(
+    "task_id", "learner_id", "harrell_c", "uno_c", "rcll", "rcll_erv", 
+    "logloss", "logloss_erv", "intlogloss", "intlogloss_erv", "brier_proper", 
+    "brier_proper_erv", "brier_improper", "brier_improper_erv", "dcalib", 
+    "caliba_ratio", "caliba_diff", "tuned"
+  ) |>
+  tidyr::pivot_longer(cols = harrell_c:caliba_diff, names_to = "measure", values_to = "score") |>
+  summarize(score = mean(score), .by = c("learner_id", "tuned", "measure")) |>
+  mutate(score = round(score, 3)) |>
+  mutate(
+    measure = vapply(measure, \(x) {msr_tbl[id == x, label]}, FUN.VALUE = "", USE.NAMES = FALSE),
+    tuned = vapply(tuned, \(x) {msr_tbl[id == x, label]}, FUN.VALUE = "", USE.NAMES = FALSE)
+  ) |>
+  tidyr::pivot_wider(id_cols = c("tuned", "measure"), values_from = "score", names_from = "learner_id")
+
+groupings = table(tab_input$tuned)
+
+# HTML version here
+tab_input |>
+  select(-tuned, ` ` = measure) |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling() |>
+  kableExtra::group_rows(group_label = names(groupings), index = groupings)
+
+# latex version for saving
+tab_input |>
+  select(-tuned, ` ` = measure) |>
+  kableExtra::kbl(booktabs = TRUE, format = "latex") |>
+  kableExtra::kable_styling() |>
+  kableExtra::group_rows(group_label = names(groupings), index = groupings) |>
+  kableExtra::landscape() |>
+  writeLines(con = fs::path(settings$result_path, "aggr_table", ext = "tex"))
 
 ```
 
 
+
 <!-- Last chunk to auto-trim CD plots while we're at it -->
 
-```{r trim-critical-diff, eval = requireNamespace("magick", quietly = TRUE)}
+```{r trim-critical-diff}
+if (!requireNamespace("magick", quietly = TRUE)) {
+  warning("Needs magick package to auto-trim CD plots")
+}
+
 # This requires the magick package which is purposefully excluded from renv.lock 
 # as it was not easily installable on the cluster due to the libmagick dependency
 
 pngs = fs::dir_ls(knitr::opts_chunk$get()$fig.path, glob = "*critical-diff*png")
+
 purrr::walk(pngs, \(x) {
   magick::image_read(x) |>
     magick::image_trim() |>
     magick::image_write(path = x)
 })
 ```
-
