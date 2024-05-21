@@ -222,11 +222,11 @@ get_measures_eval = function() {
     msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
 
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survial Brier Score (RISBS)"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survial Brier Score (RISBS) [ERV]"),
+    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
+    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
-    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survial Brier Score (ISBS)"),
-    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survial Brier Score (ISBS) [ERV]"),
+    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
