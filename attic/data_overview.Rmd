@@ -20,7 +20,7 @@ library(dplyr)
 library(kableExtra)
 library(data.table)
 
-# All datasets currently in code/data with pkg::dataset notation, using
+# All datasets currently in datasets with pkg::dataset notation, using
 # pkg := pycox for the pycox datasets
 datasets <- c(
   #"APtools::mayo",
@@ -65,10 +65,10 @@ length(datasets)
 datasets <- tibble(pkgdata = datasets) |>
   tidyr::separate(pkgdata, c("pkg", "dataset"), sep = "::")
 
-# Do files in code/data and files in above table match up?
+# Do files in datasets and files in above table match up?
 setdiff(
   datasets$dataset,
-  fs::dir_ls(here::here("code/data"), glob = "*.rds") |> fs::path_file() |> fs::path_ext_remove()
+  fs::dir_ls(here::here("datasets"), glob = "*.rds") |> fs::path_file() |> fs::path_ext_remove()
 )
 
 is.binary <- function(x) {
@@ -76,7 +76,7 @@ is.binary <- function(x) {
            error = function(e) FALSE, silent = TRUE)
 }
 
-xdat_summary <- fs::dir_ls(here::here("code/data"), glob = "*.rds") |>
+xdat_summary <- fs::dir_ls(here::here("datasets"), glob = "*.rds") |>
   purrr::map_df(~{
     dat <- readRDS(.x)
     

@@ -21,7 +21,7 @@ library(kableExtra)
 ```{r}
 # Checking datasets for low factor level counts
 
-overview <- purrr::map_df(fs::dir_ls(here::here("code/data"), glob = "*rds"), ~{
+overview <- purrr::map_df(fs::dir_ls(here::here("datasets"), glob = "*rds"), ~{
   tmpds <- readRDS(.x)
 
   tibble::tibble(
@@ -42,7 +42,7 @@ overview |>
 Tasks with factors: **`r sum(overview$n_factor_vars > 0)`**
 
 ```{r, results='asis'}
-tasks <- purrr::map(fs::dir_ls(here::here("code/data"), glob = "*rds"), function(x) {
+tasks <- purrr::map(fs::dir_ls(here::here("datasets"), glob = "*rds"), function(x) {
   data.table(readRDS(x))
 })
 

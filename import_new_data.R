@@ -2,7 +2,7 @@
 # See also https://github.com/RaphaelS1/proba_benchmark/issues/28 for discussion on individual datasets
 library(dplyr)
 
-save_data <- function(x, path = here::here("code/data/")) {
+save_data <- function(x, path = here::here("datasets/")) {
   xname <- deparse(substitute(x))
   path_file_rds <- paste0(path, xname, ".rds")
   path_file_csv <- paste0(path, xname, ".csv")

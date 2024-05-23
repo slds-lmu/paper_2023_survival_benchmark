@@ -29,7 +29,7 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
 #' @return Object of class `mlr3::ResamplingCustomCV` reconstructing the stored resampling folds.
 #'
 #' @examples
-#' data = readRDS("code/data/cost.rds")
+#' data = readRDS("datasets/cost.rds")
 #' task = as_task_surv(data, target = "time", event = "status", id = "cost")
 #' task$set_col_roles("status", add_to = "stratum")
 #'
