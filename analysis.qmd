@@ -397,6 +397,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
 
 ```{r boxplot-harrell-c}
 #| fig-width: 10
+#| fig-height: 8
 for (measure_id in msr_tbl[type == "Discrimination", id]) {
   plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
@@ -407,6 +408,7 @@ for (measure_id in msr_tbl[type == "Discrimination", id]) {
 
 ```{r boxplot-rcll}
 #| fig-width: 10
+#| fig-height: 8
 for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
   plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll")
 }
