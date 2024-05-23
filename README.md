@@ -9,7 +9,7 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
 - `batchmark.R` is the main setup script. It creates a benchmark registry (using `batchtools` and `mlr3batchmark`).
   - Resulting compute jobs can be submitted with `batchtools::submitJobs()` depending on available resources.
   - `submit.R` contains job management steps specific to the HPC environment used for the benchmark.
-- Datasets are loaded from `code/datasets` in `.rds` format
+- Datasets are loaded from `./datasets` in `.rds` format
   - Code for retrieval and minimal preprocessing is in `import_new_data.R`
 - `resamplings` contains resampling fold information for each dataset in CSV form to ensure reproducibility.
   - These files are automatically generated when running `batchmark.R`, where resampling is done using a set RNG seed.
