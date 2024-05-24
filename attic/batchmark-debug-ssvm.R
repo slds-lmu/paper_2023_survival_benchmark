@@ -41,7 +41,7 @@ reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(settings$seed)
-files = dir(file.path(root, "code", "data"), pattern = "\\.rds$", full.names = TRUE)
+files = dir(file.path(root, "datasets"), pattern = "\\.rds$", full.names = TRUE)
 names = stringi::stri_sub(basename(files), 1, -5)
 tasks = resamplings = mlr3misc::named_list(names)
 

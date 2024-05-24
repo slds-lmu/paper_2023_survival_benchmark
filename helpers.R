@@ -91,7 +91,7 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
 #'
 #' To just get the tasks as a named list of `data.table` objects
 load_task_data = function() {
-  files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
+  files = dir(here::here("datasets"), pattern = "\\.rds$", full.names = TRUE)
   names = stringi::stri_sub(basename(files), 1, -5)
   tasks = mlr3misc::named_list(names)
 

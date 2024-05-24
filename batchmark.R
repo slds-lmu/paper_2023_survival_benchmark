@@ -41,7 +41,7 @@ reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(settings$seed)
-files = dir(here::here("code", "data"), pattern = "\\.rds$", full.names = TRUE)
+files = dir(here::here("datasets"), pattern = "\\.rds$", full.names = TRUE)
 names = fs::path_ext_remove(fs::path_file(files))
 tasks = resamplings = mlr3misc::named_list(names)
 
