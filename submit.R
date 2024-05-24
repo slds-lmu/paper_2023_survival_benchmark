@@ -14,7 +14,7 @@ library("mlr3batchmark")
 source(here::here("helpers.R"))
 
 # Assumes batchmark.R is run beforehand
-reg = loadRegistry(settings$reg_dir, writeable = FALSE)
+reg = loadRegistry(settings$reg_dir, writeable = TRUE)
 
 # Expecting 576 task (32) x learner (19) combinations, 5 outer folds (except "veteran"), 2 tuning measures
 print(summarizeExperiments(by = c("task_id", "learner_id")))
