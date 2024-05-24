@@ -79,7 +79,7 @@ tasktab = save_tasktab(tasks)
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 #' @param .form (`"ph"`) Passed to `distrcompositor` as `form = .form`.
-#' @param .estimator (`"kaplan"`) Passed to `distrcompoistor` as `estimator = .estimator`.
+#' @param .estimator (`"kaplan"`) Passed to `distrcompositor` as `estimator = .estimator`.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimator = "kaplan") {
   checkmate::assert_choice(.form, choices = c("ph", "aft"))
   checkmate::assert_choice(.estimator, choices = c("kaplan", "breslow"))
