@@ -772,9 +772,10 @@ tablify = function(x, caption = NULL, ...) {
 #' @param bma (`BenchmarkAggr`)
 #' @param type One of `"mean", "box", "fn"` or `"cd_n"` for Critical Differences (Nemenyi) or
 #'   `"cd_bd"` for Critical Differences with baseline comparison
-#' @param measure_id
-#' @param tuning_measure_id
-#' @param ...
+#' @param measure_id,tuning_measure_id (`character(1)`) Measure ids as per `measures_tbl()`.
+#' @param flip (`FALSE`) If `TRUE`, applies `coord_flip()`.
+#' @param dodge (`TRUE`) If `TRUE`, applies `scale_x_discrete(guide = guide_axis(n.dodge = 2))`.
+#' @param ... Additional arguments passed to `autoplot()`.
 #'
 #' @return
 #' @export
@@ -787,6 +788,8 @@ tablify = function(x, caption = NULL, ...) {
 plot_results = function(
     bma, type = "box", measure_id = "harrell_c", tuning_measure_id = "harrell_c",
     exclude_learners = "",
+    flip = FALSE,
+    dodge = TRUE,
     ...
 ) {
 
@@ -838,7 +841,11 @@ plot_results = function(
   }
 
   if (type %in% c("box", "mean")) {
-    p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    if (flip) {
+      p = p + coord_flip() +
+        scale_x_discrete(limits = rev)
+    }
     p = p + theme_minimal(base_size = 15)
     p = p + theme(plot.background = element_rect(fill = "transparent", color = NA))
   }
