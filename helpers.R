@@ -69,15 +69,31 @@ create_resampling_from_csv = function(task, resampling_dir = here::here("resampl
 #'
 #' @param tasks List of `TaskSurv` objects.
 #' @param path Path to store CSV file of results.
+#' @examples
+#'
+#' tasks = load_task_data()
+#' save_tasktab(tasks)
 save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
+
+  names = names(tasks)
+
   # Save overview of tasks with some metadata which comes in handy later
-  tasktab = data.table::rbindlist(lapply(tasks, \(x) {
+  tasktab = data.table::rbindlist(lapply(seq_along(tasks), \(x) {
+    task_data = tasks[[x]]
+
+    if (!(inherits(task_data, "TaskSurv"))) {
+      task = as_task_surv(task_data, target = "time", event = "status", id = names[x])
+      task$set_col_roles("status", add_to = "stratum")
+    }
+
     data.table::data.table(
-      task_id = x$id,
-      n = x$nrow,
-      p = length(x$feature_names),
-      dim = x$nrow * length(x$feature_names),
-      n_uniq_t = length(unique(x$data(cols = "time")[[1]]))
+      task_id = task$id,
+      n = task$nrow,
+      p = length(task$feature_names),
+      dim = task$nrow * length(task$feature_names),
+      n_uniq_t = length(unique(task$data(cols = "time")[[1]])),
+      events = sum(task$data(cols = "status")[[1]] == 1),
+      censprop = mean(task$data(cols = "status")[[1]] == 0)
     )
   }))
   tasktab[, dimrank := data.table::frank(dim)]
@@ -167,19 +183,19 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     NL = list(learner = "surv.nelson", params = 0),
     AF = list(learner = "surv.akritas", params = 1),
     CPH = list(learner = "surv.coxph", params = 0),
-    GLM = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
+    GLMN = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
     Pen = list(learner = "surv.penalized", params = 2),
-    Par = list(learner = "surv.parametric", params = 1, grid = TRUE),
+    AFT = list(learner = "surv.parametric", params = 1, grid = TRUE),
     Flex = list(learner = "surv.flexible", params = 1, grid = TRUE),
     RFSRC = list(learner = "surv.rfsrc", params = 5),
     RAN = list(learner = "surv.ranger", params = 5),
     CIF = list(learner = "surv.cforest", params = 5),
     ORSF = list(learner = "surv.aorsf", params = 2),
     RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
-    MBO = list(learner = "surv.mboost", params = 4),
+    MBST = list(learner = "surv.mboost", params = 4),
     CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
     XGBCox = list(learner = "surv.xgboost", .encode = TRUE, params = 6, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost", .encode = TRUE, params = 6, .form = "aft"),
+    XGBAFT = list(learner = "surv.xgboost", .encode = TRUE, params = 8, .form = "aft"),
     SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
   ) |>
     lapply(data.table::as.data.table) |>
@@ -683,19 +699,25 @@ remove_results = function(bma,
   mlr3benchmark::as_benchmark_aggr(xdat)
 }
 
+
+#' When experiments were started less thought was put inot the abbreviations we ended
+#' up using for the results etc. plots so this is the "fixing stuff up" function.
 rename_learners = function(bma) {
   checkmate::assert_class(bma, classes = "BenchmarkAggr")
 
   xdat = data.table::copy(bma$data)
 
   xdat[, learner_id := dplyr::case_when(
-    learner_id == "AF" ~ "AK",
-    learner_id == "NL" ~ "NA",
+    learner_id == "AF" ~ "AK",    # Akritas
+    learner_id == "NL" ~ "NA",    # Nelson-Aalen
+    learner_id == "Par" ~ "AFT",  # AFT more standard than "parametric"
+    learner_id == "MBO" ~ "MBST", # mboost
+    learner_id == "GLM" ~ "GLMN", # glmnet
     TRUE ~ learner_id
   )]
 
-  learner_order = c("KM", "NA", "AK", "CPH", "GLM", "Pen", "Par", "Flex", "RFSRC",
-                    "RAN", "CIF", "ORSF", "RRT", "MBO", "CoxB", "XGBCox", "XGBAFT")
+  learner_order = c("KM", "NA", "AK", "CPH", "GLMN", "Pen", "AFT", "Flex", "RFSRC",
+                    "RAN", "CIF", "ORSF", "RRT", "MBST", "CoxB", "XGBCox", "XGBAFT")
 
   xdat[, learner_id := factor(learner_id, levels = learner_order)]
 
@@ -727,9 +749,9 @@ add_learner_groups = function(bma) {
       learner_group = dplyr::case_match(
         learner_id,
         c("KM", "NA", "AK") ~ "Baseline",
-        c("CPH", "GLM", "Pen", "Par", "Flex") ~ "Classical",
+        c("CPH", "GLMN", "Pen", "AFT", "Flex") ~ "Classical",
         c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
-        c("MBO", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
+        c("MBST", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
         .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
       )
     )

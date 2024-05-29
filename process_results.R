@@ -102,7 +102,7 @@ bma_rcll      = remove_results(bma_rcll,      learner_id_exclude = "SSVM")
 bma_harrell_c = rename_learners(bma_harrell_c)
 bma_rcll      = rename_learners(bma_rcll)
 
-
+# Saving cleaned results
 saveRDS(bma_harrell_c, file = fs::path(settings$result_path, "bma_clean_harrell_c.rds"))
 saveRDS(bma_rcll,      file = fs::path(settings$result_path, "bma_clean_rcll.rds"))
 
