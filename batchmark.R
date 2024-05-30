@@ -56,18 +56,22 @@ for (i in seq_along(files)) {
     folds = 1
     resampling = rsmp("holdout", ratio = 4/5)$instantiate(task)
   } else { # normal CV
-    # For reproduction purposes, remove the following lines which create/store the resamplings...
-    folds = min(floor(task$nrow / settings$min_obs), settings$outer_folds)
-    resampling = rsmp("cv", folds = folds)$instantiate(task)
-    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$min_obs))
-    save_resampling(resampling, task, resampling_dir = here::here("resamplings"))
-    # ...and uncomment the following to restore the resampling from disk
-    # resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
+    # If there is a stored resampling already, use a reconstructed version using the CSV file
+    if (fs::file_exists(fs::path(here::here("resamplings"), names[[i]], ext = "csv"))) {
+      resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
+    } else {
+      # Otherwise create a new resampling and store it
+      folds = min(floor(task$nrow / settings$min_obs), settings$outer_folds)
+      resampling = rsmp("cv", folds = folds)$instantiate(task)
+      stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$min_obs))
+      save_resampling(resampling, task, resampling_dir = here::here("resamplings"))
+      rm(folds)
+    }
   }
 
   tasks[[i]] = task
   resamplings[[i]] = resampling
-  rm(data, task, folds, resampling)
+  rm(data, task, resampling)
 }
 
 tasktab = save_tasktab(tasks)

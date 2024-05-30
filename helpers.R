@@ -84,6 +84,8 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
     if (!(inherits(task_data, "TaskSurv"))) {
       task = as_task_surv(task_data, target = "time", event = "status", id = names[x])
       task$set_col_roles("status", add_to = "stratum")
+    } else {
+      task = task_data
     }
 
     data.table::data.table(
