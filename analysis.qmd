@@ -21,36 +21,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png")
-source(here::here("helpers.R"))
-settings = config::get(config = "beartooth")
-reg_dir = here::here(settings$reg_name)
-result_path = here::here("results")
-
-###################################################################################################
-### Packages
-###################################################################################################
-library(mlr3benchmark)
-library(mlr3proba)
-requireNamespace("mlr3extralearners")
-# requires PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
-library(ggplot2)
-library(kableExtra)
-library(dplyr)
-
-result_path = here::here("results", settings$reg_name)
-msr_tbl = measures_tbl()
-measures_eval_ids = msr_tbl$id
-lrntab = load_lrntab()
-tasktab = load_tasktab()
-
-bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
-bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
-
-bmrtab_harrell_c = readRDS(fs::path(result_path, "bmrtab_harrell_c.rds"))
-bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
-
-bma = readRDS(fs::path(result_path, "bma_full.rds"))
+source(here::here("site/common.R"))
 ```
 
 ## Metadata
@@ -73,11 +44,24 @@ lrntab |>
 ### Tasks
 
 ```{r}
+# tasktab |>
+#   dplyr::select(task_id, n, p, n_uniq_t) |>
+#   dplyr::arrange(-n) |>
+#   kableExtra::kbl(col.names = c("Task", "N", "p", "# Unique Time Points")) |>
+#   kableExtra::kable_styling()
+
 tasktab |>
-  dplyr::select(task_id, n, p, n_uniq_t) |>
+  dplyr::select(task_id, n, p, events, censprop, n_uniq_t) |>
   dplyr::arrange(-n) |>
-  kableExtra::kbl(col.names = c("Task", "N", "p", "# Unique Time Points")) |>
-  kableExtra::kable_styling()
+  dplyr::mutate(
+    n = scales::comma(n),
+    p = scales::comma(p),
+    events = scales::comma(events),
+    censprop = scales::percent(censprop),
+    n_uniq_t = scales::comma(n_uniq_t)
+  ) |>
+  reactable::reactable(sortable = TRUE, filterable = TRUE, pagination = FALSE)
+
 ```
 
 ### Checking PH Assumption and Administrative Censoring
@@ -165,7 +149,7 @@ global_dt |>
 
 #### Performance by PH Violation
 
-Naively assuming p < 0.05 indicates PH violation definitely and using that as a "screening" to categorize tasks and visualize performance:
+Naively assuming p < 0.05 indicates definitive PH violation and using that as a "screening" to categorize tasks and visualize performance:
 
 ```{r ph-viol-perf}
 #| fig-width: 8
@@ -205,7 +189,7 @@ plot_aggr_ph(bmatemp, eval_measure = "brier_proper", tuning_measure = "rcll")
 Fitting a logistic regression model on the status indicator (`status ~ .`) and counting the number of significant (`p < 0.05`) coefficients per task.  
 
 - `p` number of features before model
-- `n_coefs` number of coefficients in model, *including* intercept and dummy-encoded variables
+- `n_coefs` number of coefficients in model, *excluding* intercept and `time`, *including* and dummy-encoded variables
 - `n_signif` number of coefficients with `p < 0.05`
 - `signif_prop` = `n_signif / n_coefs` in %
 
@@ -213,8 +197,12 @@ Fitting a logistic regression model on the status indicator (`status ~ .`) and c
 #| cache: true
 #| 
 censmods = data.table::rbindlist(lapply(names(tasks), \(task_id) {
-  coef_tbl = glm(status ~ ., data = tasks[[task_id]], family = "binomial") |>
-    broom::tidy()
+  taskdat = tasks[[task_id]]
+  taskdat = taskdat[, names(taskdat) != "time"]
+  
+  coef_tbl = glm(status ~ ., data = taskdat, family = "binomial") |>
+    broom::tidy() |>
+    dplyr::filter(term != "(Intercept)")
   
   data.frame(
     task_id = task_id,
@@ -232,23 +220,23 @@ censmods |>
 ```
 
 
-## Completed jobs
+<!-- ## Completed jobs -->
 
-All jobs are completed by now.
+<!-- All jobs are completed by now. -->
 
-<details>
-<summary>Click to expand tables of job counts</summary>
+<!-- <details> -->
+<!-- <summary>Click to expand tables of job counts</summary> -->
 
 
-```{r}
-bma_harrell_c$data[, .(n = .N), by = .(learner_id)] |>
-  tablify(caption = "Completed jobs by learner")
+<!-- ```{r} -->
+<!-- bma_harrell_c$data[, .(n = .N), by = .(learner_id)] |> -->
+<!--   tablify(caption = "Completed jobs by learner") -->
 
-bma_harrell_c$data[, .(n = .N), by = .(task_id)] |>
-  tablify(caption = "Completed jobs by task")
-```
+<!-- bma_harrell_c$data[, .(n = .N), by = .(task_id)] |> -->
+<!--   tablify(caption = "Completed jobs by task") -->
+<!-- ``` -->
 
-</details>
+<!-- </details> -->
 
 ## Counting Errors
 
@@ -303,9 +291,17 @@ archives[, .(errors_total = sum(errors_sum), evals_total = sum(archive_length)),
   tablify()
 ```
 
-## Results by Eval Measures
+## Results by Evaluation Measures
 
 Scores are separated by tuning measure (Harrell's C and RCLL).
+
+### Measures
+
+Here we consider discrimination measures and scoring rules, with calibration measures getting a separate section below.
+
+`[ERV]` denotes *Explained Residual Variation*, which normalises the score with the score of the Kaplan-Meier estimator, i.e. 
+
+$$S_{\mathrm{ERV}} = 1 - \frac{S_{\mathrm{model}}}{S_{\mathrm{KM}}}$$
 
 ### Exclusions
 
@@ -324,7 +320,7 @@ bma_harrell_c$data |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
   dplyr::arrange(task_id, learner_id) |>
   reactable::reactable(
-    sortable = TRUE, filterable = TRUE, searchable = TRUE
+    sortable = TRUE, filterable = TRUE, searchable = TRUE, defaultPageSize = 30
   )
 ```
 
@@ -336,7 +332,7 @@ bma_rcll$data |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
   dplyr::arrange(task_id, learner_id) |>
   reactable::reactable(
-    sortable = TRUE, filterable = TRUE, searchable = TRUE
+    sortable = TRUE, filterable = TRUE, searchable = TRUE, defaultPageSize = 30
   )
 ```
 
@@ -373,7 +369,7 @@ bma_rcll$friedman_test(p.adjust.method = "holm") |>
 ```{r meanse-harrell-c}
 #| fig-width: 10
 for (measure_id in msr_tbl[type == "Discrimination", id]) {
-  plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c")
+  plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c", flip = TRUE, dodge = FALSE)
 }
 ```
 
@@ -382,7 +378,7 @@ for (measure_id in msr_tbl[type == "Discrimination", id]) {
 ```{r meanse-rcll}
 #| fig-width: 10
 for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
-  plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll")
+  plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll", flip = TRUE, dodge = FALSE)
 }
 ```
 
@@ -396,61 +392,118 @@ for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
 
 
 ```{r boxplot-harrell-c}
-#| fig-width: 10
+#| fig-width: 11
 #| fig-height: 8
-for (measure_id in msr_tbl[type == "Discrimination", id]) {
-  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c")
+for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
+  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
 }
+```
 
+```{r boxplot-harrell-c-erv}
+#| fig-width: 11
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Discrimination" & erv, id]) {
+  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+}
 ```
 
 #### RCLL
 
 ```{r boxplot-rcll}
-#| fig-width: 10
+#| fig-width: 11
 #| fig-height: 8
-for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
-  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll")
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
 }
+```
 
+```{r boxplot-rcll-erv}
+#| fig-width: 11
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
+  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+}
 ```
 
 :::
 
-### Friedman-Nemenyi
+<!-- ### Friedman-Nemenyi -->
 
-Not sure if we are actually interested in these plots but they are here for completeness' sake.
+<!-- Not sure if we are actually interested in these plots but they are here for completeness' sake. -->
 
-<details>
-<summary>Click to show plots</summary>
+<!-- <details> -->
+<!-- <summary>Click to show plots</summary> -->
 
+
+<!-- ::: {.panel-tabset} -->
+
+
+<!-- #### Harrell's C -->
+
+<!-- ```{r friedman-nemenyi-harrell-c} -->
+<!-- #| fig-width: 10 -->
+<!-- for (measure_id in msr_tbl[type == "Discrimination", id]) { -->
+<!--   plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c") -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- #### RCLL -->
+
+<!-- ```{r friedman-nemenyi-rcll} -->
+<!-- #| fig-width: 10 -->
+<!-- for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) { -->
+<!--   plot_results(bma = bma_rcll, type = "fn", measure_id = measure_id, tuning_measure_id = "rcll") -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ::: -->
+
+<!-- </details> -->
+
+### Critical Difference Plots: Bonferroni-Dunn
+
+Using Cox (`CPH`) as baseline for comparison, these represent the primary result of the benchmark.
 
 ::: {.panel-tabset}
 
-
 #### Harrell's C
 
-```{r friedman-nemenyi-harrell-c}
+```{r critical-difference-baseline-diff-harrell-c-harrell-c}
 #| fig-width: 10
-for (measure_id in msr_tbl[type == "Discrimination", id]) {
-  plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c")
-}
+
+cd_ratio = 10/12
+
+plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
 ```
+
+```{r critical-difference-baseline-diff-harrell-c-isbs}
+#| fig-width: 10
+
+cd_ratio = 10/12
+
+plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
+```
+
 
 #### RCLL
 
-```{r friedman-nemenyi-rcll}
+```{r critical-difference-baseline-diff-rcll-rcll}
 #| fig-width: 10
-for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_results(bma = bma_rcll, type = "fn", measure_id = measure_id, tuning_measure_id = "rcll")
-}
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 ```
+
+
+```{r critical-difference-baseline-diff-rcll-isbs}
+#| fig-width: 10
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+```
+
 
 :::
 
-</details>
-
 ### Critical Difference Plots: Nemenyi
+
+These are not the primary results as they test for all pairwise comparisons, they are merely here for informative purposes.
 
 ::: {.panel-tabset}
 
@@ -473,44 +526,17 @@ plot_results(bma = bma_rcll, type = "cd_n", measure_id = "brier_improper", tunin
 
 ::: 
 
-### Critical Difference Plots: Bonferroni-Dunn
-
-Using Cox (`CPH`) as baseline.
-
-::: {.panel-tabset}
-
-#### Harrell's C
-
-```{r critical-difference-baseline-diff-harrell-c}
-#| fig-width: 10
-plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = 1, baseline = "CPH")
-```
-
-#### RCLL
-
-```{r critical-difference-baseline-diff-rcll}
-#| fig-width: 10
-plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
-
-plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = 1, baseline = "CPH")
-```
-
-:::
-
-## Calibration
+## D-Calibration
 
 Calculating p-valued for D-Calibration as `pchisq(score, 10 - 1, lower.tail = FALSE)`.
 
-TODO: Not sure how to multiplicity-adjust these p-values, i.e. for a simple Bonferroni-adjustment,
-multiply `p` by `n_learners`, `n_tasks`, `n_learners * n_tasks`?
-Unclear how we phrase this hypothesis as this is generally more of a "screening" type plot.
+This represents more of a heuristic approach as an insignificant result implies a well-calibrated model, but a significant result does not necessarily imply a poorly calibrated model.
+Furthermore, there is no multiplicity correction applied due to the generally exploratory nature of the plots.
 
-```{r dcalibration-heatmap}
-#| fig-width: 10
-#| fig-height: 8
+```{r dcalibration-heatmap, fig.width=10, fig.height=8}
 
 bma[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
-# bma[, dcalib_p_bh := p.adjust(dcalib_p, method = "holm")]
+bma[, dcalib_label := fifelse(dcalib_p < 0.05, "X", "")]
 
 for (tuned_on in c("harrell_c", "rcll")) {
   p = ggplot(bma[tuned == tuned_on], 
@@ -518,6 +544,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
           y = forcats::fct_rev(task_id), 
           fill = dcalib_p)) +
     geom_tile(color = "#EEEEEE") +
+    geom_text(aes(label = dcalib_label), color = "white", size = 3) +
     # scale_fill_manual(values = c(`TRUE` = "red", `FALSE` = "blue"), labels = c(`TRUE` = "Signif.", `FALSE` = "Not Signif.")) +
     scale_fill_viridis_c(breaks = seq(0, 1, .1)) +
     guides(
@@ -530,7 +557,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
       title = "D-Calibration p-values by task and learner",
       subtitle = glue::glue(
         "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
-        "Learners ordered by average p-value"
+        "Learners ordered by average p-value. X denotes p < 0.05"
       ),
       y = "Task", x = "Learner", color = NULL, fill = "p-value"
     ) +
