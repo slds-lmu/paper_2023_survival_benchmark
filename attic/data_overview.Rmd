@@ -113,7 +113,6 @@ datasets |>
   column_spec(2, bold = TRUE)
 ```
 
-
 ## Table contents for overleaf
 
 ```{r, eval = FALSE}
@@ -145,65 +144,5 @@ purrr::walk(unique(datasets$pkg), ~{
   cat(glue::glue("Package {.x}:\n\n"))
   knitr::write_bib(.x, prefix = "pkg")
 })
-```
-
-## Comparing with SurvSet
-
-```{r, eval = FALSE}
-survset_path <- "~/repos/github/ErikinBC/SurvSet/SurvSet/_datagen/output/"
-
-survset_list <- fs::dir_ls(survset_path, glob = "*.csv") |>
-  purrr::map(~{
-    dat <- readr::read_csv(.x, show_col_types = FALSE)
-    dat$status <- dat$event
-    dat$event <- NULL
-    
-    dat
-  })
-
-names(survset_list) <- fs::dir_ls(survset_path, glob = "*.csv") |>
-  fs::path_file() |>
-  fs::path_ext_remove()
-
-survset_datasets <- fs::dir_ls(survset_path, glob = "*.csv") |>
-  purrr::map_df(~{
-    dat <- readr::read_csv(.x, show_col_types = FALSE)
-    dat$status <- dat$event
-    dat$event <- NULL
-    
-    dat_preds <- dat |> select(-any_of(c("time", "time2", "status", "pid")))
-    
-    tibble(
-      dataset = fs::path_file(.x) |> fs::path_ext_remove(),
-      N = nrow(dat),
-      time_varying = length(unique(dat$pid)) < N,
-      has_time2 = "time2" %in% names(dat),
-      has_cr = length(unique(dat$status)) > 2,
-      # Censoring percentage
-      C_perc = round((sum(dat$status == 0) / N) * 100, 0),
-      # Number of events
-      n_events = sum(dat$status == 1),
-      # Number of predictors (so ncol - 2), number of predictors of certain types
-      p = ncol(dat_preds),
-      p_binary = sum(purrr::map_int(dat_preds, is.binary)),
-      p_factor = sum(purrr::map_int(dat_preds, ~{is.factor(.x) & !is.binary(.x)})),
-      p_continuous = sum(purrr::map_int(dat_preds, ~{is.numeric(.x)  & !is.binary(.x)})),
-      # CV folds, defaults to 5 unless N too small
-      folds = ifelse(N < 150, floor(N / 30), 5)
-    )
-  })
-
-survset_datasets |>
-  dplyr::filter(
-    C_perc > 0, 
-    n_events >= 100, 
-    p < N,
-    !time_varying,
-    !has_time2,
-    !has_cr,
-    ) |> 
-  dplyr::select(-dplyr::any_of(c("time_varying", "has_time2", "has_cr"))) |>
-  kable(caption = "Possibly suitable datasets in SurvSet") |>
-  kable_styling()
 ```
 
