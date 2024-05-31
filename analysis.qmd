@@ -368,16 +368,38 @@ bma_rcll$friedman_test(p.adjust.method = "holm") |>
 
 ```{r meanse-harrell-c}
 #| fig-width: 10
-for (measure_id in msr_tbl[type == "Discrimination", id]) {
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
   plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c", flip = TRUE, dodge = FALSE)
 }
+  
+plot_results(bma = bma_harrell_c, type = "mean", measure_id = "brier_improper", tuning_measure_id = "harrell_c", flip = TRUE, dodge = FALSE)
+```
+
+```{r meanse-harrell-c-erv}
+#| fig-width: 10
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Discrimination" & erv, id]) {
+  plot_results(bma = bma_harrell_c, type = "mean", measure_id = measure_id, tuning_measure_id = "harrell_c", flip = TRUE, dodge = FALSE)
+}
+  
+plot_results(bma = bma_harrell_c, type = "mean", measure_id = "brier_improper", tuning_measure_id = "harrell_c", flip = TRUE, dodge = FALSE)
 ```
 
 #### RCLL
 
 ```{r meanse-rcll}
 #| fig-width: 10
-for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll", flip = TRUE, dodge = FALSE)
+}
+```
+
+```{r meanse-rcll-erv}
+#| fig-width: 10
+#| fig-height: 8
+for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   plot_results(bma = bma_rcll, type = "mean", measure_id = measure_id, tuning_measure_id = "rcll", flip = TRUE, dodge = FALSE)
 }
 ```
@@ -390,13 +412,16 @@ for (measure_id in msr_tbl[type == "Scoring Rule", id]) {
 
 #### Harrell's C
 
-
 ```{r boxplot-harrell-c}
 #| fig-width: 11
 #| fig-height: 8
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
   plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
 }
+
+# Added Harrell's C -> ISBS last minute
+plot_results(bma = bma_harrell_c, type = "box", measure_id = "brier_improper", tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+
 ```
 
 ```{r boxplot-harrell-c-erv}
