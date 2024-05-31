@@ -183,7 +183,7 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
   lrnlist <- list(
     KM = list(learner = "surv.kaplan", params = 0),
     NL = list(learner = "surv.nelson", params = 0),
-    AF = list(learner = "surv.akritas", params = 1),
+    AK = list(learner = "surv.akritas", params = 1),
     CPH = list(learner = "surv.coxph", params = 0),
     GLMN = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
     Pen = list(learner = "surv.penalized", params = 2),
