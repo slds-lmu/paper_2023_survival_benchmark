@@ -747,13 +747,13 @@ tab_input |>
   kableExtra::group_rows(group_label = names(groupings), index = groupings)
 
 # latex version for saving
-tab_input |>
-  select(-tuned, ` ` = measure) |>
-  kableExtra::kbl(booktabs = TRUE, format = "latex") |>
-  kableExtra::kable_styling() |>
-  kableExtra::group_rows(group_label = names(groupings), index = groupings) |>
-  kableExtra::landscape() |>
-  writeLines(con = fs::path(settings$result_path, "aggr_table", ext = "tex"))
+# tab_input |>
+#   select(-tuned, ` ` = measure) |>
+#   kableExtra::kbl(booktabs = TRUE, format = "latex") |>
+#   kableExtra::kable_styling() |>
+#   kableExtra::group_rows(group_label = names(groupings), index = groupings) |>
+#   kableExtra::landscape() |>
+#   writeLines(con = fs::path(settings$result_path, "aggr_table", ext = "tex"))
 
 ```
 
@@ -764,16 +764,18 @@ tab_input |>
 ```{r trim-critical-diff}
 if (!requireNamespace("magick", quietly = TRUE)) {
   warning("Needs magick package to auto-trim CD plots")
+} else {
+  # This requires the magick package which is purposefully excluded from renv.lock 
+  # as it was not easily installable on the cluster due to the libmagick dependency
+  
+  pngs = fs::dir_ls(knitr::opts_chunk$get()$fig.path, glob = "*critical-diff*png")
+  
+  purrr::walk(pngs, \(x) {
+    magick::image_read(x) |>
+      magick::image_trim() |>
+      magick::image_write(path = x)
+  })
+  }
 }
 
-# This requires the magick package which is purposefully excluded from renv.lock 
-# as it was not easily installable on the cluster due to the libmagick dependency
-
-pngs = fs::dir_ls(knitr::opts_chunk$get()$fig.path, glob = "*critical-diff*png")
-
-purrr::walk(pngs, \(x) {
-  magick::image_read(x) |>
-    magick::image_trim() |>
-    magick::image_write(path = x)
-})
 ```
