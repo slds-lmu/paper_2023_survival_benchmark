@@ -775,7 +775,6 @@ if (!requireNamespace("magick", quietly = TRUE)) {
       magick::image_trim() |>
       magick::image_write(path = x)
   })
-  }
 }
 
 ```
