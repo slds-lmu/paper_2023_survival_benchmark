@@ -1,4 +1,12 @@
-"sex","age","diag","time","status","stage","site"
+@relation 'colrec'
+@attribute 'sex' {'male','female'}
+@attribute 'age' numeric
+@attribute 'diag' numeric
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'stage' numeric
+@attribute 'site' {'colon','rectum'}
+@data
 "male",23004,12656,16,0,1,"rectum"
 "female",12082,13388,504,0,3,"rectum"
 "male",24277,12711,22,0,3,"colon"

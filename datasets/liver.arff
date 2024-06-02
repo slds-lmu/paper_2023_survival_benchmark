@@ -1,4 +1,9 @@
-"prothrombin","treatment","time","status"
+@relation 'liver'
+@attribute 'prothrombin' numeric
+@attribute 'treatment' numeric
+@attribute 'time' numeric
+@attribute 'status' numeric
+@data
 49,1,0.010958904109589,1
 42,1,0.0136986301369863,1
 42,0,0.0356164383561644,1

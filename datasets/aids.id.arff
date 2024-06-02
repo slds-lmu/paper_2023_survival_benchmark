@@ -1,4 +1,12 @@
-"time","status","CD4","drug","gender","prevOI","AZT"
+@relation 'aids.id'
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'CD4' numeric
+@attribute 'drug' {'ddC','ddI'}
+@attribute 'gender' {'female','male'}
+@attribute 'prevOI' {'noAIDS','AIDS'}
+@attribute 'AZT' {'intolerance','failure'}
+@data
 16.97,0,10.677078252,"ddC","male","AIDS","intolerance"
 19,0,6.3245553203,"ddI","male","noAIDS","intolerance"
 18.53,1,3.4641016151,"ddI","female","AIDS","intolerance"

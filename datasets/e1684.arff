@@ -1,4 +1,10 @@
-"TRT","time","status","AGE","SEX"
+@relation 'e1684'
+@attribute 'TRT' numeric
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'AGE' numeric
+@attribute 'SEX' numeric
+@data
 1,1.15068,1,-11.0359436619718,0
 1,0.62466,1,-5.12904366197183,0
 0,1.89863,0,23.1859563380282,1

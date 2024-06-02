@@ -1,4 +1,11 @@
-"time","status","ageR2cl","sexeR","ageD2cl","Tattente2cl"
+@relation 'dataSTR'
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'ageR2cl' numeric
+@attribute 'sexeR' numeric
+@attribute 'ageD2cl' numeric
+@attribute 'Tattente2cl' numeric
+@data
 0.99112912057825,0,0,1,0,1
 3.06647683714818,0,0,0,0,0
 5.07337641003176,0,1,1,1,0

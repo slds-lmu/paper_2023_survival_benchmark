@@ -1,4 +1,10 @@
-"Center","time","status","Chemo","Tustat"
+@relation 'bladder0'
+@attribute 'Center' {'22','70','108','114','303','304','308','316','335','336','340','343','461','507','525','533','607','608','612','710','903'}
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'Chemo' numeric
+@attribute 'Tustat' numeric
+@data
 "22",310,1,1,1
 "22",335,1,1,1
 "22",686,1,1,1

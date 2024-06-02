@@ -1,4 +1,28 @@
-"race","marital","age","yschool","iinfct","npartner","os12m","os30d","rs12m","rs30d","abdpain","discharge","dysuria","condom","itch","lesion","rash","lymph","vagina","dchexam","abnode","status","time"
+@relation 'std'
+@attribute 'race' {'B','W'}
+@attribute 'marital' {'D','M','S'}
+@attribute 'age' numeric
+@attribute 'yschool' numeric
+@attribute 'iinfct' {'gonorrhea','chlamydia','both'}
+@attribute 'npartner' numeric
+@attribute 'os12m' numeric
+@attribute 'os30d' numeric
+@attribute 'rs12m' numeric
+@attribute 'rs30d' numeric
+@attribute 'abdpain' numeric
+@attribute 'discharge' numeric
+@attribute 'dysuria' numeric
+@attribute 'condom' {'always','sometime','never'}
+@attribute 'itch' numeric
+@attribute 'lesion' numeric
+@attribute 'rash' numeric
+@attribute 'lymph' numeric
+@attribute 'vagina' numeric
+@attribute 'dchexam' numeric
+@attribute 'abnode' numeric
+@attribute 'status' numeric
+@attribute 'time' numeric
+@data
 "B","S",19,14,"both",1,0,0,0,0,0,0,0,"never",0,0,0,0,0,1,0,0,984
 "B","S",23,16,"chlamydia",2,1,0,0,0,0,0,0,"sometime",0,0,0,0,0,1,0,0,984
 "W","D",33,12,"chlamydia",3,1,1,1,0,0,0,0,"always",0,0,0,0,0,0,0,0,42

@@ -1,4 +1,9 @@
-"time","status","ageR2cl","sexeR"
+@relation 'dataFTR'
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'ageR2cl' numeric
+@attribute 'sexeR' numeric
+@data
 865,0,0,1
 1174,0,1,1
 1789,0,0,1

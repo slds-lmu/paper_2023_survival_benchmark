@@ -1,4 +1,19 @@
-"AGE","BECK","HC","IV","NDT","RACE","TREAT","SITE","time","status","ND1","ND2","LNDT","IV3"
+@relation 'uis'
+@attribute 'AGE' numeric
+@attribute 'BECK' numeric
+@attribute 'HC' {'1','2','3','4'}
+@attribute 'IV' numeric
+@attribute 'NDT' numeric
+@attribute 'RACE' numeric
+@attribute 'TREAT' numeric
+@attribute 'SITE' numeric
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'ND1' numeric
+@attribute 'ND2' numeric
+@attribute 'LNDT' numeric
+@attribute 'IV3' numeric
+@data
 39,9,"4",3,1,0,1,0,188,1,5,-8.0471895621705,0.693147180559945,1
 33,34,"4",2,8,0,1,0,26,1,1.11111111111111,-0.117067239619807,2.19722457733622,0
 33,10,"2",3,3,0,1,0,207,1,2.5,-2.29072682968539,1.38629436111989,1

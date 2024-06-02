@@ -412,7 +412,7 @@ collect_results = function(
 #' having to apply all measures again.
 #'
 #' @param settings `config::get()`
-#' @param tuning_measure
+#' @param tuning_measure (`character(1)`, `"harrell_c"`) The tuning measure used to filter the `bmr`
 #' @param measure One or a list of `MeasureSurv`s
 #' @param nthreads (`1`) Parallelize using forking with `plan("multicore")`.
 #'   **Does not work on Windows or in RStudio**
@@ -1061,4 +1061,38 @@ ensure_directory = function(x) {
   }
 
   fs::dir_exists(x)
+}
+
+
+#' Bulk-convert datasets from RDS to ARFF.
+#'
+#' @param data_dir (`character(1)`) Directory to look for datasets, defaults to `here::here("datasets")`.
+#' @param overwrite (`logical(1)`) Overwrite existing arff files? Defaults to `TRUE`.
+#'
+#' @return Invisivbly: `TRUE` if all arff files exists, `FALSE` otherwise.
+#' @examples
+#' convert_tasks_arff()
+convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRUE) {
+  if (!requireNamespace("farff", quietly = TRUE)) {
+    stop("Please install 'farff' package to use this function.")
+  }
+
+  data_rds = fs::dir_ls(data_dir, glob = "*.rds")
+
+  res = vapply(data_rds, \(path) {
+    path_arff = fs::path_ext_set(path, "arff")
+
+    cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to arff")
+    farff::writeARFF(
+      x = readRDS(path),
+      path = path_arff,
+      overwrite = overwrite,
+      relation = fs::path_ext_remove(fs::path_file(path))
+    )
+
+    fs::file_exists(path_arff)
+  }, logical(1))
+
+  invisible(all(res))
+
 }

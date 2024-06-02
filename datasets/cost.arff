@@ -1,4 +1,20 @@
-"age","sex","hypTen","ihd","prevStroke","othDisease","alcohol","diabetes","smoke","atrialFib","hemor","strokeScore","cholest","time","status"
+@relation 'cost'
+@attribute 'age' numeric
+@attribute 'sex' {'female','male'}
+@attribute 'hypTen' {'no','yes'}
+@attribute 'ihd' {'no','yes'}
+@attribute 'prevStroke' {'no','yes'}
+@attribute 'othDisease' {'no','yes'}
+@attribute 'alcohol' {'no','yes'}
+@attribute 'diabetes' {'no','yes'}
+@attribute 'smoke' {'no','yes'}
+@attribute 'atrialFib' {'no','yes'}
+@attribute 'hemor' {'no','yes'}
+@attribute 'strokeScore' numeric
+@attribute 'cholest' numeric
+@attribute 'time' numeric
+@attribute 'status' numeric
+@data
 80,"female","no","no","no","yes","no","no","yes","no","no",55,5.2,1369,1
 74,"male","no","yes","yes","no","yes","no","no","no","no",54,5.6,1657,1
 71,"male","no","no","no","no","yes","no","no","no","no",58,6.9,3670,0

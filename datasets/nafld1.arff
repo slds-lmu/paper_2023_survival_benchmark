@@ -1,4 +1,12 @@
-"age","weight","height","bmi","status","sex","time"
+@relation 'nafld1'
+@attribute 'age' numeric
+@attribute 'weight' numeric
+@attribute 'height' numeric
+@attribute 'bmi' numeric
+@attribute 'status' numeric
+@attribute 'sex' {'F','M'}
+@attribute 'time' numeric
+@data
 57,60,163,22.6909394821587,0,"F",894
 67,70.4,168,24.8840277061027,0,"F",89
 53,105.8,186,30.4535370503297,0,"M",255

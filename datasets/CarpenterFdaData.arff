@@ -1,4 +1,32 @@
-"time","status","hcomm","hfloor","scomm","sfloor","prespart","demhsmaj","demsnmaj","orderent","stafcder","prevgenx","lethal","deathrt1","hosp01","hospdisc","hhosleng","acutediz","orphdum","mandiz01","femdiz01","peddiz01","natreg","natregsq","wpnoavg3","vandavg3","condavg3"
+@relation 'CarpenterFdaData'
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'hcomm' numeric
+@attribute 'hfloor' numeric
+@attribute 'scomm' numeric
+@attribute 'sfloor' numeric
+@attribute 'prespart' numeric
+@attribute 'demhsmaj' numeric
+@attribute 'demsnmaj' numeric
+@attribute 'orderent' numeric
+@attribute 'stafcder' numeric
+@attribute 'prevgenx' numeric
+@attribute 'lethal' numeric
+@attribute 'deathrt1' numeric
+@attribute 'hosp01' numeric
+@attribute 'hospdisc' numeric
+@attribute 'hhosleng' numeric
+@attribute 'acutediz' numeric
+@attribute 'orphdum' numeric
+@attribute 'mandiz01' numeric
+@attribute 'femdiz01' numeric
+@attribute 'peddiz01' numeric
+@attribute 'natreg' numeric
+@attribute 'natregsq' numeric
+@attribute 'wpnoavg3' numeric
+@attribute 'vandavg3' numeric
+@attribute 'condavg3' numeric
+@data
 37.4465789794922,1,-0.222000002861023,-0.0579999983310699,-0.0804999992251396,-0.00899999961256981,0,1,0,18,1043,115.680000305176,1,0.0995000004768372,1,75172,3,0,0,0,0,0,12,169,51.25,0.5,2
 84.2958908081055,1,-0.222000002861023,-0.0579999983310699,-0.0804999992251396,-0.00899999961256981,0,1,0,3,1043,100,0,0,0,0,0,0,0,0,0,0,1,4,25.25,0.75,0
 15.3863000869751,1,-0.222000002861023,-0.0579999983310699,-0.0804999992251396,-0.00899999961256981,0,1,0,2,1043,1.29999995231628,1,0.150000005960464,1,134882,3.03999996185303,0,0,1,0,0,9,100,4.25,0,0

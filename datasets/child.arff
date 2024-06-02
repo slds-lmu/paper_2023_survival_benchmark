@@ -1,4 +1,11 @@
-"sex","socBranch","time","status","illeg","m.age"
+@relation 'child'
+@attribute 'sex' {'male','female'}
+@attribute 'socBranch' {'official','farming','business','worker'}
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'illeg' {'no','yes'}
+@attribute 'm.age' numeric
+@data
 "male","farming",15,0,"no",35.009
 "male","farming",15,0,"no",30.609
 "male","worker",15,0,"no",29.32

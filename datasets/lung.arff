@@ -1,4 +1,15 @@
-"inst","time","status","age","sex","ph.ecog","ph.karno","pat.karno","meal.cal","wt.loss"
+@relation 'lung'
+@attribute 'inst' {'1','2','3','4','5','6','7','10','11','12','13','15','16','21','22','26','32','33'}
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'age' numeric
+@attribute 'sex' {'F','M'}
+@attribute 'ph.ecog' numeric
+@attribute 'ph.karno' numeric
+@attribute 'pat.karno' numeric
+@attribute 'meal.cal' numeric
+@attribute 'wt.loss' numeric
+@data
 "3",455,1,68,"M",0,90,90,1225,15
 "5",210,1,57,"M",1,90,60,1150,11
 "12",1022,0,74,"M",1,50,80,513,0

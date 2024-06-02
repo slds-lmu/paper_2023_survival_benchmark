@@ -1,4 +1,10 @@
-"time","status","age","sex","year"
+@relation 'rdata'
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'age' numeric
+@attribute 'sex' numeric
+@attribute 'year' {'82','83','84','85','86'}
+@data
 2657,1,68,1,"82"
 1097,1,63,1,"82"
 3764,1,60,0,"82"

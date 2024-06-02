@@ -1,4 +1,10 @@
-"time","age","status","genderF","raceBlack"
+@relation 'kidtran'
+@attribute 'time' numeric
+@attribute 'age' numeric
+@attribute 'status' numeric
+@attribute 'genderF' numeric
+@attribute 'raceBlack' numeric
+@data
 1,46,0,0,0
 5,51,0,0,0
 7,55,1,0,0

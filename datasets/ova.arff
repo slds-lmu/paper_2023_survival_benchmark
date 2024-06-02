@@ -1,4 +1,12 @@
-"Karn","Broders","Ascites","Diam","time","status","FIGOIII"
+@relation 'ova'
+@attribute 'Karn' numeric
+@attribute 'Broders' {'1','2','3','4','unknown'}
+@attribute 'Ascites' {'absent','present','unknown'}
+@attribute 'Diam' {'1-2cm','2-5cm','gt5cm','lt1cm','micr.'}
+@attribute 'time' numeric
+@attribute 'status' numeric
+@attribute 'FIGOIII' numeric
+@data
 9,"unknown","present","1-2cm",0.967123743540975,1,0
 10,"4","present","lt1cm",2.66575331894845,1,0
 10,"3","present","1-2cm",1.0547939828146,1,1
