@@ -117,4 +117,43 @@ checkmate::assert_true(length(unique(bma$learner_id)) == 17)
 checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "rcll"))
 
 # Technically not a bma anymore but useful nonetheless
-saveRDS(bma, file = fs::path(settings$result_path,  "bma_full.rds"))
+saveRDS(bma, file = fs::path(settings$result_path,  "aggr_scores.rds"))
+
+# Write CSV with aggregated scores
+write.csv(bma, file = fs::path(settings$result_path, "aggr_scores.csv"))
+
+# Aggregating scores --------------------------------------------------------------------------
+# This requires score_bmr() above!
+
+scores_harrell_c = combine_scores_aggrs(settings, tuning_measure = "harrell_c", type = "scores")
+scores_rcll      = combine_scores_aggrs(settings, tuning_measure = "rcll",      type = "scores")
+
+scores = rbind(scores_rcll, scores_harrell_c)
+# Exclude broken SSVM results, rename learners for consistency
+scores = scores |>
+  remove_results(learner_id_exclude = "SSVM") |>
+  rename_learners() |>
+  add_learner_groups()
+
+
+# Handle warnings and errors list columns
+warning_lengths = vapply(scores$warnings, length, integer(1))
+sum(warning_lengths > 0)
+# No warnings, dropping column
+scores[, warnings := NULL]
+
+error_lengths = vapply(scores$errors, length, integer(1))
+sum(error_lengths > 0)
+
+# Converting errors to character to make it more handleable
+scores[, errors := sapply(errors, function(x) paste(x, collapse = "\n"))]
+
+# Very strict assertion just to make sure, will need adjustment if minor things change
+checkmate::assert_data_table(scores, any.missing = FALSE, nrows = 5406, ncols = 22)
+
+
+saveRDS(scores, file = fs::path(settings$result_path,  "scores.rds"))
+
+# Write CSV
+write.csv(scores, file = fs::path(settings$result_path, "scores.csv"))
+
