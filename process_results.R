@@ -18,6 +18,7 @@ msr_tbl = measures_tbl()
 measures_eval = get_measures_eval()
 
 # Reassembling tuning archives ----------------------------------------------------------------
+# Archives with logs are very alrge objects of questionable utility, version without logs should suffice
 if (!fs::file_exists(fs::path(settings$result_path, "archives-with-logs.rds"))) {
   cli::cli_alert_info("Reassembling tuning archives including logs")
   tictoc::tic()
@@ -31,6 +32,7 @@ if (!fs::file_exists(fs::path(settings$result_path, "archives-no-logs.rds"))) {
   archives = reassemble_archives(settings, keep_logs = FALSE)
   tictoc::toc()
 }
+
 
 # Reducing results ----------------------------------------------------------------------------
 # Also includes creation of bma

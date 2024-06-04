@@ -14,7 +14,6 @@ result_path = here::here("results")
 # requires package PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
 library(mlr3benchmark)
 library(mlr3proba)
-requireNamespace("mlr3extralearners")
 library(ggplot2)
 library(patchwork)
 library(dplyr)
@@ -27,6 +26,12 @@ ensure_directory(plot_path)
 
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
+# Exclude measures which aren't used in the paper
+msr_tbl = msr_tbl[!(id %in% c("brier_proper", "caliba_diff")), ]
+
+# Sanity check print
+# msr_tbl[!(erv)]
+# msr_tbl[(erv)]
 
 # bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
@@ -39,6 +44,31 @@ scores = readRDS(fs::path(result_path, "scores.rds"))
 # Create the scaled version of aggregated scores where KM is 0 and best model is 1
 aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)
 
+stopifnot(any(aggr_scores_scaled[tuned == "harrell_c", harrell_c] == 1))
+stopifnot(!aggr_scores_scaled[tuned == "rcll", rcll] > 1)
+
+
+
+# Table of errors -----------------------------------------------------------------------------
+
+scores |>
+  dplyr::filter(errors != "") |>
+  dplyr::count(learner_id, task_id, tuned, errors, name = "affected_folds") |>
+  tidyr::pivot_wider(
+    id_cols = c("learner_id", "task_id"),
+    names_from = "tuned",
+    values_from = "affected_folds", values_fill = 0
+  ) |>
+  dplyr::mutate(total = harrell_c + rcll) |>
+  kableExtra::kbl(
+    col.names = c("Model", "Dataset", "Harrell's C", "RCLL", "Total Errors"),
+    caption = "Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.",
+    booktabs = TRUE,
+    format = "latex"
+  ) |>
+  kableExtra::kable_styling() |>
+  readr::write_lines(fs::path(plot_path, "errors-table.tex"))
+  #kableExtra::add_header_above(c(" " = 2, "Tuning Measure" = 2, " " = 1))
 
 # Critical Difference Plots -------------------------------------------------------------------
 cli::cli_h2("Critical Difference Plots")
@@ -96,6 +126,7 @@ save_boxplot_plot = function(p, eval_measure_id, tuning_measure_id, tag = "score
     )
 }
 
+# Harrell's C, raw scores
 for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
   p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
@@ -116,26 +147,18 @@ for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") &
 }
 
 
-#### RCLL
-
-#aggr-boxplot-rcll}
+#### RCLL (Raw scores)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "scaled")
-
+  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "score")
 }
 
 # RCLL (ERV)
 
-#aggr-boxplot-rcll-erv}
-#| fig-width: 11
-#| fig-height: 8
-
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "erv")
-
 }
 
 
@@ -164,7 +187,6 @@ aggr_scaled_temp = data.table::copy(aggr_scores_scaled)
 data.table::setnames(aggr_scaled_temp, old = measure_normal, new = measure_scaled)
 aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tuned, learner_group)]
 
-
 p = aggr_temp |>
   dplyr::filter(tuned == "rcll") |>
   tidyr::pivot_longer(cols = tidyselect::all_of(c(measure_normal, measure_erv, measure_scaled)), names_to = "measure", values_to = "score") |>
@@ -177,7 +199,7 @@ p = aggr_temp |>
     measure = forcats::fct_inorder(measure)
   ) |>
   ggplot(aes(x = score, y = learner_id, color = learner_group, fill = learner_group)) +
-  facet_wrap(vars(measure), scales = "free") +
+  facet_wrap(vars(measure), scales = "free", ncol = 3) +
   geom_boxplot(alpha = 1/4, key_glyph = "rect") +
   scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
   labs(
@@ -189,11 +211,12 @@ p = aggr_temp |>
   ) +
   theme_minimal(base_size = 15) +
   theme(
-    legend.position = "bottom"
+    legend.position = "bottom",
+    plot.title.position = "plot"
   )
 
 cli::cli_alert_info("Saving three-way-scaling aggregated boxplot")
-ggsave(p, filename = fs::path(plot_path, "aggr-boxplot-threes-rcll-rcll", ext = "png"), width = 12, height = 9, dpi = 300, bg = "white")
+ggsave(p, filename = fs::path(plot_path, "aggr-boxplot-threes-rcll-rcll", ext = "png"), width = 12, height = 5, dpi = 300, bg = "white")
 
 # Aggregated Calibration plots ----------------------------------------------------------------
 cli::cli_h2("Aggregated Calibration plots")
@@ -242,7 +265,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
     )
 
   cli::cli_alert_info("Saving d-calib heatmap, tuned on {.val {tuned_on}}")
-  ggsave(plot = p, fs::path(plot_path, paste("calib-d-heatmap", tuned_on, sep = "-"), ext = "png"), width = 10, height = 8, dpi = 300, bg = "white")
+  ggsave(plot = p, fs::path(plot_path, paste("calib-d-heatmap", tuned_on, sep = "-"), ext = "png"), width = 8, height = 8, dpi = 300, bg = "white")
 
 }
 

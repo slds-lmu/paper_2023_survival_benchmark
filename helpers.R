@@ -551,14 +551,15 @@ reassemble_archives = function(
       cli::cli_alert_info("Archives already aggregated, returning cache from {.file {fs::path_rel(archive_path)}}")
       return(readRDS(archive_path))
     } else {
-      cli::cli_alert_info("Ignoring that {.file {fs::path_rel(archive_path)} is already present, overwriting...")
+      cli::cli_alert_info("Ignoring that {.file {fs::path_rel(archive_path)}} is already present, overwriting...")
     }
   }
 
   archive_dir = fs::path(settings$reg_dir, "tuning_archives")
   tuning_files = fs::dir_ls(archive_dir)
+
   if (length(tuning_files) == 0) {
-    cli::cli_abort("No tuning archives found in {fs::path_rel(archive_dir)}!")
+    cli::cli_abort("No tuning archives found in {.file {fs::path_rel(archive_dir)}}!")
   }
 
   learners = load_lrntab()
@@ -574,7 +575,6 @@ reassemble_archives = function(
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     cli::cli_progress_update(id = pb)
     archive = readRDS(file)
-
 
     if (!keep_logs) {
       # Temp fix because objects became to large
@@ -592,7 +592,7 @@ reassemble_archives = function(
     components = components[[1]]
     names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
 
-    data.table::data.table(
+    ret = data.table::data.table(
       t(components),
       archive = list(archive),
       file = file,
@@ -923,7 +923,7 @@ plot_results = function(
     )
   }
 
-  print(p)
+  p
 
 }
 
@@ -968,7 +968,8 @@ plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tu
   p = p + theme_minimal(base_size = 15)
   p = p + theme(
     plot.background = element_rect(fill = "transparent", color = NA),
-    legend.position = "bottom"
+    legend.position = "bottom",
+    plot.title.position = "plot"
   )
 
   print(p)
@@ -988,7 +989,7 @@ plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id =
 
   p = scores |>
     dplyr::filter(tuned == tuning_measure_id) |>
-    ggplot(aes(y = reorder(learner_id, .data[[eval_measure_id]], FUN = median), x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
+    ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
     facet_wrap(vars(task_id), scales = "free_x", ncol = 8) +
     geom_boxplot(alpha = 1/4) +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
@@ -1070,13 +1071,23 @@ plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
 
 #' Scale a learner score from 0 (baseline) to 1 (best)
 #' This can produce values <0 but can should never create values greater 1
-scale_score = function(score_learner, score_baseline, score_best, lower_is_better = FALSE) {
+scale_score = function(score_learner, score_baseline, score_best, lower_is_better = TRUE) {
 
   denom = (score_best - score_baseline)
-  numera = (score_baseline - score_learner)
 
-  if (lower_is_better) numera = -numera
-  checkmate::assert_numeric(numera / denom, upper = 1)
+  # I know I did this weirdly but I somehow messed this up multiple times such that
+  # I am now scared of thinking about and/or touching it again.
+  if (lower_is_better) {
+    numera = (score_baseline - score_learner)
+    denom = -denom
+  } else {
+    numera = (score_learner - score_baseline)
+  }
+
+  res = numera / denom
+  checkmate::assert_numeric(res, upper = 1)
+
+  res
 }
 
 #' Find best index depending on whether lower is better
@@ -1086,12 +1097,13 @@ which_best = function(x, lower_is_better = TRUE) {
 }
 
 #' Take `aggr_scores` and rescale all scores with `scale_score()`,
-#' for measures that are a) not calirbation measures b) not ERV measures
+#' for measures that are a) not calibration measures b) not ERV measures
 #'
 #' Resulting scores have same column names as before, but are scaled.
 #' This is unfortunate parallelism to msr_tbl and existing plotting functions that rely on it
 #' but it's hard to avoid this late in the game.
 rescale_aggr_scores = function(aggr_scores, msr_tbl) {
+  # Inefficient but prevents silly bug
   aggr_scores_scaled = data.table::copy(aggr_scores)
 
   # Get measures to scale, excluding ERV (already scaled) and calibration measures
@@ -1104,6 +1116,7 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
   for (eval_measure in measures_to_scale) {
 
     # cli::cli_alert_info("scaling for {eval_measure}")
+    #if (eval_measure == "harrell_c") browser()
 
     lower_is_better = msr_tbl[id == eval_measure, minimize]
 
@@ -1117,7 +1130,6 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
     setnames(scores_best, c(eval_measure), "score_best")
 
     scores_to_scale_by = scores_km[scores_best, on = c("task_id", "tuned")]
-
     aggr_scores_scaled = aggr_scores_scaled[scores_to_scale_by, on = c("task_id", "tuned")]
 
     aggr_scores_scaled[ , (eval_measure) := scale_score(
@@ -1126,6 +1138,8 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
       score_best = score_best,
       lower_is_better = lower_is_better
     ), .SDcols = eval_measure]
+
+    if (lower_is_better & any(aggr_scores_scaled[[eval_measure]] > 1)) browser()
 
     aggr_scores_scaled[, score_best := NULL]
     aggr_scores_scaled[, score_km := NULL]

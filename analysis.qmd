@@ -416,11 +416,15 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
 #| fig-width: 11
 #| fig-height: 8
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
-  plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+  # plot_results(bma = bma_harrell_c, type = "box", measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+
 }
 
 # Added Harrell's C -> ISBS last minute
-plot_results(bma = bma_harrell_c, type = "box", measure_id = "brier_improper", tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+# plot_results(bma = bma_harrell_c, type = "box", measure_id = "brier_improper", tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+
+plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = "brier_improper", tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
 
 ```
 
@@ -438,7 +442,7 @@ for (measure_id in msr_tbl[type == "Discrimination" & erv, id]) {
 #| fig-width: 11
 #| fig-height: 8
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
 }
 ```
 
@@ -446,44 +450,12 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
 #| fig-width: 11
 #| fig-height: 8
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  plot_results(bma = bma_rcll, type = "box", measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
 }
 ```
 
 :::
 
-<!-- ### Friedman-Nemenyi -->
-
-<!-- Not sure if we are actually interested in these plots but they are here for completeness' sake. -->
-
-<!-- <details> -->
-<!-- <summary>Click to show plots</summary> -->
-
-
-<!-- ::: {.panel-tabset} -->
-
-
-<!-- #### Harrell's C -->
-
-<!-- ```{r friedman-nemenyi-harrell-c} -->
-<!-- #| fig-width: 10 -->
-<!-- for (measure_id in msr_tbl[type == "Discrimination", id]) { -->
-<!--   plot_results(bma = bma_harrell_c, type = "fn", measure_id = measure_id, tuning_measure_id = "harrell_c") -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- #### RCLL -->
-
-<!-- ```{r friedman-nemenyi-rcll} -->
-<!-- #| fig-width: 10 -->
-<!-- for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) { -->
-<!--   plot_results(bma = bma_rcll, type = "fn", measure_id = measure_id, tuning_measure_id = "rcll") -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- ::: -->
-
-<!-- </details> -->
 
 ### Critical Difference Plots: Bonferroni-Dunn
 
