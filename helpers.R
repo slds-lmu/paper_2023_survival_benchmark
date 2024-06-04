@@ -677,37 +677,59 @@ check_scores = function(bma) {
   res[total > 0, ]
 }
 
-remove_results = function(bma,
+#' Exclude results for given learner or task IDs in case of kerfuffle.
+#' @param x A `bma`/`BemcharkAggr` or `data.frame`-like object with appropriate column names.
+#' @param learner_id_exclude (`character()`) Learner IDs to exclude.
+#' @param task_id_exclude (`character()`) Task IDs to exclude.
+remove_results = function(x,
                           learner_id_exclude = NULL,
                           task_id_exclude = NULL
 ) {
-  checkmate::assert_class(bma, classes = "BenchmarkAggr")
-  xdat = data.table::copy(bma$data)
+
+  if (inherits(x, "BenchmarkAggr")) {
+    checkmate::assert_class(x, classes = "BenchmarkAggr")
+    xdat = data.table::copy(x$data)
+  } else if (inherits(x, "data.frame")) {
+    xdat = checkmate::assert_data_table(x)
+  } else {
+    stop("Expecting a BenchmarkAggr or data.frame-like object")
+  }
+
   if (!is.null(learner_id_exclude)) {
-    checkmate::assert_subset(learner_id_exclude, as.character(xdat[["learner_id"]]))
+    learner_id_orig = unique(as.character(xdat[["learner_id"]]))
+    checkmate::assert_subset(learner_id_exclude, learner_id_orig)
 
     xdat = xdat[xdat[["learner_id"]] != learner_id_exclude, ]
+    xdat = xdat[, learner_id := factor(learner_id, levels = setdiff(learner_id_orig, learner_id_exclude))]
   }
 
   if (!is.null(task_id_exclude)) {
-    checkmate::assert_subset(task_id_exclude, as.character(xdat[["task_id"]]))
+    task_id_orig = unique(as.character(xdat[["task_id"]]))
+    checkmate::assert_subset(task_id_exclude, task_id_orig)
+
     xdat = xdat[xdat[["task_id"]] != task_id_exclude, ]
+    xdat = xdat[, task_id := factor(task_id, levels = setdiff(task_id_orig, task_id_exclude))]
   }
 
 
-  xdat = xdat[, task_id := factor(task_id, levels = setdiff(levels(xdat$task_id), task_id_exclude))]
-  xdat = xdat[, learner_id := factor(learner_id, levels = setdiff(levels(xdat$learner_id), learner_id_exclude))]
 
-  mlr3benchmark::as_benchmark_aggr(xdat)
+  if (inherits(x, "BenchmarkAggr")) return(mlr3benchmark::as_benchmark_aggr(xdat))
+  xdat[]
 }
 
 
-#' When experiments were started less thought was put inot the abbreviations we ended
+#' When experiments were started less thought was put into the abbreviations we ended
 #' up using for the results etc. plots so this is the "fixing stuff up" function.
-rename_learners = function(bma) {
-  checkmate::assert_class(bma, classes = "BenchmarkAggr")
-
-  xdat = data.table::copy(bma$data)
+#' @param x A `bma`/`BemcharkAggr` or `data.frame`-like object with appropriate column names.
+rename_learners = function(x) {
+  if (inherits(x, "BenchmarkAggr")) {
+    checkmate::assert_class(x, classes = "BenchmarkAggr")
+    xdat = data.table::copy(x$data)
+  } else if (inherits(x, "data.frame")) {
+    xdat = checkmate::assert_data_table(x)
+  } else (
+    stop("Expecting a BenchmarkAggr or data.frame-like object")
+  )
 
   xdat[, learner_id := dplyr::case_when(
     learner_id == "AF" ~ "AK",    # Akritas
@@ -723,7 +745,8 @@ rename_learners = function(bma) {
 
   xdat[, learner_id := factor(learner_id, levels = learner_order)]
 
-  mlr3benchmark::as_benchmark_aggr(xdat)
+  if (inherits(x, "BenchmarkAggr")) return(mlr3benchmark::as_benchmark_aggr(xdat))
+  xdat[]
 }
 
 combine_bma = function(bma_harrell_c, bma_rcll) {
@@ -739,14 +762,14 @@ combine_bma = function(bma_harrell_c, bma_rcll) {
   data.table::rbindlist(list(bma1, bma2))
 }
 
-add_learner_groups = function(bma) {
-  if (checkmate::test_class(bma, classes = "BenchmarkAggr")) {
-    bma = data.table::copy(bma$data)
+add_learner_groups = function(x) {
+  if (checkmate::test_class(x, classes = "BenchmarkAggr")) {
+    x = data.table::copy(x$data)
   } else {
-    checkmate::assert_data_table(bma)
+    checkmate::assert_data_table(x)
   }
 
-  bma |>
+  x |>
     dplyr::mutate(
       learner_group = dplyr::case_match(
         learner_id,
@@ -758,6 +781,47 @@ add_learner_groups = function(bma) {
       )
     )
 }
+
+#' Collect individually `$score()`'d or `$aggregate()`'d results from `settings$result_path`.
+#' @param settings `list()` of settings, `config::get()`
+#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"rcll"`
+#' @param type `character(1)`, one of `"scores"` or `"aggr"`
+combine_scores_aggrs = function(
+    settings = config::get(),
+    tuning_measure = "harrell_c",
+    type = "scores"
+) {
+
+  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "rcll"))
+  checkmate::assert_subset(type, choices = c("scores", "aggr"))
+
+  # Load all scores from files
+  files = fs::dir_ls(fs::path(settings$result_path, tuning_measure, type))
+  dts = lapply(files, readRDS)
+  dts
+
+  if (type == "scores") {
+    base_cols = c("uhash", "nr", "task_id", "learner_id", "resampling_id",
+                  "iteration", "warnings", "errors")
+  }
+
+  # Paranoid check that alle base columns are identical across all dts
+  basecollist = unname(lapply(dts, \(x) x[, ..base_cols]))
+  stopifnot(sapply(2:(length(dts) - 1), \(i) {
+    identical(basecollist[[1]], basecollist[[i]])
+  }))
+
+  # Create base dt of only base columns for identificiation that's the same
+  # across all dts and consecutively cbind score columns
+  basedt = basecollist[[1]]
+  for (dti in seq_along(dts)) {
+    measure_col = setdiff(names(dts[[dti]]), base_cols)
+    basedt = cbind(basedt, dts[[dti]][, ..measure_col])
+  }
+
+  basedt[, tuned := ..tuning_measure][]
+}
+
 
 
 
@@ -863,13 +927,100 @@ plot_results = function(
 
 }
 
+#' Unfortunate partial duplication as above function is for BenchmarkAggr objects but turns out
+#' I want one for "normal" data.frames as well. Should have seen that coming.
+#'
+plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tuning_measure_id = "harrell_c", dodge = FALSE, flip = FALSE) {
+  checkmate::assert_data_table(xdf)
+
+  measure_label = msr_tbl[id == eval_measure_id, label]
+  tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
+
+  plot_type_label = switch(type, mean = "Mean ± SE", box = "Boxplot")
+
+  minimize = msr_tbl[id == eval_measure_id, minimize]
+
+  if (minimize) {
+    direction_label = "lower is better"
+  } else {
+    direction_label = "higher is better"
+  }
+
+  p = ggplot(xdf[tuned == tuning_measure_id], aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
+    geom_boxplot(alpha = 1/4, key_glyph = "rect") +
+    scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
+
+  p = p +
+    labs(
+      title = measure_label,
+      subtitle = glue::glue("{plot_type_label} of aggregated scores across all tasks ({direction_label})"),
+      x = NULL,
+      y = measure_label,
+      color = NULL, fill = NULL,
+      caption = glue::glue("Tuning measure: {tuning_measure_label}")
+    )
+
+  if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+  if (flip) {
+    p = p + coord_flip() +
+      scale_x_discrete(limits = rev)
+  }
+  p = p + theme_minimal(base_size = 15)
+  p = p + theme(
+    plot.background = element_rect(fill = "transparent", color = NA),
+    legend.position = "bottom"
+  )
+
+  print(p)
+}
+
+#' Analogous plotting function but for by-dataset plots, slightly different, could be consolidated though
+plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id = "harrel_c", dodge = FALSE, flip = TRUE) {
+  checkmate::assert_data_table(scores)
+  checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
+  checkmate::assert_subset(tuning_measure_id, choices = c("rcll", "harrell_c"))
+
+  if (msr_tbl[id == eval_measure_id, minimize]) {
+    direction_label = "lower is better"
+  } else {
+    direction_label = "higher is better"
+  }
+
+  p = scores |>
+    dplyr::filter(tuned == tuning_measure_id) |>
+    ggplot(aes(y = reorder(learner_id, .data[[eval_measure_id]], FUN = median), x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
+    facet_wrap(vars(task_id), scales = "free_x", ncol = 8) +
+    geom_boxplot(alpha = 1/4) +
+    scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
+    labs(
+      title = msr_tbl[id == eval_measure_id, label],
+      subtitle = glue::glue("Scores per dataset across outer resampling folds ({direction_label})"),
+      x = "Score", y = NULL,
+      color = NULL,
+      fill = NULL,
+      caption = glue::glue("Tuning measure: {msr_tbl[id == tuning_measure_id, label]}"),
+    ) +
+    theme_minimal(
+      base_size = 11#,
+      # Would want to use custom fonts but reproducibility... :(
+      # base_family = "Fira Sans"
+    ) +
+    theme(
+      legend.position = "bottom",
+      panel.background = element_rect(fill = "transparent", color = NA),
+      panel.grid.major.x = element_blank(),
+      plot.title.position = "plot",
+      axis.text.x = element_text(size = rel(.8)),
+      strip.text = element_text(size = rel(1.1))
+    )
+
+  print(p)
+}
+
 # Color palette for learner groups
-palette_groups = RColorBrewer::brewer.pal(5, "Dark2")
+palette_groups = RColorBrewer::brewer.pal(4, "Dark2")
 names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 
-plot_bmadt = function() {
-
-}
 
 #' Boxplot of scores separated by violation of PH assumption
 #'
@@ -904,13 +1055,84 @@ plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
       x = NULL, y = msr_tbl[id == eval_measure, label],
       color = NULL, fill = NULL
     ) +
-    theme_minimal(base_size = 15, base_family = "Fira Sans") +
+    theme_minimal(
+      base_size = 15#,
+      # Would want to use custom fonts but reproducibility... :(
+      # base_family = "Fira Sans"
+    ) +
     theme(
       legend.position = "top",
       panel.background = element_rect(fill = "transparent", color = NA),
       panel.grid.major.x = element_blank(),
       plot.title.position = "plot"
     )
+}
+
+#' Scale a learner score from 0 (baseline) to 1 (best)
+#' This can produce values <0 but can should never create values greater 1
+scale_score = function(score_learner, score_baseline, score_best, lower_is_better = FALSE) {
+
+  denom = (score_best - score_baseline)
+  numera = (score_baseline - score_learner)
+
+  if (lower_is_better) numera = -numera
+  checkmate::assert_numeric(numera / denom, upper = 1)
+}
+
+#' Find best index depending on whether lower is better
+which_best = function(x, lower_is_better = TRUE) {
+  # Make sure to return a single value in case of ties
+  ifelse(lower_is_better, which.min(x), which.max(x)[[1]])
+}
+
+#' Take `aggr_scores` and rescale all scores with `scale_score()`,
+#' for measures that are a) not calirbation measures b) not ERV measures
+#'
+#' Resulting scores have same column names as before, but are scaled.
+#' This is unfortunate parallelism to msr_tbl and existing plotting functions that rely on it
+#' but it's hard to avoid this late in the game.
+rescale_aggr_scores = function(aggr_scores, msr_tbl) {
+  aggr_scores_scaled = data.table::copy(aggr_scores)
+
+  # Get measures to scale, excluding ERV (already scaled) and calibration measures
+  measures_to_scale = msr_tbl[!erv & type != "Calibration", id]
+  measures_to_scale = measures_to_scale[measures_to_scale %in% colnames(aggr_scores_scaled)]
+
+  measures_to_drop = msr_tbl[erv | type == "Calibration", id]
+  aggr_scores_scaled[, (measures_to_drop) := NULL]
+
+  for (eval_measure in measures_to_scale) {
+
+    # cli::cli_alert_info("scaling for {eval_measure}")
+
+    lower_is_better = msr_tbl[id == eval_measure, minimize]
+
+    scores_km = aggr_scores_scaled[learner_id == "KM", c("task_id", "tuned", ..eval_measure)]
+    setnames(scores_km, c(eval_measure), "score_km")
+
+    scores_best = aggr_scores_scaled[
+      , .SD[which_best(.SD[[eval_measure]], lower_is_better = lower_is_better), ],
+      by = .(task_id, tuned)
+    ][, .SD, .SDcols = c("task_id", "tuned", eval_measure)]
+    setnames(scores_best, c(eval_measure), "score_best")
+
+    scores_to_scale_by = scores_km[scores_best, on = c("task_id", "tuned")]
+
+    aggr_scores_scaled = aggr_scores_scaled[scores_to_scale_by, on = c("task_id", "tuned")]
+
+    aggr_scores_scaled[ , (eval_measure) := scale_score(
+      score_learner = .SD[[eval_measure]],
+      score_baseline = score_km,
+      score_best = score_best,
+      lower_is_better = lower_is_better
+    ), .SDcols = eval_measure]
+
+    aggr_scores_scaled[, score_best := NULL]
+    aggr_scores_scaled[, score_km := NULL]
+    aggr_scores_scaled[]
+  }
+
+  aggr_scores_scaled
 }
 
 # Utilities for job management ----------------------------------------------------------------
