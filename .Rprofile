@@ -55,4 +55,11 @@ if (FALSE) {
 
   library("callr")
   require("config")
+
+  # For datasets
+  library(frailtyHL)
+  library(simPH)
+  library(smcure)
+  library(dynpred)
+
 }
