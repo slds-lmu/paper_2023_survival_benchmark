@@ -204,7 +204,7 @@ p = aggr_temp |>
   scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
   labs(
     title = "Right-Censored Log-Loss (RCLL) ",
-    subtitle = "Boxplot of aggregated scores across all tasks with different with different transformations",
+    subtitle = "Boxplot of aggregated scores across all tasks transformations",
     x = NULL, y = "Model",
     color = NULL, fill = NULL,
     caption = " Tuning measure: Right-Censored Log Loss (RCLL)"

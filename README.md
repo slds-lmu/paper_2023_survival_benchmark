@@ -22,6 +22,8 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
   - `renv::restore()` can be used to restore the project environment.
   - Due to limitations on the HPC environment used for the benchmark, R version 4.2.2 is expected.
   (you may want to use [rig]([renv](https://github.com/r-lib/rig) for R version management)
+- `produce_paper_plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible, but loads helper functions from `helpers.R` for de-duplication and readability.
+  - The output path is `./results_paper` by default.
 
 
 ## Results

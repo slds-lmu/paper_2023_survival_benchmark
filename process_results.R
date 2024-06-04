@@ -1,10 +1,14 @@
 # Preprocess results --------------------------------------------------------------------------
+# This script processes the batchtools registry and creates the BenchmarkResult (bmr) objects
+# for both tuning measures the benchmark was run on and creates the derivative result files which
+# are much easier to handle as they have much smaller file sizes.
+# The bmr files are upwards of 5GB in size, per file.
 source(here::here("helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
-cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
-settings = config::get()
+# "BEartooth" denotes the config for results retrieved from cluster (other than e.g. local trial runs)
+settings = config::get(value = "beartooth")
 
 library(batchtools)
 library(mlr3proba)
