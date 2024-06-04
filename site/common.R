@@ -24,10 +24,12 @@ measures_eval_ids = msr_tbl$id
 lrntab = load_lrntab()
 tasktab = load_tasktab()
 
+# bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
 bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
 
 bmrtab_harrell_c = readRDS(fs::path(result_path, "bmrtab_harrell_c.rds"))
 bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
 
-bma = readRDS(fs::path(result_path, "bma_full.rds"))
+aggr_scores = readRDS(fs::path(result_path, "aggr_scores.rds"))
+scores = readRDS(fs::path(result_path, "scores.rds"))
