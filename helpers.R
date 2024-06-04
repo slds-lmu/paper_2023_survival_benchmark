@@ -611,6 +611,65 @@ reassemble_archives = function(
   archives[]
 }
 
+#' Read tuning archives stored in registry and convert to CSV in results dir
+#' @param settings `config::get()` for result paths.
+#'
+#' @return Nothing, only writes files.
+convert_archives_csv = function(settings = config::get()) {
+
+  archive_csv_dir = fs::path(settings$result_path, "tuning_archives")
+  ensure_directory(archive_csv_dir)
+
+  archive_dir = fs::path(settings$reg_dir, "tuning_archives")
+  tuning_files = fs::dir_ls(archive_dir)
+
+  if (length(tuning_files) == 0) {
+    cli::cli_abort("No tuning archives found in {.file {fs::path_rel(archive_dir)}}!")
+  }
+
+  # Having to fix XGBoost split not corresponding to learner IDs at time of benchmark
+  learners = load_lrntab()
+  learners = learners[, c("learner_id", "learner_id_long")]
+
+  learners$learner_id_long = dplyr::case_when(
+    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+    .default = learners$learner_id_long
+  )
+
+  pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
+  purrr::walk(tuning_files, \(file) {
+    cli::cli_progress_update(id = pb)
+    archive = readRDS(file)
+
+    components = fs::path_file(file) |>
+      fs::path_ext_remove() |>
+      stringi::stri_split_fixed(pattern = "__")
+
+    components = components[[1]]
+    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
+    components = components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")]
+
+    to_csv = cbind(
+      data.table::data.table(t(components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")])),
+      archive
+    )
+
+    out_path = fs::path(archive_csv_dir, paste(components, collapse = "__"), ext = "csv")
+    if (!fs::file_exists(out_path)) {
+
+      # cli::cli_alert_info("Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
+      #                   {.val {components[['tune_measure']]}} on {.val {components[['task_id']]}} \\
+      #                   (iter {.val {components[['iter_hash']]}}) to CSV")
+
+      readr::write_csv(x = to_csv, file = out_path, append = FALSE)
+    }
+
+  })
+  cli::cli_progress_done(id = pb)
+}
+
+
 #' Removing duplicate tuning archives
 #'
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,

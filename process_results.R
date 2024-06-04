@@ -22,7 +22,7 @@ msr_tbl = measures_tbl()
 measures_eval = get_measures_eval()
 
 # Reassembling tuning archives ----------------------------------------------------------------
-# Archives with logs are very alrge objects of questionable utility, version without logs should suffice
+# Archives with logs are very large objects of questionable utility, version without logs should suffice
 if (!fs::file_exists(fs::path(settings$result_path, "archives-with-logs.rds"))) {
   cli::cli_alert_info("Reassembling tuning archives including logs")
   tictoc::tic()
@@ -37,6 +37,22 @@ if (!fs::file_exists(fs::path(settings$result_path, "archives-no-logs.rds"))) {
   tictoc::toc()
 }
 
+# Create zipped collection of tuning archive CSVs
+if (!fs::file_exists(fs::path(settings$result_path, "archives.zip"))) {
+
+  tictoc::tic()
+  convert_archives_csv(settings)
+
+  zip_out = fs::path(settings$result_path, "archives.zip")
+
+  utils::zip(
+    zipfile = zip_out,
+    files = fs::dir_ls(fs::path(settings$result_path, "tuning_archives")),
+    flags = "-rD9j"
+  )
+
+  tictoc::toc()
+}
 
 # Reducing results ----------------------------------------------------------------------------
 # Also includes creation of bma
