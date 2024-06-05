@@ -1,7 +1,7 @@
 "learner_id","learner_id_long","params","internal_cv","encode","scale","grid"
 "KM","surv.kaplan",0,FALSE,FALSE,FALSE,FALSE
 "NL","surv.nelson",0,FALSE,FALSE,FALSE,FALSE
-"AF","surv.akritas",1,FALSE,FALSE,FALSE,FALSE
+"AK","surv.akritas",1,FALSE,FALSE,FALSE,FALSE
 "CPH","surv.coxph",0,FALSE,FALSE,FALSE,FALSE
 "GLMN","surv.cv_glmnet",1,TRUE,TRUE,FALSE,FALSE
 "Pen","surv.penalized",2,FALSE,FALSE,FALSE,FALSE
