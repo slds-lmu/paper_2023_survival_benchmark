@@ -1,4 +1,4 @@
-knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png")
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png", cache = TRUE)
 
 source(here::here("helpers.R"))
 
@@ -33,3 +33,6 @@ bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
 
 aggr_scores = readRDS(fs::path(result_path, "aggr_scores.rds"))
 scores = readRDS(fs::path(result_path, "scores.rds"))
+
+# Create the scaled version of aggregated scores where KM is 0 and best model is 1
+aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)

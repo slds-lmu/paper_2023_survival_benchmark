@@ -7,9 +7,6 @@
 # Setup ---------------------------------------------------------------------------------------
 if (!exists(".canary")) source(here::here("helpers.R")) # Source only if not already sourced via .Rprofile
 
-settings = config::get(config = "beartooth")
-result_path = here::here("results")
-
 # Packages
 # requires package PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)
 library(mlr3benchmark)
@@ -19,7 +16,7 @@ library(dplyr, warn.conflicts = FALSE)
 library(data.table)
 
 # Load results --------------------------------------------------------------------------------
-result_path = here::here("results", settings$reg_name)
+result_path = here::here("results", "registry_beartooth")
 plot_path = fs::path("results_paper")
 stopifnot(ensure_directory(plot_path))
 

@@ -1,0 +1,36 @@
+project:
+  type: website
+  output-dir: _site
+  preview:
+    port: 4200
+    browser: false
+
+website:
+  title: "Survival Benchmark"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: datasets.qmd
+        text: Datasets
+      - href: results.qmd
+        text: Results
+    right:
+      - href: https://github.com/slds-lmu/paper_2023_survival_benchmark
+        icon: github
+
+format:
+  html:
+    code-fold: true
+    toc: true
+    # toc-expand: 2
+    toc-depth: 4
+    toc-location: left
+    embed-resources: false
+    fig-align: center
+    theme:
+      light: flatly
+      dark: darkly
+lightbox: true
+
+

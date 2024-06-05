@@ -1,0 +1,374 @@
+---
+format:
+  html:
+    page-layout: full
+    tbl-cap-location: top
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source(here::here("site", "common.R"))
+```
+
+This page gives an overview of the benchmark results, including scores aggregated across outer resampling iterations used for later statistical analysis and individual scores per dataset and model.
+
+In general, results are divided by udnerlying tuning measure, i.e. `harrel_c` and `rcll`, with the former being a measure of discrimination and the latter a scoring rule.
+
+
+## Errros and elapsed time limits
+
+The following table lists the number of errors in the outer resampling iterations per tuning measure (`tuned`).
+These errors were caused by the learner exceeding the time limit or exceeding memory limitations.
+We attempted to resubmit failing computational jobs with increased memory limits, yet in some cases the jobs still failed with more than 100GB of available memory, at which point we considered the learner/task combination to just be infeasible.
+
+We note:
+
+- the affected learners were particularly slow or memory intensive for large tasks with many observations or a large number of unique time points, where the latter in particular appeared even more relevant than the number of observations.
+- the tasks below are mostly those with many observations and unique time points.
+- `SSVM` is excluded due to persistent technical issues that we could not resolve, giving us no results to evaluate.
+
+We therefore consider the errors to be a result of the learners' complexity and the tasks' size.
+
+### Exclusions
+
+
+<details>
+<summary>Click to view table</summary>
+
+
+```{r aggr-errors-tbl}
+scores |>
+  dplyr::filter(errors != "") |>
+  count(learner_id, task_id, tuned, errors, name = "affected_folds") |>
+  reactable::reactable(pagination = FALSE, filterable = TRUE, sortable = TRUE)
+```
+
+</details>
+
+## Aggregated Results
+
+Averaged scores across outer resampling folds for each task and learner.
+
+### Boxplots
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r aggr-boxplot-harrell-c}
+#| fig-width: 11
+#| fig-height: 8
+
+for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+}
+```
+
+Harrell's C (Scaled)
+
+```{r aggr-boxplot-harrell-c-scaled}
+#| fig-width: 11
+#| fig-height: 8
+
+for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
+  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE) %+%
+    labs(
+      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM-Best]"),
+      subtitle = "Boxplot of aggregated scores across all tasks scaled such that 0 = KM, 1 = Best model"
+    )
+}
+```
+
+#### RCLL
+
+```{r aggr-boxplot-rcll}
+#| fig-width: 11
+#| fig-height: 8
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+}
+```
+
+RCLL (ERV)
+
+```{r aggr-boxplot-rcll-erv}
+#| fig-width: 11
+#| fig-height: 8
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+}
+
+```
+
+Scaled RCLL
+
+```{r aggr-boxplot-rcll-scaled}
+#| fig-width: 11
+#| fig-height: 8
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE) %+%
+    labs(
+      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM-Best]"),
+      subtitle = "Boxplot of aggregated scores across all tasks scaled such that 0 = KM, 1 = Best model"
+    )
+}
+```
+
+:::
+
+## Results per Dataset / `scores`
+
+Taking scores from the outer evaluation folds, see `scores.[csv|rds]`.
+
+### Boxplots
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r scores-boxplot-rcll}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+}
+```
+
+#### RCLL
+
+```{r scores-boxplot-harrell-c}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+}
+```
+
+:::
+
+
+### Calibration
+
+#### D-Calibration
+
+Calculating p-values for D-Calibration as `pchisq(score, 10 - 1, lower.tail = FALSE)`.
+
+This represents more of a heuristic approach as an insignificant result implies a well-calibrated model, but a significant result does not necessarily imply a poorly calibrated model.
+Furthermore, there is no multiplicity correction applied due to the generally exploratory nature of the plots.
+
+```{r calibration-dcalib-heatmap, fig.width=10, fig.height=8}
+
+for (tuned_on in c("harrell_c", "rcll")) {
+  p = aggr_scores |>
+    dplyr::filter(tuned == tuned_on) |>
+    dplyr::mutate(
+      dcalib_p = pchisq(dcalib, 10 - 1, lower.tail = FALSE),
+      dcalib_label = fifelse(dcalib_p < 0.05, "X", "")
+    ) |>
+    ggplot(aes(
+      x = forcats::fct_reorder(learner_id, dcalib_p), 
+      y = forcats::fct_rev(task_id), 
+      fill = dcalib_p)
+    ) +
+    geom_tile(color = "#EEEEEE") +
+    geom_text(aes(label = dcalib_label), color = "white", size = 3) +
+    # scale_fill_manual(values = c(`TRUE` = "red", `FALSE` = "blue"), labels = c(`TRUE` = "Signif.", `FALSE` = "Not Signif.")) +
+    scale_fill_viridis_c(breaks = seq(0, 1, .1)) +
+    guides(
+      x = guide_axis(n.dodge = 2), 
+      fill = guide_colorbar(
+        title.vjust = .8,
+        barwidth = unit(200, "pt")
+    )) +
+    labs(
+      title = "D-Calibration p-values by task and learner",
+      subtitle = glue::glue(
+        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
+        "Learners ordered by average p-value. X denotes p < 0.05"
+      ),
+      y = "Task", x = "Learner", color = NULL, fill = "p-value"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      plot.title.position = "plot",
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      panel.spacing.x = unit(5, "mm"),
+      panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+    )
+  print(p)
+}
+
+```
+
+#### Alpha-Calibration
+
+For this measure, calibration is indicated by a score close to 1.
+
+```{r calibration-alpha-ratio}
+for (tuned_on in c("harrell_c", "rcll")) {
+  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
+    geom_point() +
+    geom_vline(xintercept = 1) +
+    scale_x_log10() +
+    labs(
+      title = "Alpha-Calibration by task and learner",
+      subtitle = glue::glue(
+        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
+        "Values close to 1 indicate reasonable calibration"
+      ),
+      y = "Learner", x = "Alpha (log10)"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      plot.title.position = "plot",
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank()
+      # panel.spacing.x = unit(5, "mm"),
+      # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+    )
+
+  print(p)
+
+}
+```
+
+### Raw scores
+
+| Variable              | Type  | Description |
+| ----------------------|-------|-------------|
+| `task_id`             | `fct` | Dataset name, e.g. `veteran`                  |
+| `learner_id`          | `fct` | Model / learner name, e.g. `RAN` for `ranger` |
+| `harrell_c`           | `dbl` | Evaluation measure score |
+| `uno_c`               | `dbl` | Evaluation measure score |
+| `rcll`                | `dbl` | Evaluation measure score |
+| `rcll_erv`            | `dbl` | Evaluation measure score |
+| `logloss`             | `dbl` | Evaluation measure score |
+| `logloss_erv`         | `dbl` | Evaluation measure score |
+| `intlogloss`          | `dbl` | Evaluation measure score |
+| `intlogloss_erv`      | `dbl` | Evaluation measure score |
+| `brier_proper`        | `dbl` | Evaluation measure score |
+| `brier_proper_erv`    | `dbl` | Evaluation measure score |
+| `brier_improper`      | `dbl` | Evaluation measure score |
+| `brier_improper_erv`  | `dbl` | Evaluation measure score |
+| `dcalib`              | `dbl` | Evaluation measure score |
+| `caliba_ratio`        | `dbl` | Evaluation measure score |
+| `caliba_diff`         | `dbl` | Evaluation measure score |
+| `tuned`               | `chr` | Tuning measure, one of `harrell_c`, `rcll` |
+| `learner_group`       | `fct` | Model / learner group, one of "Baseline", "Classical"m "Trees", "Boosting" |
+
+
+```{r}
+#| column: page
+#| 
+aggr_scores |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
+  dplyr::arrange(task_id, learner_id) |>
+  reactable::reactable(
+    sortable = TRUE, filterable = TRUE, searchable = TRUE, defaultPageSize = 30
+  )
+```
+
+
+```{r aggr-raw, eval=FALSE, include=FALSE}
+#| column: body-outset
+#| results: asis
+
+library(reactable)
+library(htmltools)
+
+table_aggr = function(aggr_scores, eval_measure_id, tuning_measure_id) {
+  checkmate::assert_data_table(aggr_scores)
+  
+  tab = aggr_scores[tuned == tuning_measure_id, c("task_id", "learner_id", ..eval_measure_id)] |>
+    group_by(task_id) |>
+    mutate(score := round(.data[[eval_measure_id]], 2)) |>
+    select(task_id, learner_id, score) |>
+    tidyr::pivot_wider(names_from = "learner_id", values_from = "score") |>
+    reactable::reactable(
+      sortable = TRUE, pagination = FALSE, filterable = TRUE, striped = TRUE
+    )
+  
+  div(class = "cran-packages", h2(class = "title", "Table title"), tab)
+
+
+}
+
+table_aggr(aggr_scores, eval_measure_id = "brier_improper", tuning_measure_id = "harrell_c")
+
+```
+
+
+## Statistical Analysis
+
+### Global Friedman Test
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+
+```{r friedman-harrell-c}
+bma_harrell_c$friedman_test(p.adjust.method = "holm") |>
+  tablify()
+```
+
+#### RCLL
+
+```{r friedman-rcll}
+bma_rcll$friedman_test(p.adjust.method = "holm") |>
+  tablify()
+```
+
+::: 
+
+### Critical Difference Plots: Bonferroni-Dunn
+
+Using Cox (`CPH`) as baseline for comparison, these represent the primary result of the benchmark.
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r critical-difference-baseline-diff-harrell-c-harrell-c}
+#| fig-width: 10
+#| fig-height: 6.25
+
+cd_ratio = 10/12
+
+plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
+```
+
+```{r critical-difference-baseline-diff-harrell-c-isbs}
+#| fig-width: 10
+#| fig-height: 6.25
+
+cd_ratio = 10/12
+
+plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
+```
+
+#### RCLL
+
+```{r critical-difference-baseline-diff-rcll-rcll}
+#| fig-width: 10
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+```
+
+
+```{r critical-difference-baseline-diff-rcll-isbs}
+#| fig-width: 10
+plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+```
+
+
+:::
