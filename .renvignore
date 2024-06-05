@@ -8,3 +8,4 @@ results
 attic/_dependencies.R
 analysis.qmd
 tmp
+produce_paper_plots.R
