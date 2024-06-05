@@ -164,12 +164,12 @@ scores = scores |>
 
 # Handle warnings and errors list columns
 warning_lengths = vapply(scores$warnings, length, integer(1))
-sum(warning_lengths > 0)
+# sum(warning_lengths > 0)
 # No warnings, dropping column
 scores[, warnings := NULL]
 
 error_lengths = vapply(scores$errors, length, integer(1))
-sum(error_lengths > 0)
+# sum(error_lengths > 0)
 
 # Converting errors to character to make it more handleable
 scores[, errors := sapply(errors, function(x) paste(x, collapse = "\n"))]
@@ -180,4 +180,3 @@ checkmate::assert_data_table(scores, any.missing = FALSE, nrows = 5406, ncols = 
 saveRDS(scores, file = fs::path(settings$result_path,  "scores.rds"))
 # Write CSV
 readr::write_csv(scores, file = fs::path(settings$result_path, "scores.csv"))
-
