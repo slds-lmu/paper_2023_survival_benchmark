@@ -7,8 +7,8 @@ source(here::here("helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
-# "BEartooth" denotes the config for results retrieved from cluster (other than e.g. local trial runs)
-settings = config::get(value = "beartooth")
+# "Beartooth" denotes the config for results retrieved from cluster (other than e.g. local trial runs)
+settings = config::get(config = "beartooth")
 
 library(batchtools)
 library(mlr3proba)
