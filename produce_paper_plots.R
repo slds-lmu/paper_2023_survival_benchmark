@@ -79,7 +79,7 @@ save_cd_plot = function(p, name) {
   ggsave(
     plot = p,
     filename = fs::path(plot_path, paste0("critical-difference-baseline-diff-", name), ext = "png"),
-    width = 10, height = 10,
+    width = 10, height = 6.25,
     dpi = 300, bg = "white"
   )
 }
@@ -99,16 +99,6 @@ save_cd_plot(p, "rcll-rcll")
 # critical-difference-baseline-diff-rcll-isbs
 p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "rcll-isbs")
-
-# Trim CD plots
-cd_files = fs::dir_ls(plot_path, glob = "*critical-diff*")
-cli::cli_alert_info("Trimming {.val {length(cd_files)}} critical difference plots")
-
-purrr::walk(cd_files, \(x) {
-  magick::image_read(x) |>
-    magick::image_trim() |>
-    magick::image_write(path = x, flatten = TRUE)
-})
 
 # Aggregated Boxplots -------------------------------------------------------------------------
 cli::cli_h2("Aggregated Boxplots")
