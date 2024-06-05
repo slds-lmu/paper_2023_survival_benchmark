@@ -6,7 +6,10 @@ project:
     browser: false
 
 website:
-  title: "Survival Benchmark"
+  title: "Burk (2024) Survival Benchmark"
+  reader-mode: true
+  repo-url: https://github.com/slds-lmu/paper_2023_survival_benchmark
+  repo-actions: [issue]
   navbar:
     left:
       - href: index.qmd
