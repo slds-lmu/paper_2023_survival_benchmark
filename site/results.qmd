@@ -9,7 +9,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-source(here::here("site", "common.R")).
+source(here::here("site", "common.R"))
 ```
 
 This page gives an overview of the benchmark results, including scores aggregated across outer resampling iterations used for later statistical analysis and individual scores per dataset and model.

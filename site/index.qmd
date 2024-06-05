@@ -33,4 +33,4 @@ The files required to produce primary results are given in @tbl-files-results
 Folders `harrell_c` and `rcll` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.
 Similarly, files starting with `bmr_` (`BenchmarkResult`) or `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
-See also @sec-measures for a list of measures and their abbreviated and full names.
+See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.
