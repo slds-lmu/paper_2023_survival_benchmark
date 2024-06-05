@@ -1,7 +1,12 @@
 # Circumvent srcref issue https://github.com/rstudio/renv/issues/1713
 options("install.opts" = "--without-keep.source")
 
-source("renv/activate.R")
+if (file.exists("renv/activate.R")) {
+  source("renv/activate.R")
+} else {
+  message("Not finding renv/activate.R!")
+}
+
 
 # Trying to ensure learners don't use more resources than they should
 # For e.g. XGBoost
@@ -13,9 +18,6 @@ Sys.setenv(MKL_NUM_THREADS = 1)
 
 # Package-specific settings
 try(data.table::setDTthreads(1))
-#try(RhpcBLASctl::blas_set_num_threads(1))
-#try(RhpcBLASctl::omp_set_num_threads(1))
-
 
 options(
   datatable.print.class = TRUE,
@@ -57,9 +59,9 @@ if (FALSE) {
   require("config")
 
   # For datasets
-  library(frailtyHL)
-  library(simPH)
-  library(smcure)
-  library(dynpred)
+  library("frailtyHL")
+  library("simPH")
+  library("smcure")
+  library("dynpred")
 
 }

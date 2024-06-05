@@ -56,19 +56,3 @@ debug:
       at_train: !expr 12 # 156 hours of 168 max
       at_predict: !expr 11 # leave some headroom for job
 
-
-# Ideally only one train/predict step and managable runtime for extrapolation
-runtime_est:
-    reg_name: "registry_runtime_est_dec"
-    outer_folds: 1
-    inner_folds: 1
-    budget:
-      evals_constant: 1
-      evals_multiplier: 0
-      runtime_hours: 8
-    timeout:
-      bl_train: !expr 24 * 6.5
-      bl_predict: !expr 24 * 6.5
-      at_train: !expr 24 * 6.5
-      at_predict: !expr 24 * 6.5
-
