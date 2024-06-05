@@ -55,6 +55,5 @@ vignettes/*.pdf
 registry/
 batchtools.conf.R
 resamplings/*rds
-site/_site
 
 Rplots.pdf
