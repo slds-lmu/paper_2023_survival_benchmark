@@ -9,6 +9,20 @@
     ]
   },
   "Packages": {
+    "BBmisc": {
+      "Package": "BBmisc",
+      "Version": "1.13",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "checkmate",
+        "data.table",
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "Hash": "005fd5ee75240b66b9df92c7cb32a913"
+    },
     "BH": {
       "Package": "BH",
       "Version": "1.81.0-1",
@@ -258,6 +272,17 @@
         "utils"
       ],
       "Hash": "acb0a5bf38490f26ab8661b467f4f53a"
+    },
+    "RcppTOML": {
+      "Package": "RcppTOML",
+      "Version": "0.2.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp"
+      ],
+      "Hash": "c232938949fcd8126034419cc529333a"
     },
     "RhpcBLASctl": {
       "Package": "RhpcBLASctl",
@@ -865,6 +890,19 @@
       ],
       "Hash": "e85ffbebaad5f70e1a2e2ef4302b4949"
     },
+    "dynpred": {
+      "Package": "dynpred",
+      "Version": "0.1.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "graphics",
+        "stats",
+        "survival",
+        "utils"
+      ],
+      "Hash": "47492a803360ded8031373e8b2ce3ac0"
+    },
     "eha": {
       "Package": "eha",
       "Version": "2.11.1",
@@ -921,6 +959,19 @@
         "utils"
       ],
       "Hash": "3e8583a60163b4bc1a80016e63b9959e"
+    },
+    "farff": {
+      "Package": "farff",
+      "Version": "1.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "BBmisc",
+        "checkmate",
+        "readr",
+        "stringi"
+      ],
+      "Hash": "fc6a20ee38af27e62c15f8c6d81f1226"
     },
     "farver": {
       "Package": "farver",
@@ -1014,6 +1065,20 @@
         "utils"
       ],
       "Hash": "26a24dde1722321b78f10d3bf42538d6"
+    },
+    "frailtyHL": {
+      "Package": "frailtyHL",
+      "Version": "2.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "cmprsk",
+        "methods",
+        "survival"
+      ],
+      "Hash": "0deacf7fad03e8eb2b4c25ae2be49db5"
     },
     "frailtySurv": {
       "Package": "frailtySurv",
@@ -1348,28 +1413,6 @@
       ],
       "Hash": "8954069286b4b2b0d023d1b288dce978"
     },
-    "janitor": {
-      "Package": "janitor",
-      "Version": "2.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "dplyr",
-        "hms",
-        "lifecycle",
-        "lubridate",
-        "magrittr",
-        "purrr",
-        "rlang",
-        "snakecase",
-        "stringi",
-        "stringr",
-        "tidyr",
-        "tidyselect"
-      ],
-      "Hash": "5baae149f1082f466df9d1442ba7aa65"
-    },
     "joineR": {
       "Package": "joineR",
       "Version": "1.2.8",
@@ -1582,19 +1625,6 @@
         "rlang"
       ],
       "Hash": "f2a94f8fc9db382a642e965339635ad6"
-    },
-    "lubridate": {
-      "Package": "lubridate",
-      "Version": "1.9.3",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "generics",
-        "methods",
-        "timechange"
-      ],
-      "Hash": "680ad542fbcf801442c83a6ac5a2126c"
     },
     "magrittr": {
       "Package": "magrittr",
@@ -2257,6 +2287,16 @@
       ],
       "Hash": "6b8177fd19982f0020743fadbfdbd933"
     },
+    "png": {
+      "Package": "png",
+      "Version": "0.1-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "bd54ba8a0a5faded999a7aab6e46b374"
+    },
     "polspline": {
       "Package": "polspline",
       "Version": "1.1.24",
@@ -2553,6 +2593,28 @@
       ],
       "Hash": "bb5996d0bd962d214a11140d77589917"
     },
+    "reticulate": {
+      "Package": "reticulate",
+      "Version": "1.37.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "Rcpp",
+        "RcppTOML",
+        "graphics",
+        "here",
+        "jsonlite",
+        "methods",
+        "png",
+        "rappdirs",
+        "rlang",
+        "utils",
+        "withr"
+      ],
+      "Hash": "9465d3bc6ec44eeaa52527ac2cba4020"
+    },
     "riskRegression": {
       "Package": "riskRegression",
       "Version": "2023.09.08",
@@ -2811,17 +2873,37 @@
       ],
       "Hash": "9067f962730f58b14d8ae54ca885509f"
     },
-    "snakecase": {
-      "Package": "snakecase",
-      "Version": "0.11.1",
+    "simPH": {
+      "Package": "simPH",
+      "Version": "1.3.13",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
+        "MASS",
         "R",
-        "stringi",
-        "stringr"
+        "data.table",
+        "dplyr",
+        "ggplot2",
+        "gridExtra",
+        "lazyeval",
+        "mgcv",
+        "quadprog",
+        "stringr",
+        "survival"
       ],
-      "Hash": "58767e44739b76965332e8a4fe3f91f1"
+      "Hash": "cc359ae289e5ac8485c7d6e154195794"
+    },
+    "smcure": {
+      "Package": "smcure",
+      "Version": "2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "graphics",
+        "stats",
+        "survival"
+      ],
+      "Hash": "476c655033f15910b15737ec9a70dbdf"
     },
     "stabs": {
       "Package": "stabs",
@@ -3027,17 +3109,6 @@
         "withr"
       ],
       "Hash": "79540e5fcd9e0435af547d885f184fd5"
-    },
-    "timechange": {
-      "Package": "timechange",
-      "Version": "0.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "cpp11"
-      ],
-      "Hash": "8548b44f79a35ba1791308b61e6012d7"
     },
     "timereg": {
       "Package": "timereg",
