@@ -1,4 +1,4 @@
-knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png", cache = TRUE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png")
 
 source(here::here("helpers.R"))
 

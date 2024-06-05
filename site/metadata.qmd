@@ -1,0 +1,83 @@
+---
+editor: source
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source(here::here("site", "common.R"))
+```
+
+## Measures {#sec-measures}
+
+The following table provides a brief overview of the measures used in this benchmark.
+Unfortunately, during early benchmark development slightly different shorthand names were used for the measures in filenames for result files than the abbreviations used in the paper.
+
+- `id` refers to the shorthand used in the result files listed above.
+- `mlr_id` refers to the measure as it is implemented in [mlr3proba](https://mlr3proba.mlr-org.com/reference/index.html#survival-measures)
+- `Label` refers to the measure as it is named consistently throughout the paper and resulting plots.
+
+| id                   | mlr3 id            | Label                                                        |
+|:---------------------|:-------------------|:-------------------------------------------------------------|
+| `harrell_c`          | `surv.cindex`      | Harrell's C                                                  |
+| `uno_c`              | `surv.cindex`      | Uno's C                                                      |
+| `rcll`               | `surv.rcll`        | Right-Censored Log Loss (RCLL)                               |
+| `rcll_erv`           | `surv.rcll`        | Right-Censored Log Loss (RCLL) [ERV]                         |
+| `intlogloss`         | `surv.intlogloss`  | Re-weighted Integrated Survival Log-Likelihood (RISLL)       |
+| `intlogloss_erv`     | `surv.intlogloss`  | Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV] |
+| `logloss`            | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL)                   |
+| `logloss_erv`        | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL) [ERV]             |
+| `brier_improper`     | `surv.brier`       | Integrated Survival Brier Score (ISBS)                       |
+| `brier_improper_erv` | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]                 |
+| `dcalib`             | `surv.dcalib`      | D-Calibration                                                |
+| `caliba_ratio`       | `surv.calib_alpha` | Van Houwelingen's Alpha                                      |
+
+
+## Tasks {#sec-tasks}
+
+The following table gives a summary of the included datasets (tasks) in the benchmark.
+
+```{r task-tab}
+# tasks = load_task_data()
+tasktab = load_tasktab()
+
+tasktab |>
+  dplyr::select(task_id, n, p, events, censprop, n_uniq_t) |>
+  dplyr::arrange(-n) |>
+  dplyr::mutate(
+    n = n,
+    p = p,
+    events = events,
+    censprop = round(100 * censprop, 1),
+    n_uniq_t = n_uniq_t
+  ) |>
+  setNames(c("Dataset", "N", "p", "Events", "Censoring %", "# Unique Time Points")) |>
+  reactable::reactable(sortable = TRUE, filterable = TRUE, pagination = FALSE)
+```
+
+## Learners {#sec-learners}
+
+This table shows the models (learners) used in the benchmark with their `mlr3` IDs and additional metadata.
+
+- "Parameters" is 0 for learners such as KM, NA, CPH, which do not have any hyperparameters. It is also 0 for CoxBoost, which uses its own tuning method.
+- "Internal CV" indicates learners internally perform CV, e.g., glmnet, CoxBoost.
+- "Encode" indicates whether treatment encoding is performed as part of the pre-processing pipeline **before** the learner sees the data.
+- "Scale" analogously indicates whether scaling to unit variance and 0 mean is performed.
+- "Grid Search" indicates whether the tuning space was small enough to perform exhaustive grid search with fewer than 50 evaluations
+
+```{r learner-tab}
+lrntbab = load_lrntab()
+
+lrntab |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.logical), \(x) ifelse(x, "\u2705", ""))) |>
+  kableExtra::kbl(
+    align = "llccccc",
+    col.names = c("Learner", "mlr3 ID", "Parameters", "Internal CV", "Encode", "Scale", "Grid Search")
+  ) |>
+  kableExtra::kable_styling() |>
+  kableExtra::column_spec(2, width = "5%") |>
+  kableExtra::column_spec(3, width = "5%") |>
+  kableExtra::column_spec(4, width = "20%") |>
+  kableExtra::column_spec(7, width = "25%") 
+``` 
+

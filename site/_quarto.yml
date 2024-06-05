@@ -11,13 +11,18 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: datasets.qmd
-        text: Datasets
       - href: results.qmd
         text: Results
+      - href: metadata.qmd
+        text: Models, Data, Measures
     right:
       - href: https://github.com/slds-lmu/paper_2023_survival_benchmark
         icon: github
+  # page-footer:
+  #   left: "Copyright 2021, Norah Jones"
+  #   right:
+  #     - icon: github
+  #       href: https://github.com/
 
 format:
   html:
@@ -28,9 +33,13 @@ format:
     toc-location: left
     embed-resources: false
     fig-align: center
+    number-sections: true
     theme:
       light: flatly
       dark: darkly
 lightbox: true
 
 
+execute:
+  cache: true
+  freeze: auto  # re-render only when source changes
