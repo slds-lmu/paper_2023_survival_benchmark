@@ -15,7 +15,6 @@ result_path = here::here("results")
 library(mlr3benchmark)
 library(mlr3proba)
 library(ggplot2)
-library(patchwork)
 library(dplyr)
 library(data.table)
 
@@ -27,7 +26,7 @@ ensure_directory(plot_path)
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
 # Exclude measures which aren't used in the paper
-msr_tbl = msr_tbl[!(id %in% c("brier_proper", "caliba_diff")), ]
+msr_tbl = msr_tbl[!(id %in% c("brier_proper", "brier_proper_erv", "caliba_diff")), ]
 
 # Sanity check print
 # msr_tbl[!(erv)]

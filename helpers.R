@@ -239,17 +239,17 @@ get_measures_eval = function() {
     msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
     msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
-
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
-
     msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
     msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
+    # Unsued, kept for completeness
+    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
+    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
+
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
-    # msr("surv.calib_alpha", id = "caliba", method = "ratio", truncate = 10, label = "Van Houwelingen's Alpha (truncated)"),
     msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha"),
+    # Unsued, kept for completeness
     msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
   )
@@ -274,14 +274,16 @@ measures_tbl = function() {
     "surv.logloss",     "logloss",     "Scoring Rule",
     "surv.logloss",     "logloss_erv", "Scoring Rule",
 
-    "surv.brier",       "brier_proper",     "Scoring Rule",
-    "surv.brier",       "brier_proper_erv", "Scoring Rule",
-
     "surv.brier",       "brier_improper",      "Scoring Rule",
     "surv.brier",       "brier_improper_erv",  "Scoring Rule",
 
+    # Unsued, kept for completeness
+    "surv.brier",       "brier_proper",     "Scoring Rule",
+    "surv.brier",       "brier_proper_erv", "Scoring Rule",
+
     "surv.dcalib",      "dcalib",        "Calibration",
     "surv.calib_alpha", "caliba_ratio",  "Calibration",
+    # Unused, kept for completeness
     "surv.calib_alpha", "caliba_diff",   "Calibration"
     # "surv.calib_alpha", "caliba",
   )
