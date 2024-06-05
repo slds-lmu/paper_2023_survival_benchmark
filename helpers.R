@@ -1378,16 +1378,26 @@ convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRU
 
   res = vapply(data_rds, \(path) {
     path_arff = fs::path_ext_set(path, "arff")
+    path_csv = fs::path_ext_set(path, "csv")
+
+    xdat = readRDS(path)
 
     cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to arff")
     farff::writeARFF(
-      x = readRDS(path),
+      x = xdat,
       path = path_arff,
       overwrite = overwrite,
       relation = fs::path_ext_remove(fs::path_file(path))
     )
 
-    fs::file_exists(path_arff)
+    cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to CSV")
+    readr::write_csv(
+      x = xdat,
+      file = path_csv,
+      append = !overwrite
+    )
+
+    fs::file_exists(path_arff) & fs::file_exists(path_csv)
   }, logical(1))
 
   invisible(all(res))
