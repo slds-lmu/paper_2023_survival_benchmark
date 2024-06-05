@@ -1393,3 +1393,5 @@ convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRU
   invisible(all(res))
 
 }
+
+.canary = "Hello! This variable is here to indicate that the helper functions have been loaded."

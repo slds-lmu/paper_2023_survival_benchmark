@@ -3,7 +3,7 @@
 # for both tuning measures the benchmark was run on and creates the derivative result files which
 # are much easier to handle as they have much smaller file sizes.
 # The bmr files are upwards of 5GB in size, per file.
-source(here::here("helpers.R"))
+if (!exists(".canary")) source(here::here("helpers.R")) # Source only if not already sourced via .Rprofile
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html

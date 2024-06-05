@@ -5,7 +5,7 @@
 # b) used targets instead of re-running the script a bunch.
 
 # Setup ---------------------------------------------------------------------------------------
-source(here::here("helpers.R"))
+if (!exists(".canary")) source(here::here("helpers.R")) # Source only if not already sourced via .Rprofile
 
 settings = config::get(config = "beartooth")
 result_path = here::here("results")
@@ -15,13 +15,13 @@ result_path = here::here("results")
 library(mlr3benchmark)
 library(mlr3proba)
 library(ggplot2)
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(data.table)
 
 # Load results --------------------------------------------------------------------------------
 result_path = here::here("results", settings$reg_name)
 plot_path = fs::path("results_paper")
-ensure_directory(plot_path)
+stopifnot(ensure_directory(plot_path))
 
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
