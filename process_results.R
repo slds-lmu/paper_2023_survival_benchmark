@@ -62,19 +62,23 @@ if (!fs::file_exists(fs::path(settings$result_path, "archives.zip"))) {
 # done_task_ids = alljobs[task_id %in% done_tasks]
 
 # Creating bmr and bma for jobs tuned with harrell's c and untuned/coxboost,
-# saving to result_path
-collect_results(
-  settings,
-  tuning_measure = "harrell_c",
-  measures_eval = measures_eval
-)
+# saving to result_path. Note that handling the bmr files is extremely memory intensive so
+# all these operations should be done carefully and with enough RAM (>30GB) available.
+if (FALSE) {
+  collect_results(
+    settings,
+    tuning_measure = "harrell_c",
+    measures_eval = measures_eval
+  )
 
-# Same for RCLL
-collect_results(
-  settings,
-  tuning_measure = "rcll",
-  measures_eval = measures_eval
-)
+  # Same for RCLL
+  collect_results(
+    settings,
+    tuning_measure = "rcll",
+    measures_eval = measures_eval
+  )
+}
+
 
 # Scoring is even more RAM intensive and should be done deliberately
 # Only for some measures.
@@ -142,7 +146,7 @@ checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "rcll"))
 saveRDS(bma, file = fs::path(settings$result_path,  "aggr_scores.rds"))
 
 # Write CSV with aggregated scores
-write.csv(bma, file = fs::path(settings$result_path, "aggr_scores.csv"))
+readr::write_csv(bma, file = fs::path(settings$result_path, "aggr_scores.csv"))
 
 # Aggregating scores --------------------------------------------------------------------------
 # This requires score_bmr() above!
@@ -173,9 +177,7 @@ scores[, errors := sapply(errors, function(x) paste(x, collapse = "\n"))]
 # Very strict assertion just to make sure, will need adjustment if minor things change
 checkmate::assert_data_table(scores, any.missing = FALSE, nrows = 5406, ncols = 22)
 
-
 saveRDS(scores, file = fs::path(settings$result_path,  "scores.rds"))
-
 # Write CSV
-write.csv(scores, file = fs::path(settings$result_path, "scores.csv"))
+readr::write_csv(scores, file = fs::path(settings$result_path, "scores.csv"))
 
