@@ -1,17 +1,23 @@
 ---
 title: "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data"
 author: "Lukas Burk, John Zobolas, Bernd Bischl, Andreas Bender, Marvin N. Wright, Raphael Sonabend"
-date: "today"
+date: "2024-06-05"
 ---
 
 This site aggregates additional results and metadata accompanying the benchmark project.
 
-All code is available on [GitHub at slds-lmu/paper_2023_survival_benchmark](https://github.com/slds-lmu/paper_2023_survival_benchmark).
+All code is available on [GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark).
 
 ## Downloading Results
 
-Results can be downloaded from [the web at](https://projects.lukasburk.de/survival_benchmark/results/).
-The files required to produce primary results are given in @tbl-files-results
+Results can be downloaded from [the web](https://projects.lukasburk.de/survival_benchmark/results/).
+The files required to produce primary results are given in @tbl-files-results.
+
+Folders `harrell_c` and `rcll` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.  
+Similarly, files starting with `bmr_` (`BenchmarkResult`) or `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
+
+See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.
+
 
 | File | Description |
 |------|-------------|
@@ -30,7 +36,4 @@ The files required to produce primary results are given in @tbl-files-results
 [aggr_scores_rds]: https://projects.lukasburk.de/survival_benchmark/results/aggr_scores.rds
 [archive_zip]: https://projects.lukasburk.de/survival_benchmark/results/archives.zip
 
-Folders `harrell_c` and `rcll` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.
-Similarly, files starting with `bmr_` (`BenchmarkResult`) or `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
-See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.

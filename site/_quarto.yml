@@ -6,8 +6,8 @@ project:
     browser: false
 
 website:
-  title: "Burk (2024) Survival Benchmark"
-  reader-mode: true
+  title: "Burk et al. (2024)"
+  reader-mode: false
   repo-url: https://github.com/slds-lmu/paper_2023_survival_benchmark
   repo-actions: [issue]
   navbar:
@@ -21,6 +21,8 @@ website:
     right:
       - href: https://github.com/slds-lmu/paper_2023_survival_benchmark
         icon: github
+      - href: https://arxiv.org/abs/2406.04098
+        icon: file-earmark-text
   # page-footer:
   #   left: "Copyright 2021, Norah Jones"
   #   right:
@@ -36,12 +38,11 @@ format:
     toc-location: left
     embed-resources: false
     fig-align: center
-    number-sections: true
+    number-sections: false
     theme:
       light: flatly
       dark: darkly
 lightbox: true
-
 
 execute:
   cache: true
