@@ -14,7 +14,7 @@ source(here::here("site", "common.R"))
 
 This page gives an overview of the benchmark results, including scores aggregated across outer resampling iterations used for later statistical analysis and individual scores per dataset and model.
 
-In general, results are divided by udnerlying tuning measure, i.e. `harrel_c` and `rcll`, with the former being a measure of discrimination and the latter a scoring rule.
+In general, results are divided by underlying tuning measure, i.e. `harrel_c` and `rcll`, with the former being a measure of discrimination and the latter a proper scoring rule.
 
 
 ## Errros and elapsed time limits

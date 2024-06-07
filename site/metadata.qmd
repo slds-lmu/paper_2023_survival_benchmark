@@ -11,13 +11,13 @@ source(here::here("site", "common.R"))
 ## Measures {#sec-measures}
 
 The following table provides a brief overview of the measures used in this benchmark.
-Unfortunately, during early benchmark development slightly different shorthand names were used for the measures in filenames for result files than the abbreviations used in the paper.
+Unfortunately, the identifiers used under the hood do not directly correspond to measure names and abbreviations as used in the paper.
 
-- `id` refers to the shorthand used in the result files listed above.
-- `mlr_id` refers to the measure as it is implemented in [mlr3proba](https://mlr3proba.mlr-org.com/reference/index.html#survival-measures)
+- `ID` refers to the shorthand used in the result files listed above.
+- `mlr3 ID` refers to the measure as it is implemented in [mlr3proba](https://mlr3proba.mlr-org.com/reference/index.html#survival-measures)
 - `Label` refers to the measure as it is named consistently throughout the paper and resulting plots.
 
-| id                   | mlr3 id            | Label                                                        |
+| ID                   | mlr3 ID            | Label                                                        |
 |:---------------------|:-------------------|:-------------------------------------------------------------|
 | `harrell_c`          | `surv.cindex`      | Harrell's C                                                  |
 | `uno_c`              | `surv.cindex`      | Uno's C                                                      |

@@ -1,5 +1,8 @@
 # A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data
 
+> L. Burk, J. Zobolas, B. Bischl, A. Bender, M. N. Wright, and R. Sonabend, “A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data.” arXiv, Jun. 06, 2024. doi: [10.48550/arXiv.2406.04098](https://arxiv.org/abs/2406.04098).
+
+
 ## Setup
 
 The benchmark is conducted using R and the `mlr3` framework. The following files are necessary to set up the benchmark:
@@ -15,7 +18,7 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
 - `resamplings` contains resampling fold information for each dataset in CSV form to ensure reproducibility.
   - These files are automatically generated when running `batchmark.R`, where resampling is done using a set RNG seed.
 - `helpers.R` contains helper functions for benchmark setup and later analysis.
-- `analysis.qmd` contains the main analysis steps including additional exploratory analysis.
+- `site/` contains a quarto site with all results.
 
 ## Reproducibility
 
