@@ -1,0 +1,33 @@
+package,license,dataset,dataset_id
+pycox,BSD-2,gbsg,46131
+pycox,BSD-2,metabric,46142
+pycox,BSD-2,support,46144
+relsurv,GPL,colrec,46145
+relsurv,GPL,rdata,46146
+jm,GPL (>= 2),aids.id,46130
+eha,GPL (>= 2),child,46147
+pec,GPL (>= 2),cost,46148
+RISCA,GPL (>= 2),dataFTR,46149
+RISCA,GPL (>= 2),dataSTR,46150
+dynpred,GPL (>= 2),ova,46151
+dynpred,GPL (>= 2),wbc1,46152
+quantreg,GPL (>= 2),uis,46153
+KMsurv,GPL (>= 3),channing,46154
+KMsurv,GPL (>= 3),kidtran,46155
+KMsurv,GPL (>= 3),std,46156
+smcure,GPL-2,e1684,46157
+nnet,GPL-2 | GPL-3,aids2,46158
+simPH,GPL-3,CarpenterFdaData,46159
+joineR,GPL-3,liver,46160
+survival,LGPL (>= 2),flchain,46161
+survival,LGPL (>= 2),lung,46162
+survival,LGPL (>= 2),mgus,46163
+survival,LGPL (>= 2),nafld1,46164
+survival,LGPL (>= 2),nwtco,46165
+survival,LGPL (>= 2),veteran,46166
+frailtySurv,LGPL-2,hdfail,46167
+mlr3proba,LGPL-3,grace,46168
+mlr3proba,LGPL-3,whas,46169
+pammtools,MIT,patient,46170
+pammtools,MIT,tumor,46171
+frailtyHL,Unlimited,bladder0,46172
