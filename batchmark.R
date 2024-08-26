@@ -308,13 +308,13 @@ for (measure in measures) {
 
     ,
 
-    NL = bl("surv.nelson")
+    `NA` = bl("surv.nelson")
 
     ,
 
     # survivalmodels::akritas
     # https://raphaels1.github.io/survivalmodels/reference/akritas.html
-    AF = auto_tune(
+    AK = auto_tune(
       bl("surv.akritas"),
       surv.akritas.lambda = p_dbl(0, 1)
     )
@@ -326,7 +326,7 @@ for (measure in measures) {
     ,
 
 
-    GLM = auto_tune(
+    GLMN = auto_tune(
       bl("surv.cv_glmnet", .encode = TRUE),
       surv.cv_glmnet.alpha = p_dbl(0, 1)
     )
@@ -418,7 +418,7 @@ for (measure in measures) {
 
     ,
 
-    MBO = auto_tune(
+    MBST = auto_tune(
       bl("surv.mboost"),
       surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),

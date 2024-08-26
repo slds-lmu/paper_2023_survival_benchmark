@@ -793,11 +793,11 @@ rename_learners = function(x) {
   )
 
   xdat[, learner_id := dplyr::case_when(
-    learner_id == "AF" ~ "AK",    # Akritas
-    learner_id == "NL" ~ "NA",    # Nelson-Aalen
+    # learner_id == "AF" ~ "AK",    # Akritas
+    # learner_id == "NL" ~ "NA",    # Nelson-Aalen
     learner_id == "Par" ~ "AFT",  # AFT more standard than "parametric"
-    learner_id == "MBO" ~ "MBST", # mboost
-    learner_id == "GLM" ~ "GLMN", # glmnet
+    # learner_id == "MBO" ~ "MBST", # mboost
+    # learner_id == "GLM" ~ "GLMN", # glmnet
     TRUE ~ learner_id
   )]
 
