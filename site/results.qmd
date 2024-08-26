@@ -290,7 +290,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
 | `rcll`                | `dbl` | Evaluation measure score |
 | `rcll_erv`            | `dbl` | Evaluation measure score |
 | `rnll`             | `dbl` | Evaluation measure score |
-| `rnll`_erv`         | `dbl` | Evaluation measure score |
+| `rnll_erv`         | `dbl` | Evaluation measure score |
 | `risll`          | `dbl` | Evaluation measure score |
 | `risll_erv`      | `dbl` | Evaluation measure score |
 | `risbs`        | `dbl` | Evaluation measure score |
@@ -336,8 +336,6 @@ table_aggr = function(aggr_scores, eval_measure_id, tuning_measure_id) {
     )
   
   div(class = "cran-packages", h2(class = "title", "Table title"), tab)
-
-
 }
 
 table_aggr(aggr_scores, eval_measure_id = "isbs", tuning_measure_id = "harrell_c")
@@ -362,7 +360,7 @@ bma_harrell_c$friedman_test(p.adjust.method = "holm") |>
 #### RCLL
 
 ```{r friedman-rcll}
-bma_rcll$friedman_test(p.adjust.method = "holm") |>
+bma_isbs$friedman_test(p.adjust.method = "holm") |>
   tablify()
 ```
 
@@ -398,13 +396,13 @@ plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tuning_me
 
 ```{r critical-difference-baseline-diff-rcll-rcll}
 #| fig-width: 10
-plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 ```
 
 
 ```{r critical-difference-baseline-diff-rcll-isbs}
 #| fig-width: 10
-plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 ```
 
 

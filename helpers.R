@@ -262,29 +262,29 @@ get_measures_eval = function() {
 measures_tbl = function() {
   msr_tbl = mlr3misc::rowwise_table(
     ~mlr_id,            ~id,           ~type,
-    "surv.cindex",      "harrell_c",   "Discrimination",
-    "surv.cindex",      "uno_c",       "Discrimination",
+    "surv.cindex",      "harrell_c",    "Discrimination",
+    "surv.cindex",      "uno_c",        "Discrimination",
 
-    "surv.rcll",        "rcll",       "Scoring Rule",
-    "surv.rcll",        "rcll_erv",   "Scoring Rule",
+    "surv.rcll",        "rcll",         "Scoring Rule",
+    "surv.rcll",        "rcll_erv",     "Scoring Rule",
 
-    "surv.risll",  "risll",     "Scoring Rule",
-    "surv.risll",  "risll_erv", "Scoring Rule",
+    "surv.risll",       "risll",        "Scoring Rule",
+    "surv.risll",       "risll_erv",    "Scoring Rule",
 
-    "surv.logloss",     "rnll",     "Scoring Rule",
-    "surv.logloss",     "rnll_erv", "Scoring Rule",
+    "surv.logloss",     "rnll",         "Scoring Rule",
+    "surv.logloss",     "rnll_erv",     "Scoring Rule",
 
-    "surv.brier",       "isbs",      "Scoring Rule",
-    "surv.brier",       "isbs_erv",  "Scoring Rule",
+    "surv.brier",       "isbs",         "Scoring Rule",
+    "surv.brier",       "isbs_erv",     "Scoring Rule",
 
     # Unsued, kept for completeness
-    "surv.brier",       "risbs",     "Scoring Rule",
-    "surv.brier",       "risbs_erv", "Scoring Rule",
+    "surv.brier",       "risbs",        "Scoring Rule",
+    "surv.brier",       "risbs_erv",    "Scoring Rule",
 
-    "surv.dcalib",      "dcalib",        "Calibration",
-    "surv.calib_alpha", "caliba_ratio",  "Calibration",
+    "surv.dcalib",      "dcalib",       "Calibration",
+    "surv.calib_alpha", "caliba_ratio", "Calibration",
     # Unused, kept for completeness
-    "surv.calib_alpha", "caliba_diff",   "Calibration"
+    "surv.calib_alpha", "caliba_diff",  "Calibration"
     # "surv.calib_alpha", "caliba",
   )
 
@@ -420,7 +420,7 @@ collect_results = function(
 #'   **Does not work on Windows or in RStudio**
 
 #' @examples
-#' score_bmr(config::get(), "harrell_c",  msr("surv.rcll"))
+#' score_bmr(config::get(), "harrell_c",  msr("surv.isbs"))
 score_bmr = function(
     settings = config::get(),
     tuning_measure = "harrell_c",
@@ -481,7 +481,7 @@ score_bmr = function(
 #' @export
 #'
 #' @examples
-#' aggr_bmr(config::get(), "harrell_c", msr("surv.rcll"))
+#' aggr_bmr(config::get(), "harrell_c", msr("surv.isbs"))
 aggr_bmr = function(
     settings = config::get(),
     tuning_measure = "harrell_c",
@@ -810,15 +810,15 @@ rename_learners = function(x) {
   xdat[]
 }
 
-combine_bma = function(bma_harrell_c, bma_rcll) {
+combine_bma = function(bma_harrell_c, bma_isbs) {
   checkmate::assert_class(bma_harrell_c, classes = "BenchmarkAggr")
-  checkmate::assert_class(bma_rcll, classes = "BenchmarkAggr")
+  checkmate::assert_class(bma_isbs, classes = "BenchmarkAggr")
 
   bma1 = data.table::copy(bma_harrell_c$data)
   bma1[, tuned := "harrell_c"]
 
-  bma2 = data.table::copy(bma_rcll$data)
-  bma2[, tuned := "rcll"]
+  bma2 = data.table::copy(bma_isbs$data)
+  bma2[, tuned := "isbs"]
 
   data.table::rbindlist(list(bma1, bma2))
 }
@@ -845,7 +845,7 @@ add_learner_groups = function(x) {
 
 #' Collect individually `$score()`'d or `$aggregate()`'d results from `settings$result_path`.
 #' @param settings `list()` of settings, `config::get()`
-#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"rcll"`
+#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"isbs"`
 #' @param type `character(1)`, one of `"scores"` or `"aggr"`
 combine_scores_aggrs = function(
     settings = config::get(),
@@ -853,7 +853,7 @@ combine_scores_aggrs = function(
     type = "scores"
 ) {
 
-  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "rcll"))
+  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "isbs"))
   checkmate::assert_subset(type, choices = c("scores", "aggr"))
 
   # Load all scores from files
@@ -1040,7 +1040,7 @@ plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tu
 plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id = "harrel_c", dodge = FALSE, flip = TRUE) {
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
-  checkmate::assert_subset(tuning_measure_id, choices = c("rcll", "harrell_c"))
+  checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
 
   if (msr_tbl[id == eval_measure_id, minimize]) {
     direction_label = "lower is better"

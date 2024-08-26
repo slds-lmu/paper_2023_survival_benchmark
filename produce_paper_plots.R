@@ -31,7 +31,7 @@ msr_tbl = msr_tbl[!(id %in% c("risbs", "risbs_erv", "caliba_diff")), ]
 
 # bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
-bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
+bma_isbs      = readRDS(fs::path(result_path, "bma_clean_isbs.rds"))
 
 # These are data.tables with additional columns for presentation
 aggr_scores = readRDS(fs::path(result_path, "aggr_scores.rds"))
@@ -90,11 +90,11 @@ p = plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tunin
 save_cd_plot(p, "harrell_c-isbs")
 
 # critical-difference-baseline-diff-rcll-rcll
-p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "rcll-rcll")
 
 # critical-difference-baseline-diff-rcll-isbs
-p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "rcll-isbs")
 
 # Aggregated Boxplots -------------------------------------------------------------------------
