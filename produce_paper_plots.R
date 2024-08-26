@@ -23,7 +23,7 @@ stopifnot(ensure_directory(plot_path))
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
 # Exclude measures which aren't used in the paper
-msr_tbl = msr_tbl[!(id %in% c("brier_proper", "brier_proper_erv", "caliba_diff")), ]
+msr_tbl = msr_tbl[!(id %in% c("risbs", "risbs_erv", "caliba_diff")), ]
 
 # Sanity check print
 # msr_tbl[!(erv)]
@@ -86,7 +86,7 @@ p = plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", 
 save_cd_plot(p, "harrell_c-harrell_c")
 
 # critical-difference-baseline-diff-harrell-c-isbs
-p = plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
+p = plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "harrell_c-isbs")
 
 # critical-difference-baseline-diff-rcll-rcll
@@ -94,7 +94,7 @@ p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "rcll", tuning_mea
 save_cd_plot(p, "rcll-rcll")
 
 # critical-difference-baseline-diff-rcll-isbs
-p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "brier_improper", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+p = plot_results(bma = bma_rcll, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "rcll-isbs")
 
 # Aggregated Boxplots -------------------------------------------------------------------------
@@ -113,7 +113,7 @@ save_boxplot_plot = function(p, eval_measure_id, tuning_measure_id, tag = "score
 }
 
 # Harrell's C, raw scores
-for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
+for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
   p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
@@ -122,7 +122,7 @@ for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") &
 
 # aggr-boxplot-harrell-c-scaled
 
-for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
+for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
   p = plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE) %+%
     labs(
       title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
@@ -299,7 +299,7 @@ save_boxplot_plot_scores = function(p, eval_measure_id, tuning_measure_id, width
   )
 }
 
-for (measure_id in msr_tbl[(id == "brier_improper" | type == "Discrimination") & !erv, id]) {
+for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
   p = plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
   save_boxplot_plot_scores(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
 }

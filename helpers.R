@@ -233,18 +233,18 @@ get_measures_eval = function() {
     msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
 
     # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
-    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
-    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
+    msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
+    msr("surv.logloss",     id = "rnll_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
 
-    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
-    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
+    msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
+    msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
-    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
-    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
+    msr("surv.brier",        id = "isbs",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+    msr("surv.brier",        id = "isbs_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     # Unsued, kept for completeness
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
+    msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
+    msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
@@ -268,18 +268,18 @@ measures_tbl = function() {
     "surv.rcll",        "rcll",       "Scoring Rule",
     "surv.rcll",        "rcll_erv",   "Scoring Rule",
 
-    "surv.intlogloss",  "intlogloss",     "Scoring Rule",
-    "surv.intlogloss",  "intlogloss_erv", "Scoring Rule",
+    "surv.risll",  "risll",     "Scoring Rule",
+    "surv.risll",  "risll_erv", "Scoring Rule",
 
-    "surv.logloss",     "logloss",     "Scoring Rule",
-    "surv.logloss",     "logloss_erv", "Scoring Rule",
+    "surv.logloss",     "rnll",     "Scoring Rule",
+    "surv.logloss",     "rnll_erv", "Scoring Rule",
 
-    "surv.brier",       "brier_improper",      "Scoring Rule",
-    "surv.brier",       "brier_improper_erv",  "Scoring Rule",
+    "surv.brier",       "isbs",      "Scoring Rule",
+    "surv.brier",       "isbs_erv",  "Scoring Rule",
 
     # Unsued, kept for completeness
-    "surv.brier",       "brier_proper",     "Scoring Rule",
-    "surv.brier",       "brier_proper_erv", "Scoring Rule",
+    "surv.brier",       "risbs",     "Scoring Rule",
+    "surv.brier",       "risbs_erv", "Scoring Rule",
 
     "surv.dcalib",      "dcalib",        "Calibration",
     "surv.calib_alpha", "caliba_ratio",  "Calibration",

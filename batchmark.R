@@ -296,7 +296,9 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.rcll", id = "rcll")
+  #msr("surv.rcll", id = "rcll"),
+  msr("surv.brier", id = "isbs", proper = FALSE, ERV = FALSE),
+
 )
 
 
