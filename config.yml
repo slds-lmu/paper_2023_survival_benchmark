@@ -49,7 +49,7 @@ debug:
     budget:
       evals_constant: 0
       evals_multiplier: 1
-      runtime_hours: 0.00833333
+      runtime_hours: 1
     timeout:
       bl_train: 10
       bl_predict: 4

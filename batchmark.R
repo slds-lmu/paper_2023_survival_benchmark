@@ -297,8 +297,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
   #msr("surv.rcll", id = "rcll"),
-  msr("surv.brier", id = "isbs", proper = FALSE, ERV = FALSE),
-
+  msr("surv.brier", id = "isbs", proper = FALSE, ERV = FALSE)
 )
 
 
