@@ -14,7 +14,7 @@ source(here::here("site", "common.R"))
 
 This page gives an overview of the benchmark results, including scores aggregated across outer resampling iterations used for later statistical analysis and individual scores per dataset and model.
 
-In general, results are divided by underlying tuning measure, i.e. `harrel_c` and `rcll`, with the former being a measure of discrimination and the latter a proper scoring rule.
+In general, results are divided by underlying tuning measure, i.e. `harrel_c` and `isbs`, with the former being a measure of discrimination and the latter a proper scoring rule.
 
 
 ## Errros and elapsed time limits
@@ -42,7 +42,7 @@ scores |>
     values_from = "affected_folds", 
     values_fill = 0
   ) |>
-  dplyr::mutate(total = harrell_c + rcll) |>
+  dplyr::mutate(total = harrell_c + isbs) |>
   kableExtra::kbl(
     col.names = c("Model", "Error", "Harrell's C", "RCLL", "Total Errors"),
     caption = "Number of errors per outer resampling iteration (up to five), separated by model, and tuning measure.",
@@ -60,7 +60,7 @@ scores |>
     values_from = "affected_folds", 
     values_fill = 0
   ) |>
-  dplyr::mutate(total = harrell_c + rcll) |>
+  dplyr::mutate(total = harrell_c + isbs) |>
   kableExtra::kbl(
     col.names = c("Dataset", "Error", "Harrell's C", "RCLL", "Total Errors"),
     caption = "Number of errors per outer resampling iteration (up to five), separated by dataset, and tuning measure.",
@@ -120,35 +120,35 @@ for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]
 
 #### RCLL
 
-```{r aggr-boxplot-rcll}
+```{r aggr-boxplot-isbs}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
 }
 ```
 
 RCLL (ERV)
 
-```{r aggr-boxplot-rcll-erv}
+```{r aggr-boxplot-isbs-erv}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
 }
 
 ```
 
 Scaled RCLL
 
-```{r aggr-boxplot-rcll-scaled}
+```{r aggr-boxplot-isbs-scaled}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE) %+%
+  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE) %+%
     labs(
       title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM-Best]"),
       subtitle = "Boxplot of aggregated scores across all tasks scaled such that 0 = KM, 1 = Best model"
@@ -168,12 +168,12 @@ Taking scores from the outer evaluation folds, see `scores.[csv|rds]`.
 
 #### Harrell's C
 
-```{r scores-boxplot-rcll}
+```{r scores-boxplot-isbs}
 #| fig-width: 11
 #| fig-height: 11
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
+  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
 }
 ```
 
@@ -202,7 +202,7 @@ Furthermore, there is no multiplicity correction applied due to the generally ex
 
 ```{r calibration-dcalib-heatmap, fig.width=10, fig.height=8}
 
-for (tuned_on in c("harrell_c", "rcll")) {
+for (tuned_on in c("harrell_c", "isbs")) {
   p = aggr_scores |>
     dplyr::filter(tuned == tuned_on) |>
     dplyr::mutate(
@@ -251,7 +251,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
 For this measure, calibration is indicated by a score close to 1.
 
 ```{r calibration-alpha-ratio}
-for (tuned_on in c("harrell_c", "rcll")) {
+for (tuned_on in c("harrell_c", "isbs")) {
   p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
     geom_point() +
     geom_vline(xintercept = 1) +
@@ -287,8 +287,8 @@ for (tuned_on in c("harrell_c", "rcll")) {
 | `learner_id`          | `fct` | Model / learner name, e.g. `RAN` for `ranger` |
 | `harrell_c`           | `dbl` | Evaluation measure score |
 | `uno_c`               | `dbl` | Evaluation measure score |
-| `rcll`                | `dbl` | Evaluation measure score |
-| `rcll_erv`            | `dbl` | Evaluation measure score |
+<!-- | `rcll`                | `dbl` | Evaluation measure score | -->
+<!-- | `rcll_erv`            | `dbl` | Evaluation measure score | -->
 | `rnll`             | `dbl` | Evaluation measure score |
 | `rnll_erv`         | `dbl` | Evaluation measure score |
 | `risll`          | `dbl` | Evaluation measure score |
@@ -300,7 +300,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
 | `dcalib`              | `dbl` | Evaluation measure score |
 | `caliba_ratio`        | `dbl` | Evaluation measure score |
 | `caliba_diff`         | `dbl` | Evaluation measure score |
-| `tuned`               | `chr` | Tuning measure, one of `harrell_c`, `rcll` |
+| `tuned`               | `chr` | Tuning measure, one of `harrell_c`, `isbs` |
 | `learner_group`       | `fct` | Model / learner group, one of "Baseline", "Classical"m "Trees", "Boosting" |
 
 
@@ -359,7 +359,7 @@ bma_harrell_c$friedman_test(p.adjust.method = "holm") |>
 
 #### RCLL
 
-```{r friedman-rcll}
+```{r friedman-isbs}
 bma_isbs$friedman_test(p.adjust.method = "holm") |>
   tablify()
 ```
@@ -394,15 +394,15 @@ plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tuning_me
 
 #### RCLL
 
-```{r critical-difference-baseline-diff-rcll-rcll}
+```{r critical-difference-baseline-diff-isbs-isbs}
 #| fig-width: 10
-plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
 ```
 
 
-```{r critical-difference-baseline-diff-rcll-isbs}
+```{r critical-difference-baseline-diff-isbs-isbs}
 #| fig-width: 10
-plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
+plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
 ```
 
 

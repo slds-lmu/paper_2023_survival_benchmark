@@ -229,8 +229,8 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
-    msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
-    msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
+    # msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
+    # msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
 
     # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
     msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
@@ -243,14 +243,14 @@ get_measures_eval = function() {
     msr("surv.brier",        id = "isbs_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     # Unsued, kept for completeness
-    msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
-    msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
+    # msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
+    # msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
     msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha"),
     # Unsued, kept for completeness
-    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
+    # msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
@@ -265,8 +265,8 @@ measures_tbl = function() {
     "surv.cindex",      "harrell_c",    "Discrimination",
     "surv.cindex",      "uno_c",        "Discrimination",
 
-    "surv.rcll",        "rcll",         "Scoring Rule",
-    "surv.rcll",        "rcll_erv",     "Scoring Rule",
+    # "surv.rcll",        "rcll",         "Scoring Rule",
+    # "surv.rcll",        "rcll_erv",     "Scoring Rule",
 
     "surv.risll",       "risll",        "Scoring Rule",
     "surv.risll",       "risll_erv",    "Scoring Rule",
@@ -278,8 +278,8 @@ measures_tbl = function() {
     "surv.brier",       "isbs_erv",     "Scoring Rule",
 
     # Unsued, kept for completeness
-    "surv.brier",       "risbs",        "Scoring Rule",
-    "surv.brier",       "risbs_erv",    "Scoring Rule",
+    # "surv.brier",       "risbs",        "Scoring Rule",
+    # "surv.brier",       "risbs_erv",    "Scoring Rule",
 
     "surv.dcalib",      "dcalib",       "Calibration",
     "surv.calib_alpha", "caliba_ratio", "Calibration",
