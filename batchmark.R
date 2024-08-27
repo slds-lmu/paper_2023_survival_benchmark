@@ -23,6 +23,7 @@ library("mlr3proba")
 library("mlr3learners")
 library("mlr3pipelines")
 library("mlr3tuning")
+library("mlr3mbo")
 library("batchtools")
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
@@ -210,7 +211,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   } else {
     # combo terminator https://bbotk.mlr-org.com/reference/mlr_terminators_combo.html
     terminator = trm("combo", list(trm_runtime, trm_evals), any = TRUE)
-    tuner = tnr("random_search")
+    tuner = tnr("mbo")
   }
 
   callback_backup = callback_batch_tuning("mlr3tuning.backup_archive",
@@ -426,12 +427,12 @@ for (measure in measures) {
     # XGB/cox needs new breslow estimator
     XGBCox = auto_tune(
       bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree", .encode = TRUE),
-      surv.xgboost.max_depth = p_int(1, 20),
-      surv.xgboost.subsample = p_dbl(0, 1),
-      surv.xgboost.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.nrounds = p_int(10, 5000),
-      surv.xgboost.eta = p_dbl(0, 1),
-      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide"))
+      surv.xgboost.cox.max_depth = p_int(1, 20),
+      surv.xgboost.cox.subsample = p_dbl(0, 1),
+      surv.xgboost.cox.colsample_bytree = p_dbl(0, 1),
+      surv.xgboost.cox.nrounds = p_int(10, 5000),
+      surv.xgboost.cox.eta = p_dbl(0, 1),
+      surv.xgboost.cox.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
 
     ,
@@ -440,14 +441,14 @@ for (measure in measures) {
     # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
       bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree", .encode = TRUE),
-      surv.xgboost.max_depth = p_int(1, 20),
-      surv.xgboost.subsample = p_dbl(0, 1),
-      surv.xgboost.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.nrounds = p_int(10, 5000),
-      surv.xgboost.eta = p_dbl(0, 1),
-      surv.xgboost.grow_policy = p_fct(c("depthwise", "lossguide")),
-      surv.xgboost.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
-      surv.xgboost.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
+      surv.xgboost.aft.max_depth = p_int(1, 20),
+      surv.xgboost.aft.subsample = p_dbl(0, 1),
+      surv.xgboost.aft.colsample_bytree = p_dbl(0, 1),
+      surv.xgboost.aft.nrounds = p_int(10, 5000),
+      surv.xgboost.aft.eta = p_dbl(0, 1),
+      surv.xgboost.aft.grow_policy = p_fct(c("depthwise", "lossguide")),
+      surv.xgboost.aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
+      surv.xgboost.aft.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
     )
 
     ,
