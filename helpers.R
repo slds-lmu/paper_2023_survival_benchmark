@@ -248,7 +248,7 @@ get_measures_eval = function() {
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha"),
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
     # Unsued, kept for completeness
     # msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
