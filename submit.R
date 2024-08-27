@@ -42,6 +42,6 @@ jobs_harrell[, chunk := lpt(total_h, 100)]
 chunks_harrell = jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
 
 # Tuning on RCLL -------------------------------------------------------------------
-jobs_isbs = alljobs[measure == "rcll", ]
+jobs_isbs = alljobs[measure == "isbs", ]
 jobs_isbs[, chunk := lpt(total_h, 100)]
 chunks_isbs = jobs_isbs[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
