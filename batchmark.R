@@ -84,7 +84,7 @@ tasktab = save_tasktab(tasks)
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
-  cli::cli_h2("Constructing {key} (.encode = '{(.encode)}', .scale = '{(.scale)}'")
+  cli::cli_h2("Constructing {key}")
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"),
                  method = "mort", overwrite = FALSE, graph_learner = TRUE)
@@ -111,6 +111,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # scaling only used for SSVM if DL removed
   # Done before treatment encoding
   if (.scale) {
+    cli::cli_alert_info("Applying scaling")
     preproc = preproc %>>%
       po("scale")
   }
@@ -119,6 +120,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # Note: encoding is done for glmnet but not for coxph. Both are internally a
   # cox model, but glmnet does not do the treatment encoding automatically
   if (.encode) {
+    cli::cli_alert_info("Applying factor encoding")
     preproc = preproc %>>%
       po("encode", method = "treatment")
   }

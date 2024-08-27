@@ -24,8 +24,8 @@ if (FALSE) {
   renv::install("actuar", prompt = FALSE) # For surv.parametric
   renv::install("binderh/CoxBoost", prompt = FALSE)
 
-  #renv::install("mlr3", prompt = FALSE)
-  renv::install("mlr-org/mlr3", prompt = FALSE)
+  renv::install("mlr3", prompt = FALSE)
+  #renv::install("mlr-org/mlr3", prompt = FALSE)
 
   renv::install("mlr3learners", prompt = FALSE)
   renv::install("mlr3pipelines", prompt = FALSE)
