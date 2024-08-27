@@ -1748,15 +1748,9 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.20.2.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
-      "RemoteRepo": "mlr3",
-      "RemoteRef": "main",
-      "RemoteSha": "da4d63207084ce01bc9a56ed23c713af414432d6",
-      "Remotes": "mlr-org/mlr3measures",
+      "Version": "0.20.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -1775,7 +1769,7 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "994af24f2845773244f5810c75942678"
+      "Hash": "2e5225a210cef7155a2899a4d16f1cf2"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
@@ -1857,6 +1851,26 @@
         "paradox"
       ],
       "Hash": "121940d0b919f5eba801ada1af6f198b"
+    },
+    "mlr3mbo": {
+      "Package": "mlr3mbo",
+      "Version": "0.2.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6",
+        "bbotk",
+        "checkmate",
+        "data.table",
+        "lgr",
+        "mlr3",
+        "mlr3misc",
+        "mlr3tuning",
+        "paradox",
+        "spacefillr"
+      ],
+      "Hash": "5e2ed0348e0ad399dae4e198cddc5256"
     },
     "mlr3measures": {
       "Package": "mlr3measures",
@@ -2923,6 +2937,16 @@
         "survival"
       ],
       "Hash": "476c655033f15910b15737ec9a70dbdf"
+    },
+    "spacefillr": {
+      "Package": "spacefillr",
+      "Version": "0.3.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Rcpp"
+      ],
+      "Hash": "16d32294bfd9e55d295ec40eec8aa89f"
     },
     "stabs": {
       "Package": "stabs",
