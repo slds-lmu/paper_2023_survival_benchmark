@@ -83,7 +83,7 @@ tasktab = save_tasktab(tasks)
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
-  cli::cli_h2("Constructing {key} (.encode = '{(.encode)}', .scale = '{(.scale)'")
+  cli::cli_h2("Constructing {key} (.encode = '{(.encode)}', .scale = '{(.scale)}'")
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"),
                  method = "mort", overwrite = FALSE, graph_learner = TRUE)
@@ -125,11 +125,10 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # removeconstants: should constant features be introduced, they're dropped.
   #  - Done after treatment encoding
   # Stack preprocessing on top of learner + distr stuff.
-  graph_learner = as_learner(
-    preproc %>>%
+  graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    learner
-  )
+    learner |>
+    as_learner()
 
   graph_learner$predict_type = "crank"
   if (settings$fallback$inner) {
