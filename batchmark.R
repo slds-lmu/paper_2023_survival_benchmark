@@ -1,5 +1,5 @@
 root = here::here()
-source(file.path(root, "helpers.R"))
+source(here::here("helpers.R"))
 
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
@@ -37,7 +37,7 @@ if (dir.exists(reg_dir)) {
 
 cli::cli_alert_info("Creating new registry \"{settings$reg_name}\"!")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
-  packages = c("mlr3", "mlr3proba"), source = here::here(root, "helpers.R"))
+  packages = c("mlr3", "mlr3proba"), source = here::here("helpers.R"))
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(settings$seed)
@@ -82,17 +82,10 @@ tasktab = save_tasktab(tasks)
 #' @param ... Additional arguments passed to `lrn()`.
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
-#' @param .form (`"ph"`) Passed to `distrcompositor` as `form = .form`.
-#' @param .estimator (`"kaplan"`) Passed to `distrcompositor` as `estimator = .estimator`.
-bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimator = "kaplan") {
-  checkmate::assert_choice(.form, choices = c("ph", "aft"))
-  checkmate::assert_choice(.estimator, choices = c("kaplan", "breslow"))
-  cli::cli_h2("Constructing {key} (form = '{(.form)}')")
-  if (.estimator == "breslow") cli::cli_alert_info("Using breslow estimator!")
-
+bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   learner = lrn(key, ...)
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
-                 method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"),
+                 method = "mort", overwrite = FALSE, graph_learner = TRUE)
 
   # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
@@ -131,12 +124,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE, .form = "ph", .estimato
   # removeconstants: should constant features be introduced, they're dropped.
   #  - Done after treatment encoding
   # Stack preprocessing on top of learner + distr stuff.
-  graph_learner = preproc %>>%
+  graph_learner = as_learner(
+    preproc %>>%
     po("removeconstants") %>>%
-    # Compose $distr prediction, but only if underlying learner does not produce them itself
-    ppl("distrcompositor", learner = learner, form = .form, estimator = .estimator, overwrite = FALSE) |>
-    # Need to convert to GraphLearner
-    as_learner()
+    learner
+  )
 
   graph_learner$predict_type = "crank"
   if (settings$fallback$inner) {
@@ -221,7 +213,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     tuner = tnr("random_search")
   }
 
-  callback_backup = callback_tuning("mlr3tuning.backup_archive",
+  callback_backup = callback_batch_tuning("mlr3tuning.backup_archive",
                                     on_optimization_end = callback_backup_impl)
 
   # assemble learner_id
@@ -238,7 +230,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   callback_backup$state$learner_id = learner_id
   callback_backup$state$tuning_measure = measure$id
 
-  callback_archive_logs = callback_tuning("mlr3tuning.archive_logs",
+  callback_archive_logs = callback_batch_tuning("mlr3tuning.archive_logs",
                                           on_eval_before_archive = callback_archive_logs_impl)
 
   at = AutoTuner$new(
@@ -260,8 +252,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   )
 
   # Also define a fallback learner on AutoTuner
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"), response = TRUE,
-                 method = "mean", overwrite = FALSE, graph_learner = TRUE)
+  fallback = ppl("crankcompositor", lrn("surv.kaplan"),
+                 method = "mort", overwrite = FALSE, graph_learner = TRUE)
 
   # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
@@ -339,7 +331,7 @@ for (measure in measures) {
     # - to pass .form to bl() for distrcompositor
     # - Tune distributions within range of what's sensible/discussed with RS
     Par = auto_tune(
-      bl("surv.parametric", form = "aft", discrete = TRUE, .form = "aft"),
+      bl("surv.parametric", form = "aft", discrete = TRUE),
       surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
@@ -433,8 +425,7 @@ for (measure in measures) {
 
     # XGB/cox needs new breslow estimator
     XGBCox = auto_tune(
-      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
-         .encode = TRUE, .estimator = "breslow"),
+      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree", .encode = TRUE),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
@@ -446,11 +437,9 @@ for (measure in measures) {
     ,
 
     # AFT version needs
-    # - to pass .form to bl() for distrcompositor
     # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
-      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
-         .encode = TRUE, .form = "aft"),
+      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree", .encode = TRUE),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
       surv.xgboost.colsample_bytree = p_dbl(0, 1),
@@ -479,6 +468,11 @@ for (measure in measures) {
   )
 
   imap(learners, function(l, id) l$id = id)
+
+  if (measure$id == "isbs") {
+    cli::cli_alert_danger("Skipping RRT for ISBS measure!")
+    learners$RRT = NULL
+  }
 
   # custom grid design (with instantiated resamplings)
   grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
