@@ -196,8 +196,8 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
     MBST = list(learner = "surv.mboost", params = 4),
     CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
-    XGBCox = list(learner = "surv.xgboost", .encode = TRUE, params = 6, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost", .encode = TRUE, params = 8, .form = "aft"),
+    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 6, .form = "ph"),
+    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 8, .form = "aft"),
     SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
   ) |>
     lapply(data.table::as.data.table) |>
@@ -567,11 +567,11 @@ reassemble_archives = function(
   learners = load_lrntab()
   learners = learners[, c("learner_id", "learner_id_long")]
 
-  learners$learner_id_long = dplyr::case_when(
-    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-    .default = learners$learner_id_long
-  )
+  # learners$learner_id_long = dplyr::case_when(
+  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+  #   .default = learners$learner_id_long
+  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
@@ -633,11 +633,11 @@ convert_archives_csv = function(settings = config::get()) {
   learners = load_lrntab()
   learners = learners[, c("learner_id", "learner_id_long")]
 
-  learners$learner_id_long = dplyr::case_when(
-    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-    .default = learners$learner_id_long
-  )
+  # learners$learner_id_long = dplyr::case_when(
+  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+  #   .default = learners$learner_id_long
+  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   purrr::walk(tuning_files, \(file) {

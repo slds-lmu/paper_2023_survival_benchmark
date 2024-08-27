@@ -23,7 +23,7 @@ default:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
     bl_predict: 4
-    at_train: !expr 150 # of 168 max
+    at_train: !expr 156 # of 168 max
     at_predict: !expr 12 # leave some headroom for job
 
 # For local disambiguation on other hosts
@@ -36,8 +36,10 @@ trial:
     fallback:
       inner: true
       outer: true
+    store:
+      tuning_instance: true
     budget:
-      evals_constant: 0
+      evals_constant: 5
       evals_multiplier: 2
       runtime_hours: 6
 

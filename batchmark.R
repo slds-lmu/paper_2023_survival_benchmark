@@ -224,22 +224,15 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   callback_backup = callback_tuning("mlr3tuning.backup_archive",
                                     on_optimization_end = callback_backup_impl)
 
-  # assemble learner_id, disambiguate XGBCox and XGBAFT
+  # assemble learner_id
   known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
                      "surv.cv_glmnet", "surv.penalized", "surv.parametric", "surv.flexible",
                      "surv.rfsrc", "surv.ranger", "surv.cforest", "surv.aorsf", "surv.rpart",
-                     "surv.mboost", "surv.cv_coxboost", "surv.xgboost", "surv.xgboost",
+                     "surv.mboost", "surv.cv_coxboost", "surv.xgboost.cox", "surv.xgboost.aft",
                      "surv.svm")
   pattern = paste0(known_learners, collapse = "|")
   learner_id = stringr::str_extract(learner$id, pattern)
   checkmate::assert_string(learner_id, min.chars = 7, pattern = "^surv")
-
-  if (learner_id == "surv.xgboost") {
-    learner_id = switch(learner$param_set$values$surv.xgboost.objective,
-                        `survival:cox` = "surv.xgboostcox",
-                        `survival:aft` = "surv.xgboostaft")
-   checkmate::assert_string(learner_id, min.chars = 15, pattern = "^surv\\.xgboost")
-  }
 
   callback_backup$state$path_dir = fs::path(settings$reg_dir, "tuning_archives")
   callback_backup$state$learner_id = learner_id
@@ -262,8 +255,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     # Not needed: benchmark result of inner resamplings
     store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
-    store_models = settings$store$models,
-    callbacks = list(callback_backup, callback_archive_logs)
+    store_models = settings$store$models#,
+    #callbacks = list(callback_backup, callback_archive_logs)
   )
 
   # Also define a fallback learner on AutoTuner
@@ -346,7 +339,7 @@ for (measure in measures) {
     # - to pass .form to bl() for distrcompositor
     # - Tune distributions within range of what's sensible/discussed with RS
     Par = auto_tune(
-      bl("surv.parametric", type = "aft", discrete = TRUE, .form = "aft"),
+      bl("surv.parametric", form = "aft", discrete = TRUE, .form = "aft"),
       surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
@@ -440,8 +433,7 @@ for (measure in measures) {
 
     # XGB/cox needs new breslow estimator
     XGBCox = auto_tune(
-      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
-         objective = "survival:cox",
+      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
          .encode = TRUE, .estimator = "breslow"),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
@@ -454,12 +446,10 @@ for (measure in measures) {
     ,
 
     # AFT version needs
-    # - Adjust objective accordingly to use aft
     # - to pass .form to bl() for distrcompositor
     # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
-      bl("surv.xgboost", tree_method = "hist", booster = "gbtree",
-         objective = "survival:aft",
+      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
          .encode = TRUE, .form = "aft"),
       surv.xgboost.max_depth = p_int(1, 20),
       surv.xgboost.subsample = p_dbl(0, 1),
