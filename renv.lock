@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.2.2",
+    "Version": "4.4.0",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -284,13 +284,6 @@
       ],
       "Hash": "c232938949fcd8126034419cc529333a"
     },
-    "RhpcBLASctl": {
-      "Package": "RhpcBLASctl",
-      "Version": "0.23-42",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "c966ea2957ff75e77afa5c908dfc89e1"
-    },
     "SQUAREM": {
       "Package": "SQUAREM",
       "Version": "2021.1",
@@ -458,7 +451,7 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "0.7.3",
+      "Version": "1.0.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -471,7 +464,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "a2151c717199416ccea2f0afb6c17d84"
+      "Hash": "e6af9db7df50c2a121be237171e5c0c9"
     },
     "bdsmatrix": {
       "Package": "bdsmatrix",
@@ -828,7 +821,7 @@
       "RemoteUsername": "xoopR",
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
-      "RemoteSha": "a7c01f7166f67ebbfdc8bec4b5625ab911af85c4",
+      "RemoteSha": "a642cd312c51fba7ede7336036f907dbe279889e",
       "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
@@ -840,7 +833,7 @@
         "set6",
         "stats"
       ],
-      "Hash": "6d7ceaf2e49cad791dc060906806d45a"
+      "Hash": "5a5afc70c3794a7a67f9edfa93ca164e"
     },
     "doParallel": {
       "Package": "doParallel",
@@ -1039,6 +1032,22 @@
         "rlang"
       ],
       "Hash": "c2efdd5f0bcd1ea861c2d4e2a883a67d"
+    },
+    "forcats": {
+      "Package": "forcats",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "cli",
+        "glue",
+        "lifecycle",
+        "magrittr",
+        "rlang",
+        "tibble"
+      ],
+      "Hash": "1a0a9a3d5083d0d573c4214576f1e690"
     },
     "foreach": {
       "Package": "foreach",
@@ -1739,13 +1748,18 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.17.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.20.2.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3",
+      "RemoteRef": "main",
+      "RemoteSha": "da4d63207084ce01bc9a56ed23c713af414432d6",
+      "Remotes": "mlr-org/mlr3measures",
       "Requirements": [
         "R",
         "R6",
-        "RhpcBLASctl",
         "backports",
         "checkmate",
         "data.table",
@@ -1761,7 +1775,7 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "1925aac9b5e8d55fb4e6424fdce6d60a"
+      "Hash": "994af24f2845773244f5810c75942678"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
@@ -1772,7 +1786,7 @@
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3batchmark",
       "RemoteRef": "main",
-      "RemoteSha": "1aed0c0ba3732d93cc0695150a35d3dbc3aff758",
+      "RemoteSha": "59a7efa8511cc5d3621886f455b555854d25dd00",
       "Requirements": [
         "R",
         "batchtools",
@@ -1783,7 +1797,7 @@
         "mlr3misc",
         "uuid"
       ],
-      "Hash": "592138406a07222bde0d0aa75a049be6"
+      "Hash": "e0ec88b0fb34651f91e6aa330ff7a18e"
     },
     "mlr3benchmark": {
       "Package": "mlr3benchmark",
@@ -1807,15 +1821,15 @@
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
-      "Version": "0.7.1-9000",
+      "Version": "0.9.0-9000",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "main",
-      "RemoteSha": "0cbdb722aef3f556f316231401faf1254bfe2768",
-      "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6, ropensci/aorsf",
+      "RemoteSha": "98d790f18e34adaf5551da8e6fb5bbc3c42d67c2",
+      "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6, ropensci/aorsf, mlr-org/mlr3",
       "Requirements": [
         "R",
         "R6",
@@ -1826,11 +1840,11 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "86720f52b1620c9db3e7d730c41dbdda"
+      "Hash": "f80c57ce6e899ea0c0d3649c2647cda4"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
-      "Version": "0.5.8",
+      "Version": "0.7.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1842,25 +1856,31 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "fbd56a9aa8cf8fd9c1a8431180685b5c"
+      "Hash": "121940d0b919f5eba801ada1af6f198b"
     },
     "mlr3measures": {
       "Package": "mlr3measures",
-      "Version": "0.5.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.6.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3measures",
+      "RemoteRef": "main",
+      "RemoteSha": "41c0b52e2b10ca01e74057a83736e0c3b080e3cf",
       "Requirements": [
         "PRROC",
         "R",
-        "checkmate"
+        "checkmate",
+        "mlr3misc"
       ],
-      "Hash": "540045d567107f6305daf6e9bffa6287"
+      "Hash": "bfe54f3526f03ef200176c2a9ec03642"
     },
     "mlr3misc": {
       "Package": "mlr3misc",
-      "Version": "0.13.0",
+      "Version": "0.15.1",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -1870,11 +1890,11 @@
         "digest",
         "methods"
       ],
-      "Hash": "d6e11a7820fe331d8dfbd66762fd19c3"
+      "Hash": "465c3a7a04caf09a431bef1b9c5ec89b"
     },
     "mlr3pipelines": {
       "Package": "mlr3pipelines",
-      "Version": "0.5.0-2",
+      "Version": "0.6.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1890,18 +1910,18 @@
         "paradox",
         "withr"
       ],
-      "Hash": "f3bf5ab6a463151176b29367401b28fd"
+      "Hash": "4377f534ff568943e8ab56af58c0e65a"
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.6.1",
+      "Version": "0.6.7",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "56e33e9f2c247d0a04f14d2d068a73e61f25b391",
+      "RemoteSha": "737498ef4ec4a95f0322baaee242c47995975cf3",
       "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "R",
@@ -1915,14 +1935,13 @@
         "mlr3misc",
         "mlr3viz",
         "paradox",
-        "survival",
-        "survivalmodels"
+        "survival"
       ],
-      "Hash": "3c24341ba5a74c5464d677035cc2ac85"
+      "Hash": "33f397fd7fe1b43c77763af3cd5e336f"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
-      "Version": "0.19.2",
+      "Version": "1.0.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1936,7 +1955,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "3f75c3c8cb270a4b0a9f6df2acb5ecee"
+      "Hash": "1e725cff61c253b0e109c0ca2cf527b4"
     },
     "mlr3viz": {
       "Package": "mlr3viz",
@@ -2138,9 +2157,9 @@
     },
     "paradox": {
       "Package": "paradox",
-      "Version": "0.11.1",
+      "Version": "1.0.1",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R6",
         "backports",
@@ -2149,7 +2168,7 @@
         "methods",
         "mlr3misc"
       ],
-      "Hash": "d257067d1721ed3861f9ad966c06477d"
+      "Hash": "0ac0bb5d26a5ce1fce5b7012432ee10f"
     },
     "parallelly": {
       "Package": "parallelly",
@@ -2981,19 +3000,19 @@
     },
     "survivalmodels": {
       "Package": "survivalmodels",
-      "Version": "0.1.18",
+      "Version": "0.1.19",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "RaphaelS1",
       "RemoteRepo": "survivalmodels",
       "RemoteRef": "main",
-      "RemoteSha": "79b913fd6a3951314527eb8aedddf43a51ca19a6",
-      "Remotes": "alan-turing-institute/distr6, RaphaelS1/param6, RaphaelS1/set6",
+      "RemoteSha": "e7af58c7d8aec9f253bfed9f3814308ba2952e43",
+      "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "Rcpp"
       ],
-      "Hash": "1f15ff0905adec3ce2dc61afb5821809"
+      "Hash": "fd938d919c129edc278c6125477d2b88"
     },
     "survivalsvm": {
       "Package": "survivalsvm",
