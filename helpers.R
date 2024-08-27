@@ -95,7 +95,7 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
       dim = task$nrow * length(task$feature_names),
       n_uniq_t = length(unique(task$data(cols = "time")[[1]])),
       events = sum(task$data(cols = "status")[[1]] == 1),
-      censprop = mean(task$data(cols = "status")[[1]] == 0)
+      censprop = round(mean(task$data(cols = "status")[[1]] == 0), 4)
     )
   }))
   tasktab[, dimrank := data.table::frank(dim)]
