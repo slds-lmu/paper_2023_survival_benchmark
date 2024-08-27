@@ -41,7 +41,7 @@ scores = readRDS(fs::path(result_path, "scores.rds"))
 aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)
 
 stopifnot(any(aggr_scores_scaled[tuned == "harrell_c", harrell_c] == 1))
-stopifnot(!aggr_scores_scaled[tuned == "rcll", rcll] > 1)
+stopifnot(!aggr_scores_scaled[tuned == "isbs", isbs] > 1)
 
 
 
@@ -55,9 +55,9 @@ scores |>
     names_from = "tuned",
     values_from = "affected_folds", values_fill = 0
   ) |>
-  dplyr::mutate(total = harrell_c + rcll) |>
+  dplyr::mutate(total = harrell_c + isbs) |>
   kableExtra::kbl(
-    col.names = c("Model", "Dataset", "Harrell's C", "RCLL", "Total Errors"),
+    col.names = c("Model", "Dataset", "Harrell's C", "ISBS", "Total Errors"),
     caption = "Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.",
     booktabs = TRUE,
     format = "latex"
@@ -89,13 +89,13 @@ save_cd_plot(p, "harrell_c-harrell_c")
 p = plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
 save_cd_plot(p, "harrell_c-isbs")
 
-# critical-difference-baseline-diff-rcll-rcll
-p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "rcll", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
-save_cd_plot(p, "rcll-rcll")
+# critical-difference-baseline-diff-isbs-isbs
+p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
+save_cd_plot(p, "isbs-isbs")
 
-# critical-difference-baseline-diff-rcll-isbs
-p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "rcll", ratio = cd_ratio, baseline = "CPH")
-save_cd_plot(p, "rcll-isbs")
+# critical-difference-baseline-diff-isbs-isbs
+p = plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
+save_cd_plot(p, "isbs-isbs")
 
 # Aggregated Boxplots -------------------------------------------------------------------------
 cli::cli_h2("Aggregated Boxplots")
@@ -133,38 +133,38 @@ for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]
 }
 
 
-#### RCLL (Raw scores)
+#### ISBS (Raw scores)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "score")
+  p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
+  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
 }
 
-# RCLL (ERV)
+# ISBS (ERV)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "erv")
+  p = plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
+  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
 }
 
 
-# Scaled RCLL
+# Scaled ISBS
 
-#aggr-boxplot-rcll-scaled}
+#aggr-boxplot-isbs-scaled}
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  p = plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE) %+%
+  p = plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE) %+%
     labs(
       title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
       subtitle = "Boxplot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
     )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "rcll", tag = "scaled")
+  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
 
 }
 
 # Aggregated Boxplots with 3 types of scaling -------------------------------------------------
 
-measure_normal = "rcll"
+measure_normal = "isbs"
 measure_erv = paste0(measure_normal, "_erv")
 measure_scaled = paste0(measure_normal, "_scaled")
 
@@ -174,7 +174,7 @@ data.table::setnames(aggr_scaled_temp, old = measure_normal, new = measure_scale
 aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tuned, learner_group)]
 
 p = aggr_temp |>
-  dplyr::filter(tuned == "rcll") |>
+  dplyr::filter(tuned == "isbs") |>
   tidyr::pivot_longer(cols = tidyselect::all_of(c(measure_normal, measure_erv, measure_scaled)), names_to = "measure", values_to = "score") |>
   dplyr::mutate(
     measure = dplyr::case_when(
@@ -189,11 +189,11 @@ p = aggr_temp |>
   geom_boxplot(alpha = 1/4, key_glyph = "rect") +
   scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
   labs(
-    title = "Right-Censored Log-Loss (RCLL) ",
+    title = "Integrated Survival Brier Score (ISBS)",
     subtitle = "Boxplot of aggregated scores across all tasks transformations",
     x = NULL, y = "Model",
     color = NULL, fill = NULL,
-    caption = " Tuning measure: Right-Censored Log Loss (RCLL)"
+    caption = " Tuning measure: Integrated Survival Brier Score (ISBS)"
   ) +
   theme_minimal(base_size = 15) +
   theme(
@@ -202,7 +202,7 @@ p = aggr_temp |>
   )
 
 cli::cli_alert_info("Saving three-way-scaling aggregated boxplot")
-ggsave(p, filename = fs::path(plot_path, "aggr-boxplot-threes-rcll-rcll", ext = "png"), width = 12, height = 5, dpi = 300, bg = "white")
+ggsave(p, filename = fs::path(plot_path, "aggr-boxplot-threes-isbs-isbs", ext = "png"), width = 12, height = 5, dpi = 300, bg = "white")
 
 # Aggregated Calibration plots ----------------------------------------------------------------
 cli::cli_h2("Aggregated Calibration plots")
@@ -211,7 +211,7 @@ cli::cli_h2("Aggregated Calibration plots")
 # aggr_temp[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
 # aggr_temp[, dcalib_label := fifelse(dcalib_p < 0.05, "X", "")]
 
-for (tuned_on in c("harrell_c", "rcll")) {
+for (tuned_on in c("harrell_c", "isbs")) {
 
   p = aggr_scores |>
     dplyr::filter(tuned == tuned_on) |>
@@ -257,7 +257,7 @@ for (tuned_on in c("harrell_c", "rcll")) {
 
 # Alpha Calibration
 
-for (tuned_on in c("harrell_c", "rcll")) {
+for (tuned_on in c("harrell_c", "isbs")) {
   p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
     geom_point() +
     geom_vline(xintercept = 1) +
@@ -305,6 +305,6 @@ for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]
 }
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  p = plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "rcll", dodge = FALSE, flip = TRUE)
-  save_boxplot_plot_scores(p, eval_measure_id = measure_id, tuning_measure_id = "rcll")
+  p = plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
+  save_boxplot_plot_scores(p, eval_measure_id = measure_id, tuning_measure_id = "isbs")
 }

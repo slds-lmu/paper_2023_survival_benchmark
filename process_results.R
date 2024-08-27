@@ -71,10 +71,10 @@ if (FALSE) {
     measures_eval = measures_eval
   )
 
-  # Same for RCLL
+  # Same for ISBS
   collect_results(
     settings,
-    tuning_measure = "rcll",
+    tuning_measure = "isbs",
     measures_eval = measures_eval
   )
 }
@@ -93,7 +93,7 @@ if (FALSE) {
   score_bmr(
     settings,
     measure = msr_tbl[!(erv), measure],
-    tuning_measure = "rcll",
+    tuning_measure = "isbs",
     nthreads = 2
   )
 }
@@ -111,7 +111,7 @@ if (FALSE) {
   aggr_bmr(
     settings,
     measure = measures_eval,
-    tuning_measure = "rcll",
+    tuning_measure = "isbs",
     nthreads = 2
   )
 }
@@ -140,7 +140,7 @@ bma = combine_bma(bma_harrell_c, bma_isbs) |>
 # Coarse manual checks to ensure roughly the correct shape
 checkmate::assert_true(length(unique(bma$task_id)) == 32)
 checkmate::assert_true(length(unique(bma$learner_id)) == 17)
-checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "rcll"))
+checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "isbs"))
 
 # Technically not a bma anymore but useful nonetheless
 saveRDS(bma, file = fs::path(settings$result_path,  "aggr_scores.rds"))
@@ -152,7 +152,7 @@ readr::write_csv(bma, file = fs::path(settings$result_path, "aggr_scores.csv"))
 # This requires score_bmr() above!
 
 scores_harrell_c = combine_scores_aggrs(settings, tuning_measure = "harrell_c", type = "scores")
-scores_isbs      = combine_scores_aggrs(settings, tuning_measure = "rcll",      type = "scores")
+scores_isbs      = combine_scores_aggrs(settings, tuning_measure = "isbs",      type = "scores")
 
 scores = rbind(scores_isbs, scores_harrell_c)
 # Exclude broken SSVM results, rename learners for consistency

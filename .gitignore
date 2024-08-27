@@ -57,3 +57,4 @@ batchtools.conf.R
 resamplings/*rds
 
 Rplots.pdf
+attic/*
