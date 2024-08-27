@@ -83,6 +83,7 @@ tasktab = save_tasktab(tasks)
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
+  cli::cli_h2("Constructing {key} (.encode = '{(.encode)}', .scale = '{(.scale)'")
   learner = lrn(key, ...)
   fallback = ppl("crankcompositor", lrn("surv.kaplan"),
                  method = "mort", overwrite = FALSE, graph_learner = TRUE)
