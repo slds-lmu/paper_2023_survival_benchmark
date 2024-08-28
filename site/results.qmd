@@ -27,7 +27,7 @@ We note:
 
 - the affected learners were particularly slow or memory intensive for large tasks with many observations or a large number of unique time points, where the latter in particular appeared even more relevant than the number of observations.
 - the tasks below are mostly those with many observations and unique time points.
-- `SSVM` is excluded due to persistent technical issues that we could not resolve, giving us no results to evaluate.
+<!-- - `SSVM` is excluded due to persistent technical issues that we could not resolve, giving us no results to evaluate. -->
 
 We therefore consider the errors to be a result of the learners' complexity and the tasks' size.
 

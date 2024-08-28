@@ -46,11 +46,11 @@ trial:
 debug:
     reg_name: "registry_debug"
     fallback:
-      inner: false
-      outer: false
+      inner: true
+      outer: true
     budget:
-      evals_constant: 0
-      evals_multiplier: 1
+      evals_constant: 20
+      evals_multiplier: 0
       runtime_hours: 1
     timeout:
       bl_train: 10

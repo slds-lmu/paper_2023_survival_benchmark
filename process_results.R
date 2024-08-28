@@ -121,8 +121,8 @@ bma_harrell_c  = readRDS(fs::path(settings$result_path, "bma_harrell_c.rds"))
 bma_isbs       = readRDS(fs::path(settings$result_path, "bma_isbs.rds"))
 
 # Excluding SSVM results as there are no usable ones
-bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
-bma_isbs      = remove_results(bma_isbs,      learner_id_exclude = "SSVM")
+# bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
+# bma_isbs      = remove_results(bma_isbs,      learner_id_exclude = "SSVM")
 
 # For consistency and disambiguation of some abbreviations
 bma_harrell_c = rename_learners(bma_harrell_c)
@@ -157,7 +157,7 @@ scores_isbs      = combine_scores_aggrs(settings, tuning_measure = "isbs",      
 scores = rbind(scores_isbs, scores_harrell_c)
 # Exclude broken SSVM results, rename learners for consistency
 scores = scores |>
-  remove_results(learner_id_exclude = "SSVM") |>
+  # remove_results(learner_id_exclude = "SSVM") |>
   rename_learners() |>
   add_learner_groups()
 
