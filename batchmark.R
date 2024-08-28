@@ -236,7 +236,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   callback_archive_logs = callback_batch_tuning("mlr3tuning.archive_logs",
                                           on_eval_before_archive = callback_archive_logs_impl)
 
-  at = AutoTuner$new(
+  at = auto_tuner(
     learner = learner,
     search_space = search_space,
     resampling = resampling,
@@ -456,7 +456,7 @@ for (measure in measures) {
     ,
 
     SSVM = auto_tune(
-      bl("surv.svm", type = "hybrid", gamma.mu = 0, diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
+      bl("surv.svm", type = "hybrid", gamma.mu = c(.1, .1), diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
       surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
       surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
       surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
@@ -475,6 +475,9 @@ for (measure in measures) {
   if (measure$id == "isbs") {
     cli::cli_alert_danger("Skipping RRT for ISBS measure!")
     learners$RRT = NULL
+
+    cli::cli_alert_danger("Skipping SSVM for ISBS measure!")
+    learners$SSVM = NULL
   }
 
   # custom grid design (with instantiated resamplings)
