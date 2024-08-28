@@ -250,8 +250,8 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     # Not needed: benchmark result of inner resamplings
     store_benchmark_result = settings$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
-    store_models = settings$store$models#,
-    #callbacks = list(callback_backup, callback_archive_logs)
+    store_models = settings$store$models,
+    callbacks = list(callback_backup, callback_archive_logs)
   )
 
   # Also define a fallback learner on AutoTuner
