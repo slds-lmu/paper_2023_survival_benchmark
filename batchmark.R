@@ -52,23 +52,31 @@ for (i in seq_along(files)) {
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
-  # Just for runtime estimation: Do simple holdout
-  if (identical(c(settings$outer_folds, settings$inner_folds), c(1, 1))) {
-    folds = 1
-    resampling = rsmp("holdout", ratio = 4/5)$instantiate(task)
-  } else { # normal CV
-    # If there is a stored resampling already, use a reconstructed version using the CSV file
-    if (fs::file_exists(fs::path(here::here("resamplings"), names[[i]], ext = "csv"))) {
-      resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
-    } else {
-      # Otherwise create a new resampling and store it
-      folds = min(floor(task$nrow / settings$min_obs), settings$outer_folds)
-      resampling = rsmp("cv", folds = folds)$instantiate(task)
-      stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$min_obs))
-      save_resampling(resampling, task, resampling_dir = here::here("resamplings"))
-      rm(folds)
-    }
+
+  # If there is a stored resampling already, use a reconstructed version using the CSV file
+  if (fs::file_exists(fs::path(here::here("resamplings"), names[[i]], ext = "csv"))) {
+    resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
+  } else {
+    # Otherwise create a new resampling and store it
+    # Make number of folds dependent on number of observations in smallest tasks
+    folds = min(floor(task$nrow / settings$outer_eval$min_obs), settings$outer_eval$folds)
+
+    cli::cli_alert_warning("Using {.val {settings$outer_eval$resampling}} outer resampling!")
+
+    resampling = switch(
+      settings$outer_eval$resampling,
+      "cv"          = rsmp("cv", folds = folds),
+      "repeated_cv" = rsmp("repeated_cv", folds = folds, repeats = settings$outer_eval$repeats),
+      "holdout"     = rsmp("holdout", ratio = settings$outer_eval$ratio)
+    )
+
+    resampling$instantiate(task)
+
+    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$outer_eval$min_obs))
+    save_resampling(resampling, task, resampling_dir = here::here("resamplings", settings$outer_eval$resampling))
+    rm(folds)
   }
+
 
   tasks[[i]] = task
   resamplings[[i]] = resampling
@@ -171,14 +179,15 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
-  if (settings$inner_folds == 1) {
-    # Runtime testing mode: holdout
-    cli::cli_alert_warning("Using holdout inner resampling!")
-    resampling = rsmp("holdout", ratio = 2/3)
-  } else {
-    # regular mode: (3-fold) CV
-    resampling = rsmp("cv", folds = settings$inner_folds)
-  }
+  cli::cli_alert_warning("Using {.val {settings$tuning$resampling}} inner resampling!")
+
+  resampling = switch(
+    settings$tuning$resampling,
+    "cv"          = rsmp("cv", folds = settings$tuning$folds),
+    "repeated_cv" = rsmp("repeated_cv", folds = settings$tuning$folds, repeats = settings$tuning$repeats),
+    "holdout"     = rsmp("holdout", ratio = settings$tuning$ratio)
+  )
+
 
   # Need to switch tuner/trm since some learners have very small search spaces
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
@@ -293,6 +302,9 @@ measures = list(
 
 # Assemble learners -------------------------------------------------------
 for (measure in measures) {
+
+  cli::cli_h1("Assembling learners for {.val {measure$id}}")
+
   learners = list(
     KM = bl("surv.kaplan")
 
@@ -314,7 +326,6 @@ for (measure in measures) {
     CPH = bl("surv.coxph")
 
     ,
-
 
     GLMN = auto_tune(
       bl("surv.cv_glmnet", .encode = TRUE),
@@ -423,12 +434,12 @@ for (measure in measures) {
               penalty = "optimCoxBoostPenalty",
               maxstepno = 5000,
               # Number of inner tuning folds: analogous to other AutoTuners
-              K = settings$inner_folds,
+              K = settings$tuning$folds,
               .encode = TRUE)
 
     ,
 
-    # XGB/cox needs new breslow estimator
+    # XGB/cox, uses breslow estimator internally via mlr3proba
     XGBCox = auto_tune(
       bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree", .encode = TRUE),
       surv.xgboost.cox.max_depth = p_int(1, 20),
@@ -441,7 +452,7 @@ for (measure in measures) {
 
     ,
 
-    # AFT version needs
+    # AFT version
     # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
       bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree", .encode = TRUE),
@@ -464,6 +475,7 @@ for (measure in measures) {
       surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
       surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
       .extra_trafo = function(x, param_set) {
+        # learners has tuple param gamma.mu = c(x, y), we tune separately and ressamble via trafo
         x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
         x$surv.svm.gamma = x$surv.svm.mu = NULL
         x
@@ -475,10 +487,10 @@ for (measure in measures) {
   imap(learners, function(l, id) l$id = id)
 
   if (measure$id == "isbs") {
-    cli::cli_alert_danger("Skipping RRT for ISBS measure!")
+    cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
     learners$RRT = NULL
 
-    cli::cli_alert_danger("Skipping SSVM for ISBS measure!")
+    cli::cli_alert_warning("Skipping {.val SSVM} for ISBS measure!")
     learners$SSVM = NULL
   }
 
@@ -497,4 +509,4 @@ for (measure in measures) {
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
 
-cli::cli_alert_success("Added {sum(experiments$.count)} experiments to registry \"{settings$reg_name}\"")
+cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {settings$reg_name}}")

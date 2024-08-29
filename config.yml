@@ -4,9 +4,17 @@ default:
   reg_dir: !expr here::here(reg_name)
   result_path: !expr here::here("results", reg_name)
   seed: 123
-  outer_folds: 5
-  inner_folds: 3
-  min_obs: 30
+  outer_eval:
+    resampling: "cv"
+    folds: 5
+    repeats: 5 # Only applicable if resampling is "repeated_cv"
+    ratio: 2/3 # Only applicable if resampling is "holdout"
+    min_obs: 30
+  tuning:
+    resampling: "cv"
+    folds: 3
+    repeats: 5 # Only applicable if resampling is "repeated_cv"
+    ratio: 2/3 # Only applicable if resampling is "holdout"
   fallback:
     inner: true
     outer: true
@@ -18,7 +26,7 @@ default:
     evals_constant: 0
     evals_multiplier: 50
     # Time limit for tuning process, run_time terminator, will be converted to seconds
-    runtime_hours: !expr 6 * 24
+    runtime_hours: 144 # 6 * 24
   timeout:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
@@ -28,33 +36,44 @@ default:
 
 # For local disambiguation on other hosts
 beartooth:
-    reg_name: "registry_beartooth"
+  reg_name: "registry_beartooth"
 
 # Lower budget, just checking everything works, close to "production"
 trial:
-    reg_name: "registry_trial"
-    fallback:
-      inner: true
-      outer: true
-    store:
-      tuning_instance: true
-    budget:
-      evals_constant: 5
-      evals_multiplier: 2
-      runtime_hours: 6
+  reg_name: "registry_trial"
+  fallback:
+    inner: true
+    outer: true
+  outer_eval:
+    resampling: "repeated_cv"
+    folds: 5
+    repeats: 2 # Only applicable if resampling is "repeated_cv"
+    ratio: 2/3 # Only applicable if resampling is "holdout"
+    min_obs: 30
+  tuning:
+    resampling: "repeated_cv"
+    folds: 3
+    repeats: 2 # Only applicable if resampling is "repeated_cv"
+    ratio: 2/3 # Only applicable if resampling is "holdout"
+  store:
+    tuning_instance: true
+  budget:
+    evals_constant: 5
+    evals_multiplier: 2
+    runtime_hours: 6
 
 debug:
-    reg_name: "registry_debug"
-    fallback:
-      inner: true
-      outer: true
-    budget:
-      evals_constant: 20
-      evals_multiplier: 0
-      runtime_hours: 1
-    timeout:
-      bl_train: 10
-      bl_predict: 4
-      at_train: !expr 12 # 156 hours of 168 max
-      at_predict: !expr 11 # leave some headroom for job
+  reg_name: "registry_debug"
+  fallback:
+    inner: true
+    outer: true
+  budget:
+    evals_constant: 20
+    evals_multiplier: 0
+    runtime_hours: 1
+  timeout:
+    bl_train: 10
+    bl_predict: 4
+    at_train: !expr 12 # 156 hours of 168 max
+    at_predict: !expr 11 # leave some headroom for job
 
