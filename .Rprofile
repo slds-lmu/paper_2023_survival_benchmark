@@ -46,6 +46,7 @@ if (FALSE) {
   library("xgboost")
   library("survivalsvm")
   library("pseudo")
+  library("DiceKriging")
   library("actuar") # For surv.parametric
 
   library("mlr3batchmark") # on CRAN now with v0.1.0
