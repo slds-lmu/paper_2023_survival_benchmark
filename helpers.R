@@ -143,8 +143,8 @@ callback_backup_impl = function(callback, context) {
     callback$state$tuning_measure,
     callback$state$learner_id,
     task_id,
-    as.integer(Sys.time()), # unix epoch for good measure and sortability
-    iter_hash
+    iter_hash,
+    as.integer(Sys.time()) # unix epoch for good measure and sortability
   )
   # Assemble path based on directory and filename, store in state just in case.
   callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
