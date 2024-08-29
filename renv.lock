@@ -79,6 +79,16 @@
       ],
       "Hash": "f3de4a4878163a4629a528bbcc6e655d"
     },
+    "DiceKriging": {
+      "Package": "DiceKriging",
+      "Version": "1.6.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "methods"
+      ],
+      "Hash": "033765b87e28c58cb80809cc668a9623"
+    },
     "Formula": {
       "Package": "Formula",
       "Version": "1.2-5",
@@ -2647,6 +2657,17 @@
         "withr"
       ],
       "Hash": "9465d3bc6ec44eeaa52527ac2cba4020"
+    },
+    "rgenoud": {
+      "Package": "rgenoud",
+      "Version": "5.9-0.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "utils"
+      ],
+      "Hash": "8cc5a5e8d451afe5d05a3e7c184c6491"
     },
     "riskRegression": {
       "Package": "riskRegression",
