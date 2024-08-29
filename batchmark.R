@@ -86,8 +86,9 @@ tasktab = save_tasktab(tasks)
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   cli::cli_h2("Constructing {key}")
   learner = lrn(key, ...)
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"),
-                 method = "mort", overwrite = FALSE, graph_learner = TRUE)
+  # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
+  #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
+  fallback = lrn("surv.kaplan")
 
   # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
@@ -255,8 +256,9 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   )
 
   # Also define a fallback learner on AutoTuner
-  fallback = ppl("crankcompositor", lrn("surv.kaplan"),
-                 method = "mort", overwrite = FALSE, graph_learner = TRUE)
+  # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
+  #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
+  fallback = lrn("surv.kaplan")
 
   # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
   fallback$predict_type = "crank"
