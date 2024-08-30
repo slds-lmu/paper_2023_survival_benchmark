@@ -24,7 +24,7 @@ library("mlr3learners")
 library("mlr3pipelines")
 library("mlr3tuning")
 library("mlr3mbo")
-library("batchtools")
+library("batchtools", warn.conflicts = FALSE)
 library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
@@ -32,11 +32,11 @@ requireNamespace("mlr3extralearners")
 reg_dir = settings$reg_dir
 
 if (dir.exists(reg_dir)) {
-  cli::cli_alert_danger("Deleting existing registry \"{settings$reg_name}\"!")
+  cli::cli_alert_danger("Deleting existing registry {.val {settings$reg_name}}!")
   unlink(reg_dir, recursive = TRUE)
 }
 
-cli::cli_alert_info("Creating new registry \"{settings$reg_name}\"!")
+cli::cli_alert_info("Creating new registry {.val {settings$reg_name}}!")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
   packages = c("mlr3", "mlr3proba"), source = here::here("helpers.R"))
 
@@ -52,16 +52,22 @@ for (i in seq_along(files)) {
   task = as_task_surv(data, target = "time", event = "status", id = names[i])
   task$set_col_roles("status", add_to = "stratum")
 
+  cli::cli_alert_warning("Using {.val {settings$outer_eval$resampling}} outer resampling!")
+  resampling_dir = here::here("resamplings", settings$outer_eval$resampling)
+  resampling_csv = fs::path(resampling_dir, names[[i]], ext = "csv")
 
   # If there is a stored resampling already, use a reconstructed version using the CSV file
-  if (fs::file_exists(fs::path(here::here("resamplings"), names[[i]], ext = "csv"))) {
-    resampling = create_resampling_from_csv(task, resampling_dir = here::here("resamplings"))
+  if (fs::file_exists(resampling_csv)) {
+
+    cli::cli_alert_info("Recreating resampling from {.file {fs::path_rel(resampling_csv)}}")
+    resampling = create_resampling_from_csv(task, resampling_dir = resampling_dir)
+
   } else {
     # Otherwise create a new resampling and store it
+    cli::cli_alert_info("Creating new resampling for {.val {names[[i]]}}")
+
     # Make number of folds dependent on number of observations in smallest tasks
     folds = min(floor(task$nrow / settings$outer_eval$min_obs), settings$outer_eval$folds)
-
-    cli::cli_alert_warning("Using {.val {settings$outer_eval$resampling}} outer resampling!")
 
     resampling = switch(
       settings$outer_eval$resampling,
@@ -73,7 +79,7 @@ for (i in seq_along(files)) {
     resampling$instantiate(task)
 
     stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$outer_eval$min_obs))
-    save_resampling(resampling, task, resampling_dir = here::here("resamplings", settings$outer_eval$resampling))
+    save_resampling(resampling, task, resampling_dir = resampling_dir)
     rm(folds)
   }
 
@@ -92,7 +98,7 @@ tasktab = save_tasktab(tasks)
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
-  cli::cli_h2("Constructing {key}")
+  cli::cli_h2("Constructing {.val {key}}")
   learner = lrn(key, ...)
   # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
   #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
@@ -485,6 +491,8 @@ for (measure in measures) {
   )
 
   imap(learners, function(l, id) l$id = id)
+
+  cli::cli_h2("Cleaning up and adding to registry")
 
   if (measure$id == "isbs") {
     cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")

@@ -16,6 +16,8 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
   stopifnot(resampling$is_instantiated)
 
   file_csv <- fs::path(resampling_dir, task$id, ext = "csv")
+  cli::cli_alert_info("Saving resampling to {.file {fs::path_rel(file_csv)}}")
+
   write.csv(resampling$instance, file_csv, row.names = FALSE)
 }
 
