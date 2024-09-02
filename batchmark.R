@@ -232,8 +232,11 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     tuner = tnr("mbo")
   }
 
-  callback_backup = callback_batch_tuning("mlr3tuning.backup_archive",
-                                    on_optimization_end = callback_backup_impl)
+  callback_backup = callback_batch_tuning(
+    id = "mlr3tuning.backup_archive",
+    label = "Store tunign archives as RDS in registry",
+    on_optimization_end = callback_backup_impl
+  )
 
   # assemble learner_id
   known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
@@ -249,8 +252,11 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
   callback_backup$state$learner_id = learner_id
   callback_backup$state$tuning_measure = measure$id
 
-  callback_archive_logs = callback_batch_tuning("mlr3tuning.archive_logs",
-                                          on_eval_before_archive = callback_archive_logs_impl)
+  callback_archive_logs = callback_batch_tuning(
+    id = "mlr3tuning.archive_logs",
+    label = "Add tuning logs to archive to detect fallback usage",
+    on_eval_before_archive = callback_archive_logs_impl
+  )
 
   at = auto_tuner(
     learner = learner,
