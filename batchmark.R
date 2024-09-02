@@ -505,7 +505,15 @@ for (measure in measures) {
   # custom grid design (with instantiated resamplings)
   grid = cross_join(list(task = tasks, learner = learners), sorted = FALSE)
   grid$resampling = rep(resamplings, each = length(learners))
-  ids = batchmark(grid, store_models = settings$store$models)
+  # If we want to keep the AutoTuner's tuning instance we have to set store_models
+  # here, which counter intuitively is different from the `store_models` option in auto_tuner()
+  # Similarly we also set it to TRUE if we want to store the models in general
+  ids = batchmark(
+    design =  grid,
+    store_models = settings$store$tuning_instance | settings$store$models
+  )
+  # Tagging with the measure is used to disambiguate jobs with identical learner/task but different
+  # tuning measure. Not sure if "cleaner" solution available?
   addJobTags(ids, measure$id)
 
   # also tag jobs which have been skipped because they are not wrapped

@@ -45,7 +45,7 @@ trial:
     inner: true
     outer: true
   outer_eval:
-    resampling: "repeated_cv"
+    resampling: "cv"
     folds: 5
     repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 2/3 # Only applicable if resampling is "holdout"
