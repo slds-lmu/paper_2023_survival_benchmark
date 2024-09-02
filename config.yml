@@ -8,13 +8,13 @@ default:
     resampling: "cv"
     folds: 5
     repeats: 5 # Only applicable if resampling is "repeated_cv"
-    ratio: 2/3 # Only applicable if resampling is "holdout"
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
     resampling: "cv"
     folds: 3
     repeats: 5 # Only applicable if resampling is "repeated_cv"
-    ratio: 2/3 # Only applicable if resampling is "holdout"
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
   fallback:
     inner: true
     outer: true
@@ -31,8 +31,8 @@ default:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
     bl_predict: 4
-    at_train: !expr 156 # of 168 max
-    at_predict: !expr 12 # leave some headroom for job
+    at_train: 156 # of 168 max
+    at_predict: 12 # leave some headroom for job
 
 # For local disambiguation on other hosts
 beartooth:
@@ -48,13 +48,13 @@ trial:
     resampling: "cv"
     folds: 5
     repeats: 2 # Only applicable if resampling is "repeated_cv"
-    ratio: 2/3 # Only applicable if resampling is "holdout"
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
     resampling: "repeated_cv"
     folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
-    ratio: 2/3 # Only applicable if resampling is "holdout"
+    ratio: 0.6666667 # Only applicable if resampling is "holdout"
   store:
     tuning_instance: true
   budget:
@@ -66,7 +66,7 @@ debug:
   reg_name: "registry_debug"
   fallback:
     inner: true
-    outer: true
+    outer: false
   budget:
     evals_constant: 20
     evals_multiplier: 0
@@ -74,6 +74,6 @@ debug:
   timeout:
     bl_train: 10
     bl_predict: 4
-    at_train: !expr 12 # 156 hours of 168 max
-    at_predict: !expr 11 # leave some headroom for job
+    at_train: 12
+    at_predict: 11
 
