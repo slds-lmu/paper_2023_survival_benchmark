@@ -461,9 +461,14 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "1.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "1.0.1.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "bbotk",
+      "RemoteRef": "main",
+      "RemoteSha": "42f417825c4eb4d986ccf67bbcdcb550e85d507c",
       "Requirements": [
         "R",
         "R6",
@@ -474,7 +479,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "e6af9db7df50c2a121be237171e5c0c9"
+      "Hash": "f778d71b3e05388f3401ea45e6868865"
     },
     "bdsmatrix": {
       "Package": "bdsmatrix",
