@@ -22,7 +22,7 @@ try(data.table::setDTthreads(1))
 options(
   datatable.print.class = TRUE,
   datatable.print.keys = TRUE,
-  batchtools.progress = FALSE
+  batchtools.progress = TRUE
 )
 
 # Load script with helpers here to ensure its contents are available always
