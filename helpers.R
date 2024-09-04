@@ -230,7 +230,7 @@ callback_backup_impl = function(callback, context) {
 
   # Construct a file name that is hopefully fully unambiguous
   callback$state$file_name = sprintf(
-    "%s__%s__%s__%i__%s.rds",
+    "%s__%s__%s__%s__%i.rds",
     callback$state$tuning_measure,
     callback$state$learner_id,
     task_id,
