@@ -13,18 +13,11 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
   ensure_directory(resampling_dir)
   mlr3::assert_resampling(resampling, instantiated = TRUE)
   mlr3::assert_task(task, task_type = "surv")
-  stopifnot(resampling$is_instantiated)
 
   file_csv <- fs::path(resampling_dir, task$id, ext = "csv")
   cli::cli_alert_info("Saving resampling to {.file {fs::path_rel(file_csv)}}")
 
-  if (inherits(resampling$instance, "list")) {
-    resampling_tab = data.table::rbindlist(mlr3misc::imap(resampling$instance, \(i, set) {
-      data.table::data.table(row_id = i, set = set)
-    }))
-  } else {
-    resampling_tab = resampling$instance
-  }
+  resampling_tab = as.data.table(resampling)
 
   write.csv(resampling_tab, file_csv, row.names = FALSE)
 }
@@ -51,105 +44,21 @@ create_resampling_from_csv = function(task, resampling_dir = here::here("resampl
   checkmate::assert_file_exists(resampling_csv_path)
 
   # Read stored resampling, sort by row_id for easier assignment of folds in row_id order
-  resampling_csv = data.table::fread(resampling_csv_path)
-  resampling_csv = resampling_csv[order(row_id), ]
+  resampling_csv = data.table::fread(resampling_csv_path, key = c("set", "iteration"))
 
-  if ("rep" %in% names(resampling_csv) & ncol(resampling_csv) == 3) {
-    custom_rsmp = recreate_repeated_cv(task, resampling_csv)
-  } else if ("fold" %in% names(resampling_csv) & ncol(resampling_csv) == 2) {
-    custom_rsmp = recreate_cv(task, resampling_csv)
-  } else if ("set" %in% names(resampling_csv) & ncol(resampling_csv) == 2) {
-    custom_rsmp = recreate_holdout(task, resampling_csv)
-  } else {
-    stop("Unknown resampling format")
-  }
+  checkmate::assert_data_table(resampling_csv, min.rows = 1L, col.names = "unique", any.missing = FALSE)
+  checkmate::assert_names(names(resampling_csv), permutation.of = c("set", "iteration", "row_id"))
+  checkmate::assert_set_equal(unique(resampling_csv$set), c("train", "test"))
+  checkmate::assert_integerish(resampling_csv$iteration, lower = 1L, any.missing = FALSE)
+  checkmate::assert_integerish(resampling_csv$row_id, any.missing = FALSE)
 
-  custom_rsmp
-}
-
-#' Reconstruct a Resampling object from stored resampling CSV
-#'
-#' @param task Passed to `ResamplingCustom`'s `$instantiate()` method.
-#' @param resampling_tab A `data.table` with columns `row_id`, `rep`, `fold`,
-#'   presumable produced from a `ResamplingRepeatedCV`'s `$instance` slot.
-#'
-#' @return Object of class `ResamplingCustom` which produces the same `train_set(i)` and
-#' `$test_set(i)` as the original `ResamplingRepeatedCV`.
-recreate_repeated_cv = function(task, resampling_tab) {
-  checkmate::assert_data_table(resampling_tab, any.missing = FALSE, ncols = 3)
-
-  iterations = max(resampling_tab$rep) * max(resampling_tab$fold)
-
-  sets = list(
-    train_set = vector(mode = "list", length = iterations),
-    test_set = vector(mode = "list", length = iterations)
+  row_id = NULL
+  resampling = ResamplingCustom$new()
+  resampling$instance = list(
+    train_sets = resampling_csv[list("train"), list(ids = list(row_id)), by = "iteration"]$ids,
+    test_sets = resampling_csv[list("test"), list(ids = list(row_id)), by = "iteration"]$ids
   )
-
-  i_set = 1
-
-  for (i_rep in unique(resampling_tab$rep)) {
-    for (i_fold in sort(unique(resampling_tab[rep == i_rep, fold]))) {
-      # cli::cli_text("rep {i_rep}, fold {i_fold}")
-
-      resampling_tab[rep == i_rep & fold == i_fold, ]
-      resampling_tab[rep == i_rep & fold != i_fold, ]
-
-      sets$train_set[[i_set]] = sort(resampling_tab[rep == i_rep & fold != i_fold, row_id])
-      sets$test_set[[i_set]] = sort(resampling_tab[rep == i_rep & fold == i_fold, row_id])
-
-      i_set = i_set + 1
-    }
-  }
-
-  rsmp_custom = rsmp("custom")
-  rsmp_custom$instantiate(task = task, train_sets = sets$train_set, test_sets = sets$test_set)
-  rsmp_custom
-}
-
-#' Reconstruct a Resampling object from stored resampling CSV
-#'
-#' @param task Passed to `ResamplingCustomCV`'s `$instantiate()` method.
-#' @param resampling_tab A `data.table` with columns `row_id` and `fold`,
-#'   presumable produced from a `ResamplingCV`'s `$instance` slot.
-#'
-#' @return Object of class `ResamplingCustomCV` which produces the same `train_set(i)` and
-#' `$test_set(i)` as the original `ResamplingCV`.
-recreate_cv = function(task, resampling_tab) {
-  checkmate::assert_data_table(resampling_tab, any.missing = FALSE, ncols = 2)
-
-  folds = resampling_tab$fold[order(resampling_tab$row_id)]
-  custom_cv = rsmp("custom_cv")
-  custom_cv$instantiate(task, f = factor(folds))
-
-  # Sanity check that custom CV is identical to stored resampling
-  # resampling_reconstructed = data.table::rbindlist(lapply(names(custom_cv$instance), \(i) {
-  #   data.frame(row_id = custom_cv$instance[[i]], fold = as.integer(i))
-  # }))
-  # resampling_reconstructed = resampling_reconstructed[order(row_id), ]
-  # stopifnot(all.equal(resampling_tab, resampling_reconstructed))
-
-  custom_cv
-}
-
-#' Reconstruct a Resampling object from stored resampling CSV
-#'
-#' @param task Passed to `ResamplingCustom`'s `$instantiate()` method.
-#' @param resampling_tab A `data.table` with columns `row_id` and `set`,
-#'   presumable produced from a `ResamplingHoldout`'s `$instance` slot and saved via `save_resampling()`.
-#'
-#' @return Object of class `ResamplingCustom` which produces the same `train_set(i)` and
-#' `$test_set(i)` as the original `ResamplingHoldout`.
-recreate_holdout = function(task, resampling_tab) {
-  checkmate::assert_data_table(resampling_tab, any.missing = FALSE, ncols = 2)
-
-  sets = list(
-    train_set = list(resampling_tab[set == "train", row_id]),
-    test_set  = list(resampling_tab[set == "test", row_id])
-  )
-
-  rsmp_custom = rsmp("custom")
-  rsmp_custom$instantiate(task = task, train_sets = sets$train_set, test_sets = sets$test_set)
-  rsmp_custom
+  resampling
 }
 
 #' Store additional data fro tasks
@@ -248,7 +157,6 @@ callback_backup_impl = function(callback, context) {
 #' Archives get serialized to disk and can later be recovered to find
 #' error messages which would otherwise be obscured by using the fallback learners.
 callback_archive_logs_impl = function(callback, context) {
-
   states = context$benchmark_result$.__enclos_env__$private$.data$learners(states = TRUE)
 
   logs = data.table::rbindlist(lapply(states$learner, \(x) {
@@ -256,9 +164,12 @@ callback_archive_logs_impl = function(callback, context) {
   }))
 
   # Only attach log if there's something to attach
-  # if (any(sapply(logs$learner_log, nrow) > 0)) {
-  context$aggregated_performance[, log := list(logs)]
-  # }
+  if (nrow(logs) > 0) {
+    context$aggregated_performance[, log := list(logs)]
+  } else {
+    # Possibly safer to add column with missing here to avoid issues with later rbind etc?
+    # context$aggregated_performance[, log := NA]
+  }
 
 }
 
