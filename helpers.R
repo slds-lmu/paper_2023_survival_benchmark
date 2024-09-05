@@ -1,4 +1,4 @@
-cli::cli_alert_info("Loading helpers.R")
+# cli::cli_alert_info("Loading helpers.R")
 
 library(data.table)
 # Helpers run pre-benchmark -------------------------------------------------------------------
@@ -284,9 +284,9 @@ measures_tbl = function() {
     # "surv.brier",       "risbs_erv",    "Scoring Rule",
 
     "surv.dcalib",      "dcalib",       "Calibration",
-    "surv.calib_alpha", "caliba_ratio", "Calibration",
+    "surv.calib_alpha", "caliba_ratio", "Calibration"
     # Unused, kept for completeness
-    "surv.calib_alpha", "caliba_diff",  "Calibration"
+    # "surv.calib_alpha", "caliba_diff",  "Calibration"
     # "surv.calib_alpha", "caliba",
   )
 
