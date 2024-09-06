@@ -580,14 +580,14 @@ reassemble_archives = function(
     cli::cli_progress_update(id = pb)
     archive = readRDS(file)
 
-    if (!keep_logs) {
+    if (!keep_logs & "log" %in% names(archive)) {
       # Temp fix because objects became to large
       archive[, log := NULL]
     } else {
       # Including the fallback log at all was a mistake
-      mlr3misc::walk(archive$log, \(log) {
-        mlr3misc::remove_named(log, "fallback_log")
-      })
+      # mlr3misc::walk(archive$log, \(log) {
+      #   mlr3misc::remove_named(log, "fallback_log")
+      # })
     }
 
     components = fs::path_file(file) |>
