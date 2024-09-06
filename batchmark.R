@@ -169,6 +169,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
                               predict = settings$timeout$bl_predict * 3600)
   }
 
+  # Used for XGBoost learners to enable internal tuning / early stopping using test set
+  if ("validation" %in% graph_learner$properties) {
+    set_validate(graph_learner, "test")
+  }
+
   graph_learner
 }
 
@@ -453,11 +458,13 @@ for (measure in measures) {
 
     # XGB/cox, uses breslow estimator internally via mlr3proba
     XGBCox = auto_tune(
-      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree", .encode = TRUE),
+      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
+         early_stopping_rounds = 50,
+         .encode = TRUE),
       surv.xgboost.cox.max_depth = p_int(1, 20),
       surv.xgboost.cox.subsample = p_dbl(0, 1),
       surv.xgboost.cox.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.cox.nrounds = p_int(10, 5000),
+      surv.xgboost.cox.nrounds = p_int(upper = 5000, tags = "internal_tuning", aggr = function(x) as.integer(mean(unlist(x)))),
       surv.xgboost.cox.eta = p_dbl(0, 1),
       surv.xgboost.cox.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
@@ -467,11 +474,13 @@ for (measure in measures) {
     # AFT version
     # - Tune distributions (as per JZ)
     XGBAFT = auto_tune(
-      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree", .encode = TRUE),
+      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
+         early_stopping_rounds = 50,
+         .encode = TRUE),
       surv.xgboost.aft.max_depth = p_int(1, 20),
       surv.xgboost.aft.subsample = p_dbl(0, 1),
       surv.xgboost.aft.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.aft.nrounds = p_int(10, 5000),
+      surv.xgboost.aft.nrounds = p_int(upper = 5000, tags = "internal_tuning", aggr = function(x) as.integer(mean(unlist(x)))),
       surv.xgboost.aft.eta = p_dbl(0, 1),
       surv.xgboost.aft.grow_policy = p_fct(c("depthwise", "lossguide")),
       surv.xgboost.aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
