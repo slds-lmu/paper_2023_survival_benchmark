@@ -156,6 +156,7 @@ callback_backup_impl = function(callback, context) {
 #' Callback to find the learner logs and append them to the tuning archive.
 #' Archives get serialized to disk and can later be recovered to find
 #' error messages which would otherwise be obscured by using the fallback learners.
+#' @return Nothing, but modifies the `context$aggregated_performance` object.
 callback_archive_logs_impl = function(callback, context) {
   states = context$benchmark_result$.__enclos_env__$private$.data$learners(states = TRUE)
 
@@ -166,9 +167,11 @@ callback_archive_logs_impl = function(callback, context) {
   # Only attach log if there's something to attach
   if (nrow(logs) > 0) {
     context$aggregated_performance[, log := list(logs)]
-  } else {
-    # Possibly safer to add column with missing here to avoid issues with later rbind etc?
-    # context$aggregated_performance[, log := NA]
+  }
+
+  # For XGBoost's internally tuned nrounds param, we pry it out of the list-column to simplify things
+  if (hasName(context$aggregated_performance, "internal_tuned_values")) {
+    context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
   }
 
 }
