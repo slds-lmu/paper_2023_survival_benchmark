@@ -45,8 +45,8 @@ trial:
     inner: true
     outer: true
   outer_eval:
-    resampling: "cv"
-    folds: 5
+    resampling: "repeated_cv"
+    folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
@@ -56,10 +56,10 @@ trial:
     repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
   store:
-    tuning_instance: true
+    tuning_instance: false
   budget:
-    evals_constant: 5
-    evals_multiplier: 2
+    evals_constant: 0
+    evals_multiplier: 50
     runtime_hours: 6
 
 debug:
@@ -68,7 +68,7 @@ debug:
     inner: true
     outer: false
   budget:
-    evals_constant: 20
+    evals_constant: 1
     evals_multiplier: 0
     runtime_hours: 1
   timeout:
@@ -77,3 +77,11 @@ debug:
     at_train: 12
     at_predict: 11
 
+debug_simple:
+  reg_name: "registry_debug_simple"
+  fallback:
+    inner: false
+    outer: false
+  budget:
+    evals_constant: 1
+    evals_multiplier: 0
