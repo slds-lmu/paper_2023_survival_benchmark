@@ -496,7 +496,8 @@ for (measure in measures) {
       surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
       surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
       .extra_trafo = function(x, param_set) {
-        # learners has tuple param gamma.mu = c(x, y), we tune separately and ressamble via trafo
+        # learner has tuple param gamma.mu = c(x, y)
+        # we tune separately and reassemble via trafo
         x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
         x$surv.svm.gamma = x$surv.svm.mu = NULL
         x
