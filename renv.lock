@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.4.0",
+    "Version": "4.4.1",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -461,14 +461,9 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "1.0.1.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
-      "RemoteRepo": "bbotk",
-      "RemoteRef": "main",
-      "RemoteSha": "42f417825c4eb4d986ccf67bbcdcb550e85d507c",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -479,7 +474,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "f778d71b3e05388f3401ea45e6868865"
+      "Hash": "f567c7620152fc38663112b851a5c761"
     },
     "bdsmatrix": {
       "Package": "bdsmatrix",
@@ -746,14 +741,14 @@
     },
     "data.table": {
       "Package": "data.table",
-      "Version": "1.15.0",
+      "Version": "1.16.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods"
       ],
-      "Hash": "cfbbb4aed6e78cd45f17123a9ec9981a"
+      "Hash": "fb24e05d4a91d8b1c7ff8e284bde834a"
     },
     "data.tree": {
       "Package": "data.tree",
@@ -1970,7 +1965,7 @@
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
-      "Version": "1.0.0",
+      "Version": "1.0.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1984,7 +1979,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "1e725cff61c253b0e109c0ca2cf527b4"
+      "Hash": "0c2889eadfe973ae2f4ceaef03f76487"
     },
     "mlr3viz": {
       "Package": "mlr3viz",
