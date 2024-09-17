@@ -7,13 +7,13 @@ default:
   outer_eval:
     resampling: "cv"
     folds: 5
-    repeats: 5 # Only applicable if resampling is "repeated_cv"
+    repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
     resampling: "cv"
     folds: 3
-    repeats: 5 # Only applicable if resampling is "repeated_cv"
+    repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
   fallback:
     inner: true
@@ -48,18 +48,16 @@ trial:
     resampling: "repeated_cv"
     folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
-    ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
     resampling: "repeated_cv"
     folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
-    ratio: 0.6666667 # Only applicable if resampling is "holdout"
   store:
     tuning_instance: false
   budget:
-    evals_constant: 0
-    evals_multiplier: 50
+    evals_constant: 5
+    evals_multiplier: 2
     runtime_hours: 6
 
 debug:
@@ -67,10 +65,16 @@ debug:
   fallback:
     inner: true
     outer: false
+  outer_eval:
+    resampling: "holdout"
+  tuning:
+    resampling: "holdout"
   budget:
     evals_constant: 1
     evals_multiplier: 0
-    runtime_hours: 1
+    runtime_hours: 6
+  store:
+    tuning_instance: true
   timeout:
     bl_train: 10
     bl_predict: 4
