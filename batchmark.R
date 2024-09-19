@@ -4,7 +4,7 @@ source(here::here("helpers.R"))
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
 config_profile = Sys.getenv('R_CONFIG_ACTIVE', 'default')
-cli::cli_alert_info("Loading config \"{config_profile}\"")
+cli::cli_alert_info("Loading config {.val {config_profile}}")
 settings = config::get()
 
 # Packages ----------------------------------------------------------------
@@ -31,10 +31,19 @@ requireNamespace("mlr3extralearners")
 # Create Registry ---------------------------------------------------------
 reg_dir = settings$reg_dir
 
-if (dir.exists(reg_dir)) {
-  cli::cli_alert_danger("Deleting existing registry {.val {settings$reg_name}}!")
-  unlink(reg_dir, recursive = TRUE)
+if (!fs::dir_exists(fs::path_dir(settings$reg_dir))) {
+  fs::dir_create(fs::path_dir(settings$reg_dir))
 }
+
+if (fs::dir_exists(reg_dir)) {
+  if (config::is_active("production")) {
+    cli::cli_abort("Refusing to delete existing registry {.file {fs::path_rel(reg_dir)}} in production mode!")
+  } else {
+    cli::cli_alert_warning("Deleting registry at {.file {fs::path_rel(reg_dir)}}")
+    fs::dir_delete(reg_dir)
+  }
+}
+
 
 cli::cli_alert_info("Creating new registry {.val {settings$reg_name}}!")
 reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
@@ -42,7 +51,7 @@ reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
 
 # Create Tasks and corresponding instantiated Resamplings -----------------
 set.seed(settings$seed)
-files = dir(here::here("datasets"), pattern = "\\.rds$", full.names = TRUE)
+files = fs::dir_ls(here::here("datasets"), regexp = "\\.rds$")
 names = fs::path_ext_remove(fs::path_file(files))
 tasks = resamplings = mlr3misc::named_list(names)
 
@@ -89,7 +98,9 @@ for (i in seq_along(files)) {
   rm(data, task, resampling)
 }
 
-tasktab = save_tasktab(tasks)
+# Only write task metadata table in production-like context, not when debugging
+if (config::is_active("production") | config::is_active("trial"))
+  tasktab = save_tasktab(tasks)
 
 # Base learner setup ------------------------------------------------------
 #' Base learner with fallback + encapsulation, preprocessing pipeline and composition
@@ -102,11 +113,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   learner = lrn(key, ...)
   # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
   #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
-  fallback = lrn("surv.kaplan")
+  # fallback = lrn("surv.kaplan")
 
   # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
-  fallback$predict_type = "crank"
-  learner$predict_type = "crank"
+  # fallback$predict_type = "crank"
+  # learner$predict_type = "crank"
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -150,7 +161,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 
   graph_learner$predict_type = "crank"
   if (settings$fallback$inner) {
-    graph_learner$fallback = fallback
+    graph_learner$fallback = lrn("surv.kaplan")
     graph_learner$encapsulate = c(train = "callr", predict = "callr")
   } else {
     cli::cli_alert_info("Not applying fallback learner for inner GraphLearner")
@@ -171,6 +182,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 
   # Used for XGBoost learners to enable internal tuning / early stopping using test set
   if ("validation" %in% graph_learner$properties) {
+    cli::cli_alert_info("Setting validation field to {.val test}")
     set_validate(graph_learner, "test")
   }
 
@@ -184,7 +196,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 #' @param ... Parameter search space, passed as `ps(...)`.
 #' @param use_grid_search (`FALSE`) FOr learners with small categorical search spaces, it's more
 #'   efficient to use grid search rather than to random search over e.g. 10 elements with 50 iters.
-auto_tune = function(learner, ..., use_grid_search = FALSE) {
+wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   learner = as_learner(learner)
   search_space = ps(...)
   if (is.null(search_space$trafo))
@@ -212,8 +224,6 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
                   k = settings$budget$evals_multiplier)
 
   if (use_grid_search) {
-    cli::cli_alert_info("Using grid search for tuning")
-
     # Use resolution that is normally greater than number of unique HPCs
     # For factors etc. this is fine, and for RRT (integer, 46 vals) this is also fine.
     # Also allows shorter runs during testing with small budget
@@ -229,6 +239,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
       grid_resolution = settings$budget$evals_multiplier
     }
 
+    cli::cli_alert_info("Using grid search for tuning with resolution {.val {grid_resolution}}")
     tuner = tnr("grid_search", resolution = grid_resolution)
     terminator = trm_runtime
   } else {
@@ -243,7 +254,7 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     on_optimization_end = callback_backup_impl
   )
 
-  # assemble learner_id
+  # Check learner_id, used for disambiguation of individually saved tuning archives
   known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
                      "surv.cv_glmnet", "surv.penalized", "surv.parametric", "surv.flexible",
                      "surv.rfsrc", "surv.ranger", "surv.cforest", "surv.aorsf", "surv.rpart",
@@ -281,19 +292,16 @@ auto_tune = function(learner, ..., use_grid_search = FALSE) {
     callbacks = list(callback_backup, callback_archive_logs)
   )
 
-  # Also define a fallback learner on AutoTuner
-  # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
-  #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
-  fallback = lrn("surv.kaplan")
-
-  # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
-  fallback$predict_type = "crank"
-  at$predict_type = "crank"
+  # fallback = lrn("surv.kaplan")
+  #
+  # # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
+  # fallback$predict_type = "crank"
+  # at$predict_type = "crank"
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (settings$fallback$outer) {
-    at$fallback = fallback
+    at$fallback = lrn("surv.kaplan")
     at$encapsulate = c(train = "callr", predict = "callr")
   } else {
     cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
@@ -333,7 +341,7 @@ for (measure in measures) {
 
     # survivalmodels::akritas
     # https://raphaels1.github.io/survivalmodels/reference/akritas.html
-    AK = auto_tune(
+    AK = wrap_auto_tune(
       bl("surv.akritas"),
       surv.akritas.lambda = p_dbl(0, 1)
     )
@@ -344,14 +352,14 @@ for (measure in measures) {
 
     ,
 
-    GLMN = auto_tune(
+    GLMN = wrap_auto_tune(
       bl("surv.cv_glmnet", .encode = TRUE),
       surv.cv_glmnet.alpha = p_dbl(0, 1)
     )
 
     ,
 
-    Pen = auto_tune(
+    Pen = wrap_auto_tune(
       bl("surv.penalized"),
       surv.penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
       surv.penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
@@ -363,7 +371,7 @@ for (measure in measures) {
     # AFT version needs
     # - to pass .form to bl() for distrcompositor
     # - Tune distributions within range of what's sensible/discussed with RS
-    Par = auto_tune(
+    Par = wrap_auto_tune(
       bl("surv.parametric", form = "aft", discrete = TRUE),
       surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
@@ -372,7 +380,7 @@ for (measure in measures) {
     ,
 
     # Use grid search due to small + finite search space
-    Flex = auto_tune(
+    Flex = wrap_auto_tune(
       bl("surv.flexible"),
       surv.flexible.k = p_int(1, 10),
       use_grid_search = TRUE
@@ -380,7 +388,7 @@ for (measure in measures) {
 
     ,
 
-    RFSRC = auto_tune(
+    RFSRC = wrap_auto_tune(
       # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
       # is set to a non-default value and we ensure both use 150 time points for evaluation
       bl("surv.rfsrc", ntree = 1000, ntime = 150),
@@ -393,7 +401,7 @@ for (measure in measures) {
 
     ,
 
-    RAN = auto_tune(
+    RAN = wrap_auto_tune(
       # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
       bl("surv.ranger", num.trees = 1000, time.interest = 150),
       surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
@@ -405,7 +413,7 @@ for (measure in measures) {
 
     ,
 
-    CIF = auto_tune(
+    CIF = wrap_auto_tune(
       bl("surv.cforest", ntree = 1000),
       surv.cforest.mtryratio = p_dbl(0, 1),
       surv.cforest.minsplit = p_int(1, 50),
@@ -416,7 +424,7 @@ for (measure in measures) {
 
     ,
 
-    ORSF = auto_tune(
+    ORSF = wrap_auto_tune(
       bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
       surv.aorsf.mtry_ratio = p_dbl(0, 1),
       surv.aorsf.leaf_min_events = p_int(5, 50),
@@ -428,7 +436,7 @@ for (measure in measures) {
 
     ,
 
-    RRT = auto_tune(
+    RRT = wrap_auto_tune(
       bl("surv.rpart"),
       surv.rpart.minbucket = p_int(5, 50),
       use_grid_search = TRUE
@@ -436,7 +444,7 @@ for (measure in measures) {
 
     ,
 
-    MBST = auto_tune(
+    MBST = wrap_auto_tune(
       bl("surv.mboost"),
       surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),
@@ -457,7 +465,7 @@ for (measure in measures) {
     ,
 
     # XGB/cox, uses breslow estimator internally via mlr3proba
-    XGBCox = auto_tune(
+    XGBCox = wrap_auto_tune(
       bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
@@ -473,7 +481,7 @@ for (measure in measures) {
 
     # AFT version
     # - Tune distributions (as per JZ)
-    XGBAFT = auto_tune(
+    XGBAFT = wrap_auto_tune(
       bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
@@ -489,7 +497,7 @@ for (measure in measures) {
 
     ,
 
-    SSVM = auto_tune(
+    SSVM = wrap_auto_tune(
       bl("surv.svm", type = "hybrid", gamma.mu = c(.1, .1), diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
       surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
       surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),

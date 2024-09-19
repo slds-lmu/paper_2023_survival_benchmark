@@ -1,17 +1,17 @@
 # Default config: Should become production mode
 default:
-  reg_name: "registry"
-  reg_dir: !expr here::here(reg_name)
+  reg_name: "default"
+  reg_dir: !expr here::here("registries", reg_name)
   result_path: !expr here::here("results", reg_name)
   seed: 123
   outer_eval:
-    resampling: "cv"
-    folds: 5
+    resampling: "repeated_cv"
+    folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
-    resampling: "cv"
+    resampling: "repeated_cv"
     folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
@@ -34,13 +34,13 @@ default:
     at_train: 156 # of 168 max
     at_predict: 12 # leave some headroom for job
 
-# For local disambiguation on other hosts
-beartooth:
-  reg_name: "registry_beartooth"
+# To allow special treatment of the real benchmark run
+production:
+  reg_name: "production"
 
 # Lower budget, just checking everything works, close to "production"
 trial:
-  reg_name: "registry_trial"
+  reg_name: "trial"
   fallback:
     inner: true
     outer: true
@@ -53,15 +53,12 @@ trial:
     resampling: "repeated_cv"
     folds: 3
     repeats: 2 # Only applicable if resampling is "repeated_cv"
-  store:
-    tuning_instance: false
   budget:
-    evals_constant: 5
-    evals_multiplier: 2
-    runtime_hours: 6
+    evals_constant: 0
+    evals_multiplier: 50
 
 debug:
-  reg_name: "registry_debug"
+  reg_name: "debug"
   fallback:
     inner: true
     outer: false
@@ -82,7 +79,7 @@ debug:
     at_predict: 11
 
 debug_simple:
-  reg_name: "registry_debug_simple"
+  reg_name: "debug_simple"
   fallback:
     inner: false
     outer: false
