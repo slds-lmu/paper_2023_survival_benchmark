@@ -201,8 +201,8 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
     MBST = list(learner = "surv.mboost", params = 4),
     CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
-    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 6, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 8, .form = "aft"),
+    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 5, .form = "ph"),
+    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 7, .form = "aft"),
     SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
   ) |>
     lapply(data.table::as.data.table) |>
