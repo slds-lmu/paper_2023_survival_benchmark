@@ -235,6 +235,13 @@
       ],
       "Hash": "470851b6d5d0ac559e9d01bb352b4021"
     },
+    "RApiSerialize": {
+      "Package": "RApiSerialize",
+      "Version": "0.1.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "12cbd319d03b55edaa195695a155bb30"
+    },
     "RColorBrewer": {
       "Package": "RColorBrewer",
       "Version": "1.1-3",
@@ -282,6 +289,16 @@
         "utils"
       ],
       "Hash": "acb0a5bf38490f26ab8661b467f4f53a"
+    },
+    "RcppParallel": {
+      "Package": "RcppParallel",
+      "Version": "5.1.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "f38a72a419b91faac0ce5d9eee04c120"
     },
     "RcppTOML": {
       "Package": "RcppTOML",
@@ -786,6 +803,22 @@
         "stats"
       ],
       "Hash": "860e6724c3bcdf194e8e043b97ab6f6e"
+    },
+    "dendextend": {
+      "Package": "dendextend",
+      "Version": "1.17.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "datasets",
+        "ggplot2",
+        "magrittr",
+        "stats",
+        "utils",
+        "viridis"
+      ],
+      "Hash": "043fafb791081fc553f29021bd0a9a01"
     },
     "diagram": {
       "Package": "diagram",
@@ -1758,7 +1791,7 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.20.2",
+      "Version": "0.21.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1779,7 +1812,7 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "2e5225a210cef7155a2899a4d16f1cf2"
+      "Hash": "f7414ff6a1b860122bb75c1b74c24cbb"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
@@ -1831,8 +1864,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
-      "RemoteRef": "main",
-      "RemoteSha": "98d790f18e34adaf5551da8e6fb5bbc3c42d67c2",
+      "RemoteRef": "surv_updates",
+      "RemoteSha": "d0c06b0b132accd3d8ca83bbd79ff5fbdb646dd7",
       "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6, ropensci/aorsf, mlr-org/mlr3",
       "Requirements": [
         "R",
@@ -1844,7 +1877,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "f80c57ce6e899ea0c0d3649c2647cda4"
+      "Hash": "6db7d22a64e273f8ad91c95aafd61ef8"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
@@ -1884,21 +1917,16 @@
     },
     "mlr3measures": {
       "Package": "mlr3measures",
-      "Version": "0.6.0.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
-      "RemoteRepo": "mlr3measures",
-      "RemoteRef": "main",
-      "RemoteSha": "41c0b52e2b10ca01e74057a83736e0c3b080e3cf",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "PRROC",
         "R",
         "checkmate",
         "mlr3misc"
       ],
-      "Hash": "bfe54f3526f03ef200176c2a9ec03642"
+      "Hash": "17820d010dc2ca452b2c40361b62b732"
     },
     "mlr3misc": {
       "Package": "mlr3misc",
@@ -1915,6 +1943,31 @@
         "methods"
       ],
       "Hash": "465c3a7a04caf09a431bef1b9c5ec89b"
+    },
+    "mlr3oml": {
+      "Package": "mlr3oml",
+      "Version": "0.10.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6",
+        "backports",
+        "bit64",
+        "checkmate",
+        "curl",
+        "data.table",
+        "jsonlite",
+        "lgr",
+        "methods",
+        "mlr3",
+        "mlr3misc",
+        "paradox",
+        "stringi",
+        "uuid",
+        "withr"
+      ],
+      "Hash": "5a16e979056b6d32a6469dd245b8e422"
     },
     "mlr3pipelines": {
       "Package": "mlr3pipelines",
@@ -1997,6 +2050,21 @@
         "viridis"
       ],
       "Hash": "1cfe66ec9b62f470e554ff16087491b2"
+    },
+    "modeldata": {
+      "Package": "modeldata",
+      "Version": "1.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "MASS",
+        "R",
+        "dplyr",
+        "purrr",
+        "rlang",
+        "tibble"
+      ],
+      "Hash": "a88b3cef9f6a41e075163e767ad8c8fa"
     },
     "modeltools": {
       "Package": "modeltools",
@@ -2485,6 +2553,20 @@
       ],
       "Hash": "1cba04a4e9414bdefc9dcaa99649a8dc"
     },
+    "qs": {
+      "Package": "qs",
+      "Version": "0.26.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "BH",
+        "R",
+        "RApiSerialize",
+        "Rcpp",
+        "stringfish"
+      ],
+      "Hash": "e372cf3f70e3c7a768ec5ea14f0f3edd"
+    },
     "quadprog": {
       "Package": "quadprog",
       "Version": "1.5-8",
@@ -2597,6 +2679,22 @@
       ],
       "Hash": "b5047343b3825f37ad9d3b5d89aa1078"
     },
+    "relations": {
+      "Package": "relations",
+      "Version": "0.6-13",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "cluster",
+        "grDevices",
+        "graphics",
+        "sets",
+        "slam",
+        "stats"
+      ],
+      "Hash": "5b298128a355b7366d9c5e76c9552508"
+    },
     "relsurv": {
       "Package": "relsurv",
       "Version": "2.2-9",
@@ -2622,28 +2720,6 @@
         "utils"
       ],
       "Hash": "397b7b2a265bc5a7a06852524dabae20"
-    },
-    "reprex": {
-      "Package": "reprex",
-      "Version": "2.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "callr",
-        "cli",
-        "clipr",
-        "fs",
-        "glue",
-        "knitr",
-        "lifecycle",
-        "rlang",
-        "rmarkdown",
-        "rstudioapi",
-        "utils",
-        "withr"
-      ],
-      "Hash": "97b1d5361a24d9fb588db7afe3e5bcbf"
     },
     "reshape2": {
       "Package": "reshape2",
@@ -2938,6 +3014,20 @@
       ],
       "Hash": "819facf7dcf2fea85e25142900ae176e"
     },
+    "sets": {
+      "Package": "sets",
+      "Version": "1.0-25",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "graphics",
+        "stats",
+        "utils"
+      ],
+      "Hash": "cf00a3c090a54979990af2e89506a1d3"
+    },
     "shape": {
       "Package": "shape",
       "Version": "1.4.6",
@@ -2970,6 +3060,17 @@
         "survival"
       ],
       "Hash": "cc359ae289e5ac8485c7d6e154195794"
+    },
+    "slam": {
+      "Package": "slam",
+      "Version": "0.1-52",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "stats"
+      ],
+      "Hash": "b794b05d64b1ea017695449c410d33a9"
     },
     "smcure": {
       "Package": "smcure",
@@ -3020,6 +3121,18 @@
         "stats"
       ],
       "Hash": "26e158d12052c279bdd4ba858b80fb1f"
+    },
+    "stringfish": {
+      "Package": "stringfish",
+      "Version": "0.16.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "RcppParallel"
+      ],
+      "Hash": "b7eb79470319ae71d4b5ed9cd7bf7294"
     },
     "stringi": {
       "Package": "stringi",
