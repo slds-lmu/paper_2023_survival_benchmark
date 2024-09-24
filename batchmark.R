@@ -26,6 +26,7 @@ library("mlr3tuning")
 library("mlr3mbo")
 library("batchtools", warn.conflicts = FALSE)
 library("mlr3batchmark")
+# renv::install("mlr-org/mlr3extralearners@surv_updates")
 requireNamespace("mlr3extralearners")
 
 # Create Registry ---------------------------------------------------------
@@ -161,8 +162,12 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 
   graph_learner$predict_type = "crank"
   if (settings$fallback$inner) {
-    graph_learner$fallback = lrn("surv.kaplan")
-    graph_learner$encapsulate = c(train = "callr", predict = "callr")
+    if (packageVersion("mlr3") > package_version("0.20.2")) {
+      suppressWarnings(graph_learner$encapsulate("callr", lrn("surv.kaplan")))
+    } else {
+      graph_learner$fallback = lrn("surv.kaplan")
+      graph_learner$encapsulate = c(train = "callr", predict = "callr")
+    }
   } else {
     cli::cli_alert_info("Not applying fallback learner for inner GraphLearner")
   }
@@ -301,8 +306,13 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (settings$fallback$outer) {
-    at$fallback = lrn("surv.kaplan")
-    at$encapsulate = c(train = "callr", predict = "callr")
+    if (packageVersion("mlr3") > package_version("0.20.2")) {
+      suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
+    } else {
+      at$fallback = lrn("surv.kaplan")
+      at$encapsulate = c(train = "callr", predict = "callr")
+    }
+
   } else {
     cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
   }
@@ -498,18 +508,24 @@ for (measure in measures) {
     ,
 
     SSVM = wrap_auto_tune(
-      bl("surv.svm", type = "hybrid", gamma.mu = c(.1, .1), diff.meth = "makediff3", .encode = TRUE, .scale = TRUE),
+      bl("surv.svm", type = "hybrid",
+         diff.meth = "makediff3",
+         # Set initial values but unused due to tuning
+         gamma = 1, mu = 0,
+         .encode = TRUE, .scale = TRUE),
       surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
       surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
       surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
-      surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x),
-      .extra_trafo = function(x, param_set) {
-        # learner has tuple param gamma.mu = c(x, y)
-        # we tune separately and reassemble via trafo
-        x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
-        x$surv.svm.gamma = x$surv.svm.mu = NULL
-        x
-      }
+      surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x)#,
+      # Trafo no longer need when https://github.com/mlr-org/mlr3extralearners/pull/385
+      # is merged
+      # .extra_trafo = function(x, param_set) {
+      #   # learner has tuple param gamma.mu = c(x, y)
+      #   # we tune separately and reassemble via trafo
+      #   x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
+      #   x$surv.svm.gamma = x$surv.svm.mu = NULL
+      #   x
+      # }
     )
 
   )
