@@ -865,7 +865,6 @@
       "RemoteRepo": "distr6",
       "RemoteRef": "main",
       "RemoteSha": "a642cd312c51fba7ede7336036f907dbe279889e",
-      "Remotes": "xoopR/set6, xoopR/param6",
       "Requirements": [
         "R6",
         "Rcpp",
@@ -1791,9 +1790,14 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.21.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.21.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3",
+      "RemoteRef": "main",
+      "RemoteSha": "fdcc133f2f50ea3d81f71a4c2eb9bdb5fdb72b20",
       "Requirements": [
         "R",
         "R6",
@@ -1812,7 +1816,7 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "f7414ff6a1b860122bb75c1b74c24cbb"
+      "Hash": "9844560cefed98f372cf551630a3c436"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
@@ -1866,7 +1870,6 @@
       "RemoteRepo": "mlr3extralearners",
       "RemoteRef": "surv_updates",
       "RemoteSha": "d0c06b0b132accd3d8ca83bbd79ff5fbdb646dd7",
-      "Remotes": "binderh/CoxBoost, catboost/catboost/catboost/R-package, mlr-org/mlr3proba, RaphaelS1/survivalmodels, PlantedML/randomPlantedForest, xoopR/distr6, xoopR/param6, xoopR/set6, ropensci/aorsf, mlr-org/mlr3",
       "Requirements": [
         "R",
         "R6",
@@ -1897,9 +1900,14 @@
     },
     "mlr3mbo": {
       "Package": "mlr3mbo",
-      "Version": "0.2.4",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.2.4.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3mbo",
+      "RemoteRef": "main",
+      "RemoteSha": "438bc3cc67d35a539a631981affd0e27a3f0004b",
       "Requirements": [
         "R",
         "R6",
@@ -1913,7 +1921,7 @@
         "paradox",
         "spacefillr"
       ],
-      "Hash": "5e2ed0348e0ad399dae4e198cddc5256"
+      "Hash": "47a464a018c9262d06eb3a9881e65878"
     },
     "mlr3measures": {
       "Package": "mlr3measures",
@@ -1991,15 +1999,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.6.7",
+      "Version": "0.6.8",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "737498ef4ec4a95f0322baaee242c47995975cf3",
-      "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
+      "RemoteSha": "a3318b71970d49435b4a1c42ff342f478076a804",
       "Requirements": [
         "R",
         "R6",
@@ -2014,7 +2021,7 @@
         "paradox",
         "survival"
       ],
-      "Hash": "33f397fd7fe1b43c77763af3cd5e336f"
+      "Hash": "546d53b4e937edeb56decdb092ae9e51"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
@@ -2284,7 +2291,6 @@
       "RemoteRepo": "param6",
       "RemoteRef": "main",
       "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
-      "Remotes": "xoopR/set6",
       "Requirements": [
         "R6",
         "checkmate",
@@ -2594,6 +2600,17 @@
         "survival"
       ],
       "Hash": "1bbc97f7d637ab3917c514a69047b2c1"
+    },
+    "ragg": {
+      "Package": "ragg",
+      "Version": "1.3.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "systemfonts",
+        "textshaping"
+      ],
+      "Hash": "e3087db406e079a8a2fd87f413918ed3"
     },
     "randomForestSRC": {
       "Package": "randomForestSRC",
@@ -3190,7 +3207,6 @@
       "RemoteRepo": "survivalmodels",
       "RemoteRef": "main",
       "RemoteSha": "e7af58c7d8aec9f253bfed9f3814308ba2952e43",
-      "Remotes": "xoopR/distr6, xoopR/param6, xoopR/set6",
       "Requirements": [
         "Rcpp"
       ],
@@ -3242,6 +3258,19 @@
         "lifecycle"
       ],
       "Hash": "213b6b8ed5afbf934843e6c3b090d418"
+    },
+    "textshaping": {
+      "Package": "textshaping",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "https://packagemanager.posit.co/cran/latest",
+      "Requirements": [
+        "R",
+        "cpp11",
+        "lifecycle",
+        "systemfonts"
+      ],
+      "Hash": "5142f8bc78ed3d819d26461b641627ce"
     },
     "tibble": {
       "Package": "tibble",
