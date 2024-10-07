@@ -162,7 +162,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 
   graph_learner$predict_type = "crank"
   if (settings$fallback$inner) {
-    if (packageVersion("mlr3") > package_version("0.20.2")) {
+    if (packageVersion("mlr3") >= "0.21.0") {
       suppressWarnings(graph_learner$encapsulate("callr", lrn("surv.kaplan")))
     } else {
       graph_learner$fallback = lrn("surv.kaplan")
@@ -306,7 +306,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (settings$fallback$outer) {
-    if (packageVersion("mlr3") > package_version("0.20.2")) {
+    if (packageVersion("mlr3") >= "0.21.0") {
       suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
     } else {
       at$fallback = lrn("surv.kaplan")
