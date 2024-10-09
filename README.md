@@ -2,6 +2,7 @@
 
 > L. Burk, J. Zobolas, B. Bischl, A. Bender, M. N. Wright, and R. Sonabend, “A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data.” arXiv, Jun. 06, 2024. doi: [10.48550/arXiv.2406.04098](https://arxiv.org/abs/2406.04098).
 
+:warning: A note on versioning: This repository is actively in development. To view its state at the time of submission of the arXiv preprint, please [browse this tag on GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark/tree/f6c36cd43f1705e3612ff4f47472327a3d29ebe8)
 
 ## Setup
 
