@@ -16,7 +16,6 @@ if (FALSE) {
   # Require 0.1.2 due to split of internal functions and extralearners update
   # renv::install("aorsf", prompt = FALSE)
   renv::install("ropensci/aorsf", prompt = FALSE)
-  
   renv::install("rpart", prompt = FALSE)
   renv::install("mboost", prompt = FALSE)
   renv::install("xgboost", prompt = FALSE)
@@ -26,9 +25,12 @@ if (FALSE) {
   renv::install("binderh/CoxBoost", prompt = FALSE)
 
   renv::install("mlr3", prompt = FALSE)
+  #renv::install("mlr-org/mlr3", prompt = FALSE)
+
   renv::install("mlr3learners", prompt = FALSE)
   renv::install("mlr3pipelines", prompt = FALSE)
   renv::install("mlr3tuning", prompt = FALSE)
+  renv::install("mlr3mbo", prompt = FALSE)
   renv::install("batchtools", prompt = FALSE)
 
   # renv::install("mlr3batchmark", prompt = FALSE) # on CRAN now with v0.1.0

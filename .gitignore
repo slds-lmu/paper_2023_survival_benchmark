@@ -1,8 +1,9 @@
-registry/*
-registry-*
 registry_*
+registries/*
+old_reg
 tmp/*
 *html
+upload-*
 # attic/
 ^tmp-*
 
@@ -57,3 +58,4 @@ batchtools.conf.R
 resamplings/*rds
 
 Rplots.pdf
+attic/*

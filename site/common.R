@@ -26,10 +26,10 @@ tasktab = load_tasktab()
 
 # bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
-bma_rcll      = readRDS(fs::path(result_path, "bma_clean_rcll.rds"))
+bma_isbs      = readRDS(fs::path(result_path, "bma_clean_isbs.rds"))
 
 bmrtab_harrell_c = readRDS(fs::path(result_path, "bmrtab_harrell_c.rds"))
-bmrtab_rcll = readRDS(fs::path(result_path, "bmrtab_rcll.rds"))
+bmrtab_isbs = readRDS(fs::path(result_path, "bmrtab_isbs.rds"))
 
 aggr_scores = readRDS(fs::path(result_path, "aggr_scores.rds"))
 scores = readRDS(fs::path(result_path, "scores.rds"))

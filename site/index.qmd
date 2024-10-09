@@ -13,7 +13,7 @@ All code is available on [GitHub](https://github.com/slds-lmu/paper_2023_surviva
 Results can be downloaded from [the web](https://projects.lukasburk.de/survival_benchmark/results/).
 The files required to produce primary results are given in @tbl-files-results.
 
-Folders `harrell_c` and `rcll` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.  
+Folders `harrell_c` and `isbs` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.  
 Similarly, files starting with `bmr_` (`BenchmarkResult`) or `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
 See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.

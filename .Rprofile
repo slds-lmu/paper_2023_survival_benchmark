@@ -22,7 +22,7 @@ try(data.table::setDTthreads(1))
 options(
   datatable.print.class = TRUE,
   datatable.print.keys = TRUE,
-  batchtools.progress = FALSE
+  batchtools.progress = TRUE
 )
 
 # Load script with helpers here to ensure its contents are available always
@@ -46,6 +46,8 @@ if (FALSE) {
   library("xgboost")
   library("survivalsvm")
   library("pseudo")
+  library("DiceKriging")
+  library("rgenoud")
   library("actuar") # For surv.parametric
 
   library("mlr3batchmark") # on CRAN now with v0.1.0

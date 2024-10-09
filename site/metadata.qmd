@@ -23,12 +23,12 @@ Unfortunately, the identifiers used under the hood do not directly correspond to
 | `uno_c`              | `surv.cindex`      | Uno's C                                                      |
 | `rcll`               | `surv.rcll`        | Right-Censored Log Loss (RCLL)                               |
 | `rcll_erv`           | `surv.rcll`        | Right-Censored Log Loss (RCLL) [ERV]                         |
-| `intlogloss`         | `surv.intlogloss`  | Re-weighted Integrated Survival Log-Likelihood (RISLL)       |
-| `intlogloss_erv`     | `surv.intlogloss`  | Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV] |
-| `logloss`            | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL)                   |
-| `logloss_erv`        | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL) [ERV]             |
-| `brier_improper`     | `surv.brier`       | Integrated Survival Brier Score (ISBS)                       |
-| `brier_improper_erv` | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]                 |
+| `risll`         | `surv.risll`  | Re-weighted Integrated Survival Log-Likelihood (RISLL)       |
+| `risll_erv`     | `surv.risll`  | Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV] |
+| `rnll`            | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL)                   |
+| `rnll_erv`        | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL) [ERV]             |
+| `isbs`     | `surv.brier`       | Integrated Survival Brier Score (ISBS)                       |
+| `isbs_erv` | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]                 |
 | `dcalib`             | `surv.dcalib`      | D-Calibration                                                |
 | `caliba_ratio`       | `surv.calib_alpha` | Van Houwelingen's Alpha                                      |
 

@@ -1,4 +1,4 @@
-cli::cli_alert_info("Loading helpers.R")
+# cli::cli_alert_info("Loading helpers.R")
 
 library(data.table)
 # Helpers run pre-benchmark -------------------------------------------------------------------
@@ -13,10 +13,13 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
   ensure_directory(resampling_dir)
   mlr3::assert_resampling(resampling, instantiated = TRUE)
   mlr3::assert_task(task, task_type = "surv")
-  stopifnot(resampling$is_instantiated)
 
   file_csv <- fs::path(resampling_dir, task$id, ext = "csv")
-  write.csv(resampling$instance, file_csv, row.names = FALSE)
+  cli::cli_alert_info("Saving resampling to {.file {fs::path_rel(file_csv)}}")
+
+  resampling_tab = as.data.table(resampling)
+
+  write.csv(resampling_tab, file_csv, row.names = FALSE)
 }
 
 #' Reconstruct a Resampling object from stored resampling CSV
@@ -41,25 +44,22 @@ create_resampling_from_csv = function(task, resampling_dir = here::here("resampl
   checkmate::assert_file_exists(resampling_csv_path)
 
   # Read stored resampling, sort by row_id for easier assignment of folds in row_id order
-  resampling_csv = as.data.table(read.csv(resampling_csv_path))
-  resampling_csv = resampling_csv[order(resampling_csv$row_id), ]
+  resampling_csv = data.table::fread(resampling_csv_path, key = c("set", "iteration"))
 
-  # Create new custom CV, using stored folds
-  custom_cv = rsmp("custom_cv")
-  folds = resampling_csv$fold[order(resampling_csv$row_id)]
-  custom_cv$instantiate(task, f = factor(folds))
+  checkmate::assert_data_table(resampling_csv, min.rows = 1L, col.names = "unique", any.missing = FALSE)
+  checkmate::assert_names(names(resampling_csv), permutation.of = c("set", "iteration", "row_id"))
+  checkmate::assert_set_equal(unique(resampling_csv$set), c("train", "test"))
+  checkmate::assert_integerish(resampling_csv$iteration, lower = 1L, any.missing = FALSE)
+  checkmate::assert_integerish(resampling_csv$row_id, any.missing = FALSE)
 
-  # Sanity check that custom CV is identical to stored resampling
-  resampling_reconstructed = data.table::rbindlist(lapply(names(custom_cv$instance), \(i) {
-    data.frame(row_id = custom_cv$instance[[i]], fold = as.integer(i))
-  }))
-  resampling_reconstructed = resampling_reconstructed[order(resampling_reconstructed$row_id), ]
-
-  stopifnot(all.equal(resampling_csv, resampling_reconstructed))
-
-  custom_cv
+  row_id = NULL
+  resampling = ResamplingCustom$new()
+  resampling$instance = list(
+    train_sets = resampling_csv[list("train"), list(ids = list(row_id)), by = "iteration"]$ids,
+    test_sets = resampling_csv[list("test"), list(ids = list(row_id)), by = "iteration"]$ids
+  )
+  resampling
 }
-
 
 #' Store additional data fro tasks
 #'
@@ -95,7 +95,7 @@ save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
       dim = task$nrow * length(task$feature_names),
       n_uniq_t = length(unique(task$data(cols = "time")[[1]])),
       events = sum(task$data(cols = "status")[[1]] == 1),
-      censprop = mean(task$data(cols = "status")[[1]] == 0)
+      censprop = round(mean(task$data(cols = "status")[[1]] == 0), 4)
     )
   }))
   tasktab[, dimrank := data.table::frank(dim)]
@@ -139,12 +139,12 @@ callback_backup_impl = function(callback, context) {
 
   # Construct a file name that is hopefully fully unambiguous
   callback$state$file_name = sprintf(
-    "%s__%s__%s__%i__%s.rds",
+    "%s__%s__%s__%s__%i.rds",
     callback$state$tuning_measure,
     callback$state$learner_id,
     task_id,
-    as.integer(Sys.time()), # unix epoch for good measure and sortability
-    iter_hash
+    iter_hash,
+    as.integer(Sys.time()) # unix epoch for good measure and sortability
   )
   # Assemble path based on directory and filename, store in state just in case.
   callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
@@ -156,8 +156,8 @@ callback_backup_impl = function(callback, context) {
 #' Callback to find the learner logs and append them to the tuning archive.
 #' Archives get serialized to disk and can later be recovered to find
 #' error messages which would otherwise be obscured by using the fallback learners.
+#' @return Nothing, but modifies the `context$aggregated_performance` object.
 callback_archive_logs_impl = function(callback, context) {
-
   states = context$benchmark_result$.__enclos_env__$private$.data$learners(states = TRUE)
 
   logs = data.table::rbindlist(lapply(states$learner, \(x) {
@@ -165,9 +165,14 @@ callback_archive_logs_impl = function(callback, context) {
   }))
 
   # Only attach log if there's something to attach
-  # if (any(sapply(logs$learner_log, nrow) > 0)) {
-  context$aggregated_performance[, log := list(logs)]
-  # }
+  if (nrow(logs) > 0) {
+    context$aggregated_performance[, log := list(logs)]
+  }
+
+  # For XGBoost's internally tuned nrounds param, we pry it out of the list-column to simplify things
+  if (hasName(context$aggregated_performance, "internal_tuned_values")) {
+    context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
+  }
 
 }
 
@@ -196,8 +201,8 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
     MBST = list(learner = "surv.mboost", params = 4),
     CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
-    XGBCox = list(learner = "surv.xgboost", .encode = TRUE, params = 6, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost", .encode = TRUE, params = 8, .form = "aft"),
+    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 5, .form = "ph"),
+    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 7, .form = "aft"),
     SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
   ) |>
     lapply(data.table::as.data.table) |>
@@ -229,28 +234,28 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
-    msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
-    msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
+    # msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
+    # msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
 
     # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
-    msr("surv.logloss",     id = "logloss",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
-    msr("surv.logloss",     id = "logloss_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
+    msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
+    msr("surv.logloss",     id = "rnll_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
 
-    msr("surv.intlogloss",  id = "intlogloss",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
-    msr("surv.intlogloss",  id = "intlogloss_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
+    msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
+    msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
-    msr("surv.brier",        id = "brier_improper",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
-    msr("surv.brier",        id = "brier_improper_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
+    msr("surv.brier",        id = "isbs",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+    msr("surv.brier",        id = "isbs_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     # Unsued, kept for completeness
-    msr("surv.brier",        id = "brier_proper",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
-    msr("surv.brier",        id = "brier_proper_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
+    # msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
+    # msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha"),
+    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
     # Unsued, kept for completeness
-    msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
+    # msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
@@ -262,29 +267,29 @@ get_measures_eval = function() {
 measures_tbl = function() {
   msr_tbl = mlr3misc::rowwise_table(
     ~mlr_id,            ~id,           ~type,
-    "surv.cindex",      "harrell_c",   "Discrimination",
-    "surv.cindex",      "uno_c",       "Discrimination",
+    "surv.cindex",      "harrell_c",    "Discrimination",
+    "surv.cindex",      "uno_c",        "Discrimination",
 
-    "surv.rcll",        "rcll",       "Scoring Rule",
-    "surv.rcll",        "rcll_erv",   "Scoring Rule",
+    # "surv.rcll",        "rcll",         "Scoring Rule",
+    # "surv.rcll",        "rcll_erv",     "Scoring Rule",
 
-    "surv.intlogloss",  "intlogloss",     "Scoring Rule",
-    "surv.intlogloss",  "intlogloss_erv", "Scoring Rule",
+    "surv.risll",       "risll",        "Scoring Rule",
+    "surv.risll",       "risll_erv",    "Scoring Rule",
 
-    "surv.logloss",     "logloss",     "Scoring Rule",
-    "surv.logloss",     "logloss_erv", "Scoring Rule",
+    "surv.logloss",     "rnll",         "Scoring Rule",
+    "surv.logloss",     "rnll_erv",     "Scoring Rule",
 
-    "surv.brier",       "brier_improper",      "Scoring Rule",
-    "surv.brier",       "brier_improper_erv",  "Scoring Rule",
+    "surv.brier",       "isbs",         "Scoring Rule",
+    "surv.brier",       "isbs_erv",     "Scoring Rule",
 
     # Unsued, kept for completeness
-    "surv.brier",       "brier_proper",     "Scoring Rule",
-    "surv.brier",       "brier_proper_erv", "Scoring Rule",
+    # "surv.brier",       "risbs",        "Scoring Rule",
+    # "surv.brier",       "risbs_erv",    "Scoring Rule",
 
-    "surv.dcalib",      "dcalib",        "Calibration",
-    "surv.calib_alpha", "caliba_ratio",  "Calibration",
+    "surv.dcalib",      "dcalib",       "Calibration",
+    "surv.calib_alpha", "caliba_ratio", "Calibration"
     # Unused, kept for completeness
-    "surv.calib_alpha", "caliba_diff",   "Calibration"
+    # "surv.calib_alpha", "caliba_diff",  "Calibration"
     # "surv.calib_alpha", "caliba",
   )
 
@@ -420,7 +425,7 @@ collect_results = function(
 #'   **Does not work on Windows or in RStudio**
 
 #' @examples
-#' score_bmr(config::get(), "harrell_c",  msr("surv.rcll"))
+#' score_bmr(config::get(), "harrell_c",  msr("surv.isbs"))
 score_bmr = function(
     settings = config::get(),
     tuning_measure = "harrell_c",
@@ -481,7 +486,7 @@ score_bmr = function(
 #' @export
 #'
 #' @examples
-#' aggr_bmr(config::get(), "harrell_c", msr("surv.rcll"))
+#' aggr_bmr(config::get(), "harrell_c", msr("surv.isbs"))
 aggr_bmr = function(
     settings = config::get(),
     tuning_measure = "harrell_c",
@@ -567,25 +572,25 @@ reassemble_archives = function(
   learners = load_lrntab()
   learners = learners[, c("learner_id", "learner_id_long")]
 
-  learners$learner_id_long = dplyr::case_when(
-    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-    .default = learners$learner_id_long
-  )
+  # learners$learner_id_long = dplyr::case_when(
+  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+  #   .default = learners$learner_id_long
+  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     cli::cli_progress_update(id = pb)
     archive = readRDS(file)
 
-    if (!keep_logs) {
+    if (!keep_logs & "log" %in% names(archive)) {
       # Temp fix because objects became to large
       archive[, log := NULL]
     } else {
       # Including the fallback log at all was a mistake
-      mlr3misc::walk(archive$log, \(log) {
-        mlr3misc::remove_named(log, "fallback_log")
-      })
+      # mlr3misc::walk(archive$log, \(log) {
+      #   mlr3misc::remove_named(log, "fallback_log")
+      # })
     }
 
     components = fs::path_file(file) |>
@@ -633,11 +638,11 @@ convert_archives_csv = function(settings = config::get()) {
   learners = load_lrntab()
   learners = learners[, c("learner_id", "learner_id_long")]
 
-  learners$learner_id_long = dplyr::case_when(
-    learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-    learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-    .default = learners$learner_id_long
-  )
+  # learners$learner_id_long = dplyr::case_when(
+  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
+  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
+  #   .default = learners$learner_id_long
+  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   purrr::walk(tuning_files, \(file) {
@@ -793,11 +798,11 @@ rename_learners = function(x) {
   )
 
   xdat[, learner_id := dplyr::case_when(
-    learner_id == "AF" ~ "AK",    # Akritas
-    learner_id == "NL" ~ "NA",    # Nelson-Aalen
+    # learner_id == "AF" ~ "AK",    # Akritas
+    # learner_id == "NL" ~ "NA",    # Nelson-Aalen
     learner_id == "Par" ~ "AFT",  # AFT more standard than "parametric"
-    learner_id == "MBO" ~ "MBST", # mboost
-    learner_id == "GLM" ~ "GLMN", # glmnet
+    # learner_id == "MBO" ~ "MBST", # mboost
+    # learner_id == "GLM" ~ "GLMN", # glmnet
     TRUE ~ learner_id
   )]
 
@@ -810,15 +815,15 @@ rename_learners = function(x) {
   xdat[]
 }
 
-combine_bma = function(bma_harrell_c, bma_rcll) {
+combine_bma = function(bma_harrell_c, bma_isbs) {
   checkmate::assert_class(bma_harrell_c, classes = "BenchmarkAggr")
-  checkmate::assert_class(bma_rcll, classes = "BenchmarkAggr")
+  checkmate::assert_class(bma_isbs, classes = "BenchmarkAggr")
 
   bma1 = data.table::copy(bma_harrell_c$data)
   bma1[, tuned := "harrell_c"]
 
-  bma2 = data.table::copy(bma_rcll$data)
-  bma2[, tuned := "rcll"]
+  bma2 = data.table::copy(bma_isbs$data)
+  bma2[, tuned := "isbs"]
 
   data.table::rbindlist(list(bma1, bma2))
 }
@@ -845,7 +850,7 @@ add_learner_groups = function(x) {
 
 #' Collect individually `$score()`'d or `$aggregate()`'d results from `settings$result_path`.
 #' @param settings `list()` of settings, `config::get()`
-#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"rcll"`
+#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"isbs"`
 #' @param type `character(1)`, one of `"scores"` or `"aggr"`
 combine_scores_aggrs = function(
     settings = config::get(),
@@ -853,7 +858,7 @@ combine_scores_aggrs = function(
     type = "scores"
 ) {
 
-  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "rcll"))
+  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "isbs"))
   checkmate::assert_subset(type, choices = c("scores", "aggr"))
 
   # Load all scores from files
@@ -1040,7 +1045,7 @@ plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tu
 plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id = "harrel_c", dodge = FALSE, flip = TRUE) {
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
-  checkmate::assert_subset(tuning_measure_id, choices = c("rcll", "harrell_c"))
+  checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
 
   if (msr_tbl[id == eval_measure_id, minimize]) {
     direction_label = "lower is better"
