@@ -317,7 +317,7 @@ measures_tbl = function() {
 
 #' Collect and save benchmark results
 #'
-#' @param settings `config::get()` for registry names, paths, ...
+#' @param conf `config::get()` for registry names, paths, ...
 #' @param tuning_measure E.g. "harrell_c"
 #' @param measures_eval List of mlr3 measures used for evaluation
 #' @param result_path `here::here("results")`, where to store results.
@@ -327,7 +327,7 @@ measures_tbl = function() {
 #'
 #' @examples
 collect_results = function(
-    settings,
+    conf,
     tuning_measure = "harrell_c",
     measures_eval = get_measures_eval(),
     include_scores = FALSE,
@@ -337,12 +337,12 @@ collect_results = function(
   tictoc::tic("The whole shebang")
 
   reg = suppressWarnings(suppressMessages(batchtools::loadRegistry(
-    settings$reg_dir, writeable = TRUE
+    conf$reg_dir, writeable = TRUE
   )))
 
-  cli::cli_alert_info("Using registry {.file {settings$reg_name}}")
-  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(settings$result_path)}")
-  ensure_directory(settings$result_path)
+  cli::cli_alert_info("Using registry {.file {conf$reg_name}}")
+  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(conf$result_path)}")
+  ensure_directory(conf$result_path)
 
   selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
   done_ids = batchtools::findDone(selected_ids)
@@ -354,10 +354,10 @@ collect_results = function(
     cli::cli_alert_info("Filtering down to {nrow(done_ids)} ids")
   }
 
-  path_bmr     = glue::glue("{settings$result_path}/bmr_{tuning_measure}.rds")
-  path_bmr_tab = glue::glue("{settings$result_path}/bmrtab_{tuning_measure}.rds")
-  path_bma     = glue::glue("{settings$result_path}/bma_{tuning_measure}.rds")
-  path_scores  = glue::glue("{settings$result_path}/scores_{tuning_measure}.rds")
+  path_bmr     = glue::glue("{conf$result_path}/bmr_{tuning_measure}.rds")
+  path_bmr_tab = glue::glue("{conf$result_path}/bmrtab_{tuning_measure}.rds")
+  path_bma     = glue::glue("{conf$result_path}/bma_{tuning_measure}.rds")
+  path_scores  = glue::glue("{conf$result_path}/scores_{tuning_measure}.rds")
 
   if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab))) & (fs::file_exists(path_scores) | !include_scores)) {
     return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
@@ -418,7 +418,7 @@ collect_results = function(
 #' which makes it easier to re-score with certain measures without
 #' having to apply all measures again.
 #'
-#' @param settings `config::get()`
+#' @param conf `config::get()`
 #' @param tuning_measure (`character(1)`, `"harrell_c"`) The tuning measure used to filter the `bmr`
 #' @param measure One or a list of `MeasureSurv`s
 #' @param nthreads (`1`) Parallelize using forking with `plan("multicore")`.
@@ -427,7 +427,7 @@ collect_results = function(
 #' @examples
 #' score_bmr(config::get(), "harrell_c",  msr("surv.isbs"))
 score_bmr = function(
-    settings = config::get(),
+    conf = config::get(),
     tuning_measure = "harrell_c",
     measure,
     nthreads = 1
@@ -437,7 +437,7 @@ score_bmr = function(
   sapply(measure, checkmate::assert_class, "MeasureSurv")
   checkmate::assert_int(nthreads, lower = 1, upper = future::availableCores())
 
-  path_bmr = fs::path(settings$result_path, glue::glue("bmr_{tuning_measure}.rds"))
+  path_bmr = fs::path(conf$result_path, glue::glue("bmr_{tuning_measure}.rds"))
   checkmate::assert_file_exists(path_bmr)
 
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
@@ -452,7 +452,7 @@ score_bmr = function(
   pb = cli::cli_progress_bar("Scoring", total = length(measure))
   future.apply::future_lapply(measure, \(m) {
     cli::cli_progress_update(id = pb)
-    path_scores = fs::path(settings$result_path, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
+    path_scores = fs::path(conf$result_path, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
     ensure_directory(fs::path_dir(path_scores))
 
     if (fs::file_exists(path_scores)) {
@@ -478,7 +478,7 @@ score_bmr = function(
 
 #' Aggregate bmr with a measure and store results
 #'
-#' @param settings `config::get()`
+#' @param conf `config::get()`
 #' @param tuning_measure
 #' @param measure One or a list of `MeasureSurv`s
 #'
@@ -488,7 +488,7 @@ score_bmr = function(
 #' @examples
 #' aggr_bmr(config::get(), "harrell_c", msr("surv.isbs"))
 aggr_bmr = function(
-    settings = config::get(),
+    conf = config::get(),
     tuning_measure = "harrell_c",
     measure,
     nthreads = 1
@@ -497,7 +497,7 @@ aggr_bmr = function(
   if (!is.list(measure)) measure = list(measure)
   sapply(measure, checkmate::assert_class, "MeasureSurv")
 
-  path_bmr = fs::path(settings$result_path, glue::glue("bmr_{tuning_measure}.rds"))
+  path_bmr = fs::path(conf$result_path, glue::glue("bmr_{tuning_measure}.rds"))
   checkmate::assert_file_exists(path_bmr)
 
   cli::cli_alert_info("Reading bmr ({tuning_measure})")
@@ -512,7 +512,7 @@ aggr_bmr = function(
   pb = cli::cli_progress_bar("Scoring", total = length(measure))
   future.apply::future_lapply(measure, \(m) {
     cli::cli_progress_update(id = pb)
-    path_aggr = fs::path(settings$result_path, tuning_measure, "aggr", glue::glue("aggr_{m$id}.rds"))
+    path_aggr = fs::path(conf$result_path, tuning_measure, "aggr", glue::glue("aggr_{m$id}.rds"))
     ensure_directory(fs::path_dir(path_aggr))
 
     if (fs::file_exists(path_aggr)) {
@@ -535,20 +535,20 @@ aggr_bmr = function(
 }
 
 #' Collect tuning archives saved separately to disk via callback
-#' @param settings `config::get()` for result paths
+#' @param conf `config::get()` for result paths
 #' @param keep_logs [`TRUE`] Whether to keep the logs, which drastically increases the size
 #'   of the resulting object in memory and on disk
 #' @param ignore_cache [`FALSE`] Whether to ignore a cached result and reassemble from scratch
 reassemble_archives = function(
-    settings = config::get(),
+    conf = config::get(),
     keep_logs = TRUE,
     ignore_cache = FALSE
   ) {
 
   if (keep_logs) {
-    archive_path = fs::path(settings$result_path, "archives-with-logs.rds")
+    archive_path = fs::path(conf$result_path, "archives-with-logs.rds")
   } else {
-    archive_path = fs::path(settings$result_path, "archives-no-logs.rds")
+    archive_path = fs::path(conf$result_path, "archives-no-logs.rds")
   }
 
   ensure_directory(fs::path_dir(archive_path))
@@ -562,7 +562,7 @@ reassemble_archives = function(
     }
   }
 
-  archive_dir = fs::path(settings$reg_dir, "tuning_archives")
+  archive_dir = fs::path(conf$reg_dir, "tuning_archives")
   tuning_files = fs::dir_ls(archive_dir)
 
   if (length(tuning_files) == 0) {
@@ -619,15 +619,15 @@ reassemble_archives = function(
 }
 
 #' Read tuning archives stored in registry and convert to CSV in results dir
-#' @param settings `config::get()` for result paths.
+#' @param conf `config::get()` for result paths.
 #'
 #' @return Nothing, only writes files.
-convert_archives_csv = function(settings = config::get()) {
+convert_archives_csv = function(conf = config::get()) {
 
-  archive_csv_dir = fs::path(settings$result_path, "tuning_archives")
+  archive_csv_dir = fs::path(conf$result_path, "tuning_archives")
   ensure_directory(archive_csv_dir)
 
-  archive_dir = fs::path(settings$reg_dir, "tuning_archives")
+  archive_dir = fs::path(conf$reg_dir, "tuning_archives")
   tuning_files = fs::dir_ls(archive_dir)
 
   if (length(tuning_files) == 0) {
@@ -682,19 +682,19 @@ convert_archives_csv = function(settings = config::get()) {
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,
 #' so the associated timestamp is used to identify the older archive and move it to
 #' a backup location.
-#' @param settings `config::get()`
+#' @param conf `config::get()`
 #' @param tmp_path `here::here("tmp", "archive-backup")`.
 #'
 #' @examples
 #' clean_duplicate_archives(config::get())
 clean_duplicate_archives = function(
-  settings,
+  conf,
   tmp_path = here::here("tmp", "archive-backup")
 ) {
 
   ensure_directory(tmp_path)
 
-  archives = reassemble_archives(settings, keep_logs = FALSE)
+  archives = reassemble_archives(conf, keep_logs = FALSE)
 
   counts = archives[, .(n = .N), by = .(tune_measure, task_id, learner_id, iter_hash)]
 
@@ -848,12 +848,12 @@ add_learner_groups = function(x) {
     )
 }
 
-#' Collect individually `$score()`'d or `$aggregate()`'d results from `settings$result_path`.
-#' @param settings `list()` of settings, `config::get()`
+#' Collect individually `$score()`'d or `$aggregate()`'d results from `conf$result_path`.
+#' @param conf `list()` of conf, `config::get()`
 #' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"isbs"`
 #' @param type `character(1)`, one of `"scores"` or `"aggr"`
 combine_scores_aggrs = function(
-    settings = config::get(),
+    conf = config::get(),
     tuning_measure = "harrell_c",
     type = "scores"
 ) {
@@ -862,7 +862,7 @@ combine_scores_aggrs = function(
   checkmate::assert_subset(type, choices = c("scores", "aggr"))
 
   # Load all scores from files
-  files = fs::dir_ls(fs::path(settings$result_path, tuning_measure, type))
+  files = fs::dir_ls(fs::path(conf$result_path, tuning_measure, type))
   dts = lapply(files, readRDS)
   dts
 

@@ -4,9 +4,16 @@ options("install.opts" = "--without-keep.source")
 if (file.exists("renv/activate.R")) {
   source("renv/activate.R")
 } else {
-  message("Not finding renv/activate.R!")
+  message("Found no renv/activate.R!")
 }
 
+# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
+# See https://rstudio.github.io/config/articles/config.html
+local({
+  config_profile = Sys.getenv('R_CONFIG_ACTIVE', 'default')
+  cli::cli_alert_info("Loading config {.val {config_profile}}")
+})
+conf = config::get()
 
 # Trying to ensure learners don't use more resources than they should
 # For e.g. XGBoost

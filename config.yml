@@ -7,13 +7,13 @@ default:
   outer_eval:
     resampling: "repeated_cv"
     folds: 3
-    repeats: 2 # Only applicable if resampling is "repeated_cv"
+    repeats: "auto" # Only applicable if resampling is "repeated_cv". Set to "auto" for hybrid approach.
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
     min_obs: 30
   tuning:
     resampling: "repeated_cv"
     folds: 3
-    repeats: 2 # Only applicable if resampling is "repeated_cv"
+    repeats: 3 # Only applicable if resampling is "repeated_cv".
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
   fallback:
     inner: true
@@ -43,19 +43,10 @@ trial:
   reg_name: "trial"
   fallback:
     inner: true
-    outer: true
-  outer_eval:
-    resampling: "repeated_cv"
-    folds: 3
-    repeats: 2 # Only applicable if resampling is "repeated_cv"
-    min_obs: 30
-  tuning:
-    resampling: "repeated_cv"
-    folds: 3
-    repeats: 2 # Only applicable if resampling is "repeated_cv"
+    outer: false
   budget:
-    evals_constant: 0
-    evals_multiplier: 50
+    evals_constant: 10
+    evals_multiplier: 0
 
 debug:
   reg_name: "debug"

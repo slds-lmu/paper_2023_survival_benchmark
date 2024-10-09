@@ -1,10 +1,5 @@
 root = here::here()
 
-# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
-# See https://rstudio.github.io/config/articles/config.html
-cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
-settings = config::get()
-
 mem_beartooth = 4681
 mem_teton = 4096
 mem_knl = 5457
@@ -14,7 +9,7 @@ library("mlr3batchmark")
 source(here::here("helpers.R"))
 
 # Assumes batchmark.R is run beforehand
-reg = loadRegistry(settings$reg_dir, writeable = TRUE)
+reg = loadRegistry(conf$reg_dir, writeable = TRUE)
 
 # Expecting 576 task (32) x learner (19) combinations, 5 outer folds (except "veteran"), 2 tuning measures
 print(summarizeExperiments(by = c("task_id", "learner_id")))

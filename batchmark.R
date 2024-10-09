@@ -1,12 +1,3 @@
-root = here::here()
-source(here::here("helpers.R"))
-
-# Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
-# See https://rstudio.github.io/config/articles/config.html
-config_profile = Sys.getenv('R_CONFIG_ACTIVE', 'default')
-cli::cli_alert_info("Loading config {.val {config_profile}}")
-settings = config::get()
-
 # Packages ----------------------------------------------------------------
 
 # Dependencies managed via renv. Manually update as necessary via renv::update()
@@ -30,78 +21,31 @@ library("mlr3batchmark")
 requireNamespace("mlr3extralearners")
 
 # Create Registry ---------------------------------------------------------
-reg_dir = settings$reg_dir
 
-if (!fs::dir_exists(fs::path_dir(settings$reg_dir))) {
-  fs::dir_create(fs::path_dir(settings$reg_dir))
+if (!fs::dir_exists(fs::path_dir(conf$reg_dir))) {
+  fs::dir_create(fs::path_dir(conf$reg_dir))
 }
 
-if (fs::dir_exists(reg_dir)) {
+if (fs::dir_exists(conf$reg_dir)) {
   if (config::is_active("production")) {
-    cli::cli_abort("Refusing to delete existing registry {.file {fs::path_rel(reg_dir)}} in production mode!")
+    cli::cli_abort("Refusing to delete existing registry {.file {fs::path_rel(conf$reg_dir)}} in production mode!")
   } else {
-    cli::cli_alert_warning("Deleting registry at {.file {fs::path_rel(reg_dir)}}")
-    fs::dir_delete(reg_dir)
+    cli::cli_alert_warning("Deleting registry at {.file {fs::path_rel(conf$reg_dir)}}")
+    fs::dir_delete(conf$reg_dir)
   }
 }
 
+cli::cli_alert_info("Creating new registry {.val {conf$reg_name}}!")
+reg = makeExperimentRegistry(
+  conf$reg_dir,
+  work.dir = here::here(),
+  seed = conf$seed,
+  packages = c("mlr3", "mlr3proba"),
+  source = here::here("helpers.R")
+)
 
-cli::cli_alert_info("Creating new registry {.val {settings$reg_name}}!")
-reg = makeExperimentRegistry(reg_dir, work.dir = root, seed = settings$seed,
-  packages = c("mlr3", "mlr3proba"), source = here::here("helpers.R"))
-
-# Create Tasks and corresponding instantiated Resamplings -----------------
-set.seed(settings$seed)
-files = fs::dir_ls(here::here("datasets"), regexp = "\\.rds$")
-names = fs::path_ext_remove(fs::path_file(files))
-tasks = resamplings = mlr3misc::named_list(names)
-
-for (i in seq_along(files)) {
-  data = readRDS(files[i])
-
-  task = as_task_surv(data, target = "time", event = "status", id = names[i])
-  task$set_col_roles("status", add_to = "stratum")
-
-  cli::cli_alert_warning("Using {.val {settings$outer_eval$resampling}} outer resampling!")
-  resampling_dir = here::here("resamplings", settings$outer_eval$resampling)
-  resampling_csv = fs::path(resampling_dir, names[[i]], ext = "csv")
-
-  # If there is a stored resampling already, use a reconstructed version using the CSV file
-  if (fs::file_exists(resampling_csv)) {
-
-    cli::cli_alert_info("Recreating resampling from {.file {fs::path_rel(resampling_csv)}}")
-    resampling = create_resampling_from_csv(task, resampling_dir = resampling_dir)
-
-  } else {
-    # Otherwise create a new resampling and store it
-    cli::cli_alert_info("Creating new resampling for {.val {names[[i]]}}")
-
-    # Make number of folds dependent on number of observations in smallest tasks
-    folds = min(floor(task$nrow / settings$outer_eval$min_obs), settings$outer_eval$folds)
-
-    resampling = switch(
-      settings$outer_eval$resampling,
-      "cv"          = rsmp("cv", folds = folds),
-      "repeated_cv" = rsmp("repeated_cv", folds = folds, repeats = settings$outer_eval$repeats),
-      "holdout"     = rsmp("holdout", ratio = settings$outer_eval$ratio)
-    )
-
-    resampling$instantiate(task)
-
-    stopifnot(all(as.data.table(resampling)[set == "test"][, .N, by = "iteration"]$N >= settings$outer_eval$min_obs))
-    save_resampling(resampling, task, resampling_dir = resampling_dir)
-    rm(folds)
-  }
-
-
-  tasks[[i]] = task
-  resamplings[[i]] = resampling
-  rm(data, task, resampling)
-}
-
-# Only write task metadata table in production-like context, not when debugging
-if (config::is_active("production") | config::is_active("trial"))
-  tasktab = save_tasktab(tasks)
+# Tasks ---------------------------------------------------------------------------------------
+source(here::here("tasks.R"))
 
 # Base learner setup ------------------------------------------------------
 #' Base learner with fallback + encapsulation, preprocessing pipeline and composition
@@ -111,14 +55,6 @@ if (config::is_active("production") | config::is_active("trial"))
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
 bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   cli::cli_h2("Constructing {.val {key}}")
-  learner = lrn(key, ...)
-  # fallback = ppl("crankcompositor", lrn("surv.kaplan"),
-  #                method = "mort", overwrite = FALSE, graph_learner = TRUE)
-  # fallback = lrn("surv.kaplan")
-
-  # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
-  # fallback$predict_type = "crank"
-  # learner$predict_type = "crank"
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -157,11 +93,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # Stack preprocessing on top of learner + distr stuff.
   graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    learner |>
+    lrn(key, ...) |>
     as_learner()
 
   graph_learner$predict_type = "crank"
-  if (settings$fallback$inner) {
+  if (conf$fallback$inner) {
     if (packageVersion("mlr3") >= "0.21.0") {
       suppressWarnings(graph_learner$encapsulate("callr", lrn("surv.kaplan")))
     } else {
@@ -178,11 +114,11 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # Choosing not to do this for KM and NA as they are fast enough to not cause issues here.
   if (key == "surv.cv_coxboost") {
     cli::cli_alert_info("Applying timeout for inner GraphLearner - CoxBoost exception!")
-    graph_learner$timeout = c(train   = settings$timeout$at_train   * 3600,
-                              predict = settings$timeout$at_predict * 3600)
+    graph_learner$timeout = c(train   = conf$timeout$at_train   * 3600,
+                              predict = conf$timeout$at_predict * 3600)
   } else {
-    graph_learner$timeout = c(train   = settings$timeout$bl_train   * 3600,
-                              predict = settings$timeout$bl_predict * 3600)
+    graph_learner$timeout = c(train   = conf$timeout$bl_train   * 3600,
+                              predict = conf$timeout$bl_predict * 3600)
   }
 
   # Used for XGBoost learners to enable internal tuning / early stopping using test set
@@ -207,13 +143,13 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   if (is.null(search_space$trafo))
     checkmate::assert_subset(names(search_space$params), names(learner$param_set$params))
 
-  cli::cli_alert_warning("Using {.val {settings$tuning$resampling}} inner resampling!")
+  cli::cli_alert_warning("Using {.val {conf$tuning$resampling}} inner resampling!")
 
   resampling = switch(
-    settings$tuning$resampling,
-    "cv"          = rsmp("cv", folds = settings$tuning$folds),
-    "repeated_cv" = rsmp("repeated_cv", folds = settings$tuning$folds, repeats = settings$tuning$repeats),
-    "holdout"     = rsmp("holdout", ratio = settings$tuning$ratio)
+    conf$tuning$resampling,
+    "cv"          = rsmp("cv", folds = conf$tuning$folds),
+    "repeated_cv" = rsmp("repeated_cv", folds = conf$tuning$folds, repeats = conf$tuning$repeats),
+    "holdout"     = rsmp("holdout", ratio = conf$tuning$ratio)
   )
 
 
@@ -222,11 +158,11 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # search space and not waste compute by repeatedly evaluating the same HPCs
 
   # run_time: maximum time tuning is allowed to run, seconds (evaluated after all inner resampling iters)
-  trm_runtime = trm("run_time", secs = settings$budget$runtime_hours * 60 * 60)
-  # evals: budget set in settings.R: n_evals + k * dim_search_space
+  trm_runtime = trm("run_time", secs = conf$budget$runtime_hours * 60 * 60)
+  # evals: budget set in conf.R: n_evals + k * dim_search_space
   trm_evals = trm("evals",
-                  n_evals = settings$budget$evals_constant,
-                  k = settings$budget$evals_multiplier)
+                  n_evals = conf$budget$evals_constant,
+                  k = conf$budget$evals_multiplier)
 
   if (use_grid_search) {
     # Use resolution that is normally greater than number of unique HPCs
@@ -236,12 +172,12 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
     # Account for pretest where we want 1 eval, so budget_constant may be 1
     # and multiplier 0
-    if (settings$budget$evals_constant + settings$budget$evals_multiplier == 1) {
+    if (conf$budget$evals_constant + conf$budget$evals_multiplier == 1) {
       grid_resolution = 1
-    } else if (settings$budget$evals_multiplier == 0) {
-      grid_resolution = settings$budget$evals_constant
+    } else if (conf$budget$evals_multiplier == 0) {
+      grid_resolution = conf$budget$evals_constant
     } else {
-      grid_resolution = settings$budget$evals_multiplier
+      grid_resolution = conf$budget$evals_multiplier
     }
 
     cli::cli_alert_info("Using grid search for tuning with resolution {.val {grid_resolution}}")
@@ -269,7 +205,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   learner_id = stringr::str_extract(learner$id, pattern)
   checkmate::assert_string(learner_id, min.chars = 7, pattern = "^surv")
 
-  callback_backup$state$path_dir = fs::path(settings$reg_dir, "tuning_archives")
+  callback_backup$state$path_dir = fs::path(conf$reg_dir, "tuning_archives")
   callback_backup$state$learner_id = learner_id
   callback_backup$state$tuning_measure = measure$id
 
@@ -289,11 +225,11 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     tuner = tuner,
     # Need tuning instance for archive, need archive to know if fallback was needed
     # Callback writes out archive, no need to store instance explicitly
-    store_tuning_instance = settings$store$tuning_instance,
+    store_tuning_instance = conf$store$tuning_instance,
     # Not needed: benchmark result of inner resamplings
-    store_benchmark_result = settings$store$benchmark_result,
+    store_benchmark_result = conf$store$benchmark_result,
     # Don't need models, only needed for variable imp etc. afaict
-    store_models = settings$store$models,
+    store_models = conf$store$models,
     callbacks = list(callback_backup, callback_archive_logs)
   )
 
@@ -305,7 +241,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
-  if (settings$fallback$outer) {
+  if (conf$fallback$outer) {
     if (packageVersion("mlr3") >= "0.21.0") {
       suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
     } else {
@@ -317,10 +253,10 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
   }
 
-  # Timeouts provided in hours via settings, converted to seconds.
+  # Timeouts provided in hours via conf, converted to seconds.
   # Ensures computational job can finish prematurely given cluster timeout would kill it otherwise.
-  at$timeout = c(train = settings$timeout$at_train * 3600,
-                 predict = settings$timeout$at_predict * 3600)
+  at$timeout = c(train = conf$timeout$at_train * 3600,
+                 predict = conf$timeout$at_predict * 3600)
 
   at
 }
@@ -330,7 +266,6 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 # for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  #msr("surv.rcll", id = "rcll"),
   msr("surv.brier", id = "isbs", proper = FALSE, ERV = FALSE)
 )
 
@@ -469,7 +404,7 @@ for (measure in measures) {
               penalty = "optimCoxBoostPenalty",
               maxstepno = 5000,
               # Number of inner tuning folds: analogous to other AutoTuners
-              K = settings$tuning$folds,
+              K = conf$tuning$folds,
               .encode = TRUE)
 
     ,
@@ -550,7 +485,7 @@ for (measure in measures) {
   # Similarly we also set it to TRUE if we want to store the models in general
   ids = batchmark(
     design =  grid,
-    store_models = settings$store$tuning_instance | settings$store$models
+    store_models = conf$store$tuning_instance | conf$store$models
   )
   # Tagging with the measure is used to disambiguate jobs with identical learner/task but different
   # tuning measure. Not sure if "cleaner" solution available?
@@ -565,4 +500,4 @@ for (measure in measures) {
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
 
-cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {settings$reg_name}}")
+cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {conf$reg_name}}")

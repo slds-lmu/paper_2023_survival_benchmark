@@ -8,7 +8,7 @@ if (!exists(".canary")) source(here::here("helpers.R")) # Source only if not alr
 # Using active config as set per R_CONFIG_ACTIVE env var, see config.yml
 # See https://rstudio.github.io/config/articles/config.html
 # "Beartooth" denotes the config for results retrieved from cluster (other than e.g. local trial runs)
-settings = config::get()
+conf = config::get()
 
 library(batchtools)
 library(mlr3proba)
@@ -23,31 +23,31 @@ measures_eval = get_measures_eval()
 
 # Reassembling tuning archives ----------------------------------------------------------------
 # Archives with logs are very large objects of questionable utility, version without logs should suffice
-if (!fs::file_exists(fs::path(settings$result_path, "archives-with-logs.rds"))) {
+if (!fs::file_exists(fs::path(conf$result_path, "archives-with-logs.rds"))) {
   cli::cli_alert_info("Reassembling tuning archives including logs")
   tictoc::tic()
-  archives = reassemble_archives(settings, keep_logs = TRUE)
+  archives = reassemble_archives(conf, keep_logs = TRUE)
   tictoc::toc()
 }
 
-if (!fs::file_exists(fs::path(settings$result_path, "archives-no-logs.rds"))) {
+if (!fs::file_exists(fs::path(conf$result_path, "archives-no-logs.rds"))) {
   cli::cli_alert_info("Reassembling tuning archives without logs")
   tictoc::tic()
-  archives = reassemble_archives(settings, keep_logs = FALSE)
+  archives = reassemble_archives(conf, keep_logs = FALSE)
   tictoc::toc()
 }
 
 # Create zipped collection of tuning archive CSVs
-if (!fs::file_exists(fs::path(settings$result_path, "archives.zip"))) {
+if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {
 
   tictoc::tic()
-  convert_archives_csv(settings)
+  convert_archives_csv(conf)
 
-  zip_out = fs::path(settings$result_path, "archives.zip")
+  zip_out = fs::path(conf$result_path, "archives.zip")
 
   utils::zip(
     zipfile = zip_out,
-    files = fs::dir_ls(fs::path(settings$result_path, "tuning_archives")),
+    files = fs::dir_ls(fs::path(conf$result_path, "tuning_archives")),
     flags = "-rD9j"
   )
 
@@ -66,14 +66,14 @@ if (!fs::file_exists(fs::path(settings$result_path, "archives.zip"))) {
 # all these operations should be done carefully and with enough RAM (>30GB) available.
 if (TRUE) {
   collect_results(
-    settings,
+    conf,
     tuning_measure = "harrell_c",
     measures_eval = measures_eval
   )
 
   # Same for ISBS
   collect_results(
-    settings,
+    conf,
     tuning_measure = "isbs",
     measures_eval = measures_eval
   )
@@ -84,14 +84,14 @@ if (TRUE) {
 # Only for some measures.
 if (TRUE) {
   score_bmr(
-    settings,
+    conf,
     measure = msr_tbl[!(erv), measure],
     tuning_measure = "harrell_c",
     nthreads = 2
   )
 
   score_bmr(
-    settings,
+    conf,
     measure = msr_tbl[!(erv), measure],
     tuning_measure = "isbs",
     nthreads = 2
@@ -102,14 +102,14 @@ if (TRUE) {
 # and is not strictly necessary if collect_results() created a bma already.
 if (TRUE) {
   aggr_bmr(
-    settings,
+    conf,
     measure = measures_eval,
     tuning_measure = "harrell_c",
     nthreads = 2
   )
 
   aggr_bmr(
-    settings,
+    conf,
     measure = measures_eval,
     tuning_measure = "isbs",
     nthreads = 2
@@ -118,8 +118,8 @@ if (TRUE) {
 
 # Post-processing -----------------------------------------------------------------------------
 
-bma_harrell_c  = readRDS(fs::path(settings$result_path, "bma_harrell_c.rds"))
-bma_isbs       = readRDS(fs::path(settings$result_path, "bma_isbs.rds"))
+bma_harrell_c  = readRDS(fs::path(conf$result_path, "bma_harrell_c.rds"))
+bma_isbs       = readRDS(fs::path(conf$result_path, "bma_isbs.rds"))
 
 # Excluding SSVM results as there are no usable ones
 # bma_harrell_c = remove_results(bma_harrell_c, learner_id_exclude = "SSVM")
@@ -130,8 +130,8 @@ bma_harrell_c = rename_learners(bma_harrell_c)
 bma_isbs      = rename_learners(bma_isbs)
 
 # Saving cleaned results
-saveRDS(bma_harrell_c, file = fs::path(settings$result_path, "bma_clean_harrell_c.rds"))
-saveRDS(bma_isbs,      file = fs::path(settings$result_path, "bma_clean_isbs.rds"))
+saveRDS(bma_harrell_c, file = fs::path(conf$result_path, "bma_clean_harrell_c.rds"))
+saveRDS(bma_isbs,      file = fs::path(conf$result_path, "bma_clean_isbs.rds"))
 
 # Adding all aggregated scores for both tuning measures to a simple DT
 # and add additional metadata for grouping
@@ -144,16 +144,16 @@ bma = combine_bma(bma_harrell_c, bma_isbs) |>
 checkmate::assert_set_equal(unique(bma$tuned), c("harrell_c", "isbs"))
 
 # Technically not a bma anymore but useful nonetheless
-saveRDS(bma, file = fs::path(settings$result_path,  "aggr_scores.rds"))
+saveRDS(bma, file = fs::path(conf$result_path,  "aggr_scores.rds"))
 
 # Write CSV with aggregated scores
-readr::write_csv(bma, file = fs::path(settings$result_path, "aggr_scores.csv"))
+readr::write_csv(bma, file = fs::path(conf$result_path, "aggr_scores.csv"))
 
 # Aggregating scores --------------------------------------------------------------------------
 # This requires score_bmr() above!
 
-scores_harrell_c = combine_scores_aggrs(settings, tuning_measure = "harrell_c", type = "scores")
-scores_isbs      = combine_scores_aggrs(settings, tuning_measure = "isbs",      type = "scores")
+scores_harrell_c = combine_scores_aggrs(conf, tuning_measure = "harrell_c", type = "scores")
+scores_isbs      = combine_scores_aggrs(conf, tuning_measure = "isbs",      type = "scores")
 
 scores = rbind(scores_isbs, scores_harrell_c)
 # Exclude broken SSVM results, rename learners for consistency
@@ -178,6 +178,6 @@ scores[, errors := sapply(errors, function(x) paste(x, collapse = "\n"))]
 # Very strict assertion just to make sure, will need adjustment if minor things change
 checkmate::assert_data_table(scores, any.missing = FALSE, nrows = 5406, ncols = 22)
 
-saveRDS(scores, file = fs::path(settings$result_path,  "scores.rds"))
+saveRDS(scores, file = fs::path(conf$result_path,  "scores.rds"))
 # Write CSV
-readr::write_csv(scores, file = fs::path(settings$result_path, "scores.csv"))
+readr::write_csv(scores, file = fs::path(conf$result_path, "scores.csv"))
