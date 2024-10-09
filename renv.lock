@@ -1999,14 +1999,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.6.8",
+      "Version": "0.6.9",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "a3318b71970d49435b4a1c42ff342f478076a804",
+      "RemoteSha": "45a5b7977162a2885777b0285f93858ebc7f9319",
       "Requirements": [
         "R",
         "R6",
@@ -2021,7 +2021,7 @@
         "paradox",
         "survival"
       ],
-      "Hash": "546d53b4e937edeb56decdb092ae9e51"
+      "Hash": "f68145e8c7461909642c329aaadd8540"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
