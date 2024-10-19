@@ -98,12 +98,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
 
   graph_learner$predict_type = "crank"
   if (conf$fallback$inner) {
-    if (packageVersion("mlr3") >= "0.21.0") {
-      suppressWarnings(graph_learner$encapsulate("callr", lrn("surv.kaplan")))
-    } else {
-      graph_learner$fallback = lrn("surv.kaplan")
-      graph_learner$encapsulate = c(train = "callr", predict = "callr")
-    }
+    suppressWarnings(graph_learner$encapsulate("evaluate", lrn("surv.kaplan")))
   } else {
     cli::cli_alert_info("Not applying fallback learner for inner GraphLearner")
   }
@@ -114,17 +109,22 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # Choosing not to do this for KM and NA as they are fast enough to not cause issues here.
   if (key == "surv.cv_coxboost") {
     cli::cli_alert_info("Applying timeout for inner GraphLearner - CoxBoost exception!")
-    graph_learner$timeout = c(train   = conf$timeout$at_train   * 3600,
-                              predict = conf$timeout$at_predict * 3600)
+    graph_learner$timeout = c(
+      train   = conf$timeout$at_train   * 3600,
+      predict = conf$timeout$at_predict * 3600
+    )
   } else {
-    graph_learner$timeout = c(train   = conf$timeout$bl_train   * 3600,
-                              predict = conf$timeout$bl_predict * 3600)
+    graph_learner$timeout = c(
+      train   = conf$timeout$bl_train   * 3600,
+      predict = conf$timeout$bl_predict * 3600
+    )
   }
 
   # Used for XGBoost learners to enable internal tuning / early stopping using test set
   if ("validation" %in% graph_learner$properties) {
     cli::cli_alert_info("Setting validation field to {.val test}")
     set_validate(graph_learner, "test")
+    checkmate::assert_true(graph_learner$validate == "test")
   }
 
   graph_learner
@@ -242,13 +242,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (conf$fallback$outer) {
-    if (packageVersion("mlr3") >= "0.21.0") {
-      suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
-    } else {
-      at$fallback = lrn("surv.kaplan")
-      at$encapsulate = c(train = "callr", predict = "callr")
-    }
-
+    suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
   } else {
     cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
   }
@@ -414,7 +408,9 @@ for (measure in measures) {
       bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.cox.nrounds = p_int(upper = 5000, tags = "internal_tuning", aggr = function(x) as.integer(mean(unlist(x)))),
+      surv.xgboost.cox.nrounds = p_int(upper = 5000,
+                                       tags = "internal_tuning",
+                                       aggr = function(x) as.integer(mean(unlist(x)))),
       surv.xgboost.cox.max_depth = p_int(1, 20),
       surv.xgboost.cox.subsample = p_dbl(0, 1),
       surv.xgboost.cox.colsample_bytree = p_dbl(0, 1),
@@ -430,7 +426,9 @@ for (measure in measures) {
       bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.aft.nrounds = p_int(upper = 5000, tags = "internal_tuning", aggr = function(x) as.integer(mean(unlist(x)))),
+      surv.xgboost.aft.nrounds = p_int(upper = 5000,
+                                       tags = "internal_tuning",
+                                       aggr = function(x) as.integer(mean(unlist(x)))),
       surv.xgboost.aft.max_depth = p_int(1, 20),
       surv.xgboost.aft.subsample = p_dbl(0, 1),
       surv.xgboost.aft.colsample_bytree = p_dbl(0, 1),
