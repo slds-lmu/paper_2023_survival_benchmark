@@ -14,8 +14,8 @@ if (FALSE) {
   renv::install("coin", prompt = FALSE)
 
   # Require 0.1.2 due to split of internal functions and extralearners update
-  # renv::install("aorsf", prompt = FALSE)
-  renv::install("ropensci/aorsf", prompt = FALSE)
+  renv::install("aorsf", prompt = FALSE)
+  # renv::install("ropensci/aorsf", prompt = FALSE)
   renv::install("rpart", prompt = FALSE)
   renv::install("mboost", prompt = FALSE)
   renv::install("xgboost", prompt = FALSE)
@@ -38,8 +38,8 @@ if (FALSE) {
 
   # Non-CRAN pkgs for manual installation/updating
   renv::install("mlr-org/mlr3proba", prompt = FALSE)
-  renv::install("mlr-org/mlr3extralearners", prompt = FALSE)
-  renv::install("xoopR/distr6", prompt = FALSE)
+  renv::install("mlr-org/mlr3extralearners@surv_updates", prompt = FALSE, lock = TRUE)
+  #renv::install("xoopR/distr6", prompt = FALSE)
   renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 
 }
