@@ -233,12 +233,6 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     callbacks = list(callback_backup, callback_archive_logs)
   )
 
-  # fallback = lrn("surv.kaplan")
-  #
-  # # Needs to be consistent with each other but doesn't "do" anything, just formality in surv context
-  # fallback$predict_type = "crank"
-  # at$predict_type = "crank"
-
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (conf$fallback$outer) {
@@ -249,8 +243,10 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   # Timeouts provided in hours via conf, converted to seconds.
   # Ensures computational job can finish prematurely given cluster timeout would kill it otherwise.
-  at$timeout = c(train = conf$timeout$at_train * 3600,
-                 predict = conf$timeout$at_predict * 3600)
+  at$timeout = c(
+    train = conf$timeout$at_train * 3600,
+    predict = conf$timeout$at_predict * 3600
+  )
 
   at
 }
@@ -408,9 +404,11 @@ for (measure in measures) {
       bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.cox.nrounds = p_int(upper = 5000,
-                                       tags = "internal_tuning",
-                                       aggr = function(x) as.integer(mean(unlist(x)))),
+      surv.xgboost.cox.nrounds = p_int(
+        upper = 5000,
+        tags = "internal_tuning",
+        aggr = function(x) as.integer(mean(unlist(x)))
+      ),
       surv.xgboost.cox.max_depth = p_int(1, 20),
       surv.xgboost.cox.subsample = p_dbl(0, 1),
       surv.xgboost.cox.colsample_bytree = p_dbl(0, 1),
@@ -426,9 +424,11 @@ for (measure in measures) {
       bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.aft.nrounds = p_int(upper = 5000,
-                                       tags = "internal_tuning",
-                                       aggr = function(x) as.integer(mean(unlist(x)))),
+      surv.xgboost.aft.nrounds = p_int(
+        upper = 5000,
+        tags = "internal_tuning",
+        aggr = function(x) as.integer(mean(unlist(x)))
+      ),
       surv.xgboost.aft.max_depth = p_int(1, 20),
       surv.xgboost.aft.subsample = p_dbl(0, 1),
       surv.xgboost.aft.colsample_bytree = p_dbl(0, 1),
