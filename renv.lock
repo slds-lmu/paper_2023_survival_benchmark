@@ -473,7 +473,7 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "1.1.1",
+      "Version": "1.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -486,7 +486,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "894d6664ed783134eff3ab9339e69de8"
+      "Hash": "281f840cd418983392ad79cc2358b666"
     },
     "bdsmatrix": {
       "Package": "bdsmatrix",
@@ -1984,14 +1984,14 @@
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.6.9",
+      "Version": "0.7.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
       "RemoteRef": "main",
-      "RemoteSha": "45a5b7977162a2885777b0285f93858ebc7f9319",
+      "RemoteSha": "de18eb589c6a1c675b9e8895fe1a5c3bd7d1a6c5",
       "Requirements": [
         "R",
         "R6",
@@ -2002,17 +2002,23 @@
         "ggplot2",
         "mlr3",
         "mlr3misc",
+        "mlr3pipelines",
         "mlr3viz",
         "paradox",
         "survival"
       ],
-      "Hash": "f68145e8c7461909642c329aaadd8540"
+      "Hash": "f67a06ef187bc285725ae9a21a8d71a2"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
-      "Version": "1.0.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "1.1.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mlr-org",
+      "RemoteRepo": "mlr3tuning",
+      "RemoteRef": "main",
+      "RemoteSha": "61802edaba88dd3051b9148e5aaa2b1aa43c818f",
       "Requirements": [
         "R",
         "R6",
@@ -2024,7 +2030,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "381a72e235882e40863e08c7b0348cc5"
+      "Hash": "22b0580b87cbf0934cc9590b5eefab80"
     },
     "mlr3viz": {
       "Package": "mlr3viz",
