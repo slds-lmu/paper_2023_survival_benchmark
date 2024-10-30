@@ -471,6 +471,9 @@ for (measure in measures) {
     cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
     learners$RRT = NULL
 
+    cli::cli_alert_warning("Skipping {.val XGBAFT} for ISBS measure!")
+    learners$XGBAFT = NULL
+
     cli::cli_alert_warning("Skipping {.val SSVM} for ISBS measure!")
     learners$SSVM = NULL
   }
