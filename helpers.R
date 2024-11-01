@@ -169,10 +169,12 @@ callback_archive_logs_impl = function(callback, context) {
     context$aggregated_performance[, log := list(logs)]
   }
 
+  # !! This appears to be not necessary and also caused an issue by removing the
+  # internal_tuned_valuescolumn which needs to be present for early stopping to function
   # For XGBoost's internally tuned nrounds param, we pry it out of the list-column to simplify things
-  if (hasName(context$aggregated_performance, "internal_tuned_values")) {
-    context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
-  }
+  # if (hasName(context$aggregated_performance, "internal_tuned_values")) {
+  #   context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
+  # }
 
 }
 
