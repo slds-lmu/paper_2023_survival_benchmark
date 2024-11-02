@@ -44,6 +44,9 @@ trial:
   fallback:
     inner: true
     outer: false
+  store:
+    tuning_instance: false
+    models: false
   budget:
     evals_constant: 10
     evals_multiplier: 0
@@ -51,23 +54,17 @@ trial:
 debug:
   reg_name: "debug"
   fallback:
-    inner: true
+    inner: false
     outer: false
   outer_eval:
     resampling: "holdout"
   tuning:
     resampling: "holdout"
   budget:
-    evals_constant: 1
+    evals_constant: 10
     evals_multiplier: 0
-    runtime_hours: 6
   store:
-    tuning_instance: true
-  timeout:
-    bl_train: 10
-    bl_predict: 4
-    at_train: 12
-    at_predict: 11
+    tuning_instance: false
 
 debug_simple:
   reg_name: "debug_simple"
