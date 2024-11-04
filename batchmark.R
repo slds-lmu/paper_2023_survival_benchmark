@@ -252,13 +252,10 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 }
 
 # Set tuning measures -----------------------------------------------------
-# Tuning measures are a subset of all measures, remaining measures are used
-# for evaluation (see overleaf Table 1)
 measures = list(
   msr("surv.cindex", id = "harrell_c"),
-  msr("surv.brier", id = "isbs", proper = FALSE, ERV = FALSE)
+  msr("surv.brier", id = "isbs", p_max = 0.8, proper = FALSE, ERV = FALSE)
 )
-
 
 # Assemble learners -------------------------------------------------------
 for (measure in measures) {

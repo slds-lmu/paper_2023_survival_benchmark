@@ -246,8 +246,8 @@ get_measures_eval = function() {
     msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
     msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
-    msr("surv.brier",        id = "isbs",     proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
-    msr("surv.brier",        id = "isbs_erv", proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
+    msr("surv.brier",        id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+    msr("surv.brier",        id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     # Unsued, kept for completeness
     # msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
