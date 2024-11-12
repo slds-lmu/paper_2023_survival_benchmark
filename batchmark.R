@@ -152,7 +152,6 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     "holdout"     = rsmp("holdout", ratio = conf$tuning$ratio)
   )
 
-
   # Need to switch tuner/trm since some learners have very small search spaces
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
   # search space and not waste compute by repeatedly evaluating the same HPCs
@@ -376,10 +375,9 @@ for (measure in measures) {
 
     ,
 
-    # Split based on family
-    # family = p_fct(c("gehan", "cindex", "coxph", "weibull")
+    # Split based on family, omitting "cindex" which is different entirely
     MBSTCox = wrap_auto_tune(
-      bl("surv.mboost"),
+      bl("surv.mboost", family = "coxph", id = "mboost_cox"),
       surv.mboost.family = p_fct(c("coxph")),
       surv.mboost.mstop = p_int(10, 5000),
       surv.mboost.nu = p_dbl(0, 0.1),
@@ -389,8 +387,8 @@ for (measure in measures) {
     ,
 
     MBSTAFT = wrap_auto_tune(
-      bl("surv.mboost"),
-      surv.mboost.family = p_fct(c("weibull")),
+      bl("surv.mboost", id = "mboost_aft"),
+      surv.mboost.family = p_fct(c("gehan", "weibull")),
       surv.mboost.mstop = p_int(10, 5000),
       surv.mboost.nu = p_dbl(0, 0.1),
       surv.mboost.baselearner = p_fct(c("bols", "btree"))
@@ -477,8 +475,8 @@ for (measure in measures) {
   cli::cli_h2("Cleaning up and adding to registry")
 
   if (measure$id == "isbs") {
-    cli::cli_alert_warning("Skipping {.val MBST} for ISBS measure!")
-    learners$MBST = NULL
+    cli::cli_alert_warning("Skipping {.val MBSTAFT} for ISBS measure!")
+    learners$MBSTAFT = NULL
 
     cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
     learners$RRT = NULL
