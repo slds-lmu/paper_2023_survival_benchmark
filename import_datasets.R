@@ -250,6 +250,21 @@ save_data(grace)
 whas = data.frame(mlr3::tsk("whas")$data())
 save_data(whas)
 
+
+# modeldata::cat_adoption ---------------------------------------------------------------------
+# https://modeldata.tidymodels.org/reference/cat_adoption.html
+# A subset of the cats at the animal shelter in Long Beach, California, USA.
+# Source https://data.longbeach.gov/explore/dataset/animal-shelter-intakes-and-outcomes/information/ on 2024-06-17
+# - time: The time the cat spent at the shelter.
+# - event: The event of interest is the cat being homed or returned to its original location
+# (i.e., owner or community). The non-event is the cat being transferred to another shelter or dying. Zero indicates a non-event (censored), and one corresponds to the event occurring.
+
+if (FALSE) library("modeldata")
+cat_adoption = mlr3misc::load_dataset("cat_adoption", "modeldata") |>
+  rename(status = event)
+
+save_data(cat_adoption)
+
 # locfit::livmet ----------------------------------------------------------
 # Survival times for 622 patients diagnosed with Liver Metastases.
 # "Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z
@@ -300,20 +315,21 @@ dataSTR = mlr3misc::load_dataset("dataSTR", "RISCA") |>
 save_data(dataSTR)
 
 # pammtools::patient --------------------------------------------------------------------------
+# Excluded via AB due to administrative censoring and technically CR
 
-patient = pammtools::patient %>%
-  mutate(
-    time = Survdays,
-    status = as.integer(PatientDied),
-    sexF = if_else(Gender == "Female", 1L, 0L),
-    age = as.numeric(Age)
-  ) %>%
-  select(
-    -CombinedicuID, -CombinedID, -Survdays, -PatientDied, -survhosp,
-    -Gender, -Age
-  )
-
-save_data(patient)
+# patient = pammtools::patient %>%
+#   mutate(
+#     time = Survdays,
+#     status = as.integer(PatientDied),
+#     sexF = if_else(Gender == "Female", 1L, 0L),
+#     age = as.numeric(Age)
+#   ) %>%
+#   select(
+#     -CombinedicuID, -CombinedID, -Survdays, -PatientDied, -survhosp,
+#     -Gender, -Age
+#   )
+#
+# save_data(patient)
 
 # pammtools::tumor ----------------------------------------------------------------------------
 
