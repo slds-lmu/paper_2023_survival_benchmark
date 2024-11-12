@@ -376,9 +376,21 @@ for (measure in measures) {
 
     ,
 
-    MBST = wrap_auto_tune(
+    # Split based on family
+    # family = p_fct(c("gehan", "cindex", "coxph", "weibull")
+    MBSTCox = wrap_auto_tune(
       bl("surv.mboost"),
-      surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
+      surv.mboost.family = p_fct(c("coxph")),
+      surv.mboost.mstop = p_int(10, 5000),
+      surv.mboost.nu = p_dbl(0, 0.1),
+      surv.mboost.baselearner = p_fct(c("bols", "btree"))
+    )
+
+    ,
+
+    MBSTAFT = wrap_auto_tune(
+      bl("surv.mboost"),
+      surv.mboost.family = p_fct(c("weibull")),
       surv.mboost.mstop = p_int(10, 5000),
       surv.mboost.nu = p_dbl(0, 0.1),
       surv.mboost.baselearner = p_fct(c("bols", "btree"))
@@ -465,6 +477,9 @@ for (measure in measures) {
   cli::cli_h2("Cleaning up and adding to registry")
 
   if (measure$id == "isbs") {
+    cli::cli_alert_warning("Skipping {.val MBST} for ISBS measure!")
+    learners$MBST = NULL
+
     cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
     learners$RRT = NULL
 
