@@ -360,7 +360,7 @@ for (measure in measures) {
       aorsf.mtry_ratio = p_dbl(0, 1),
       aorsf.leaf_min_events = p_int(5, 50),
       .extra_trafo = function(x, param_set) {
-        x$aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
+        x$aorsf.split_min_obs = x$aorsf.leaf_min_events + 5L
         x
       }
     )
