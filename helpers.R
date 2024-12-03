@@ -149,8 +149,14 @@ callback_backup_impl = function(callback, context) {
   # Assemble path based on directory and filename, store in state just in case.
   callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
 
+  archive = data.table::as.data.table(context$instance$archive)
+  archive[, learner_id := callback$state$learner_id]
+  archive[, task_id := ..task_id]
+  archive[, tuning_measure := callback$state$tuning_measure]
+  archive[, resampling_hash := ..iter_hash]
+
   # cli::cli_alert_info("Writing archive to {callback$state$path}")
-  saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
+  saveRDS(archive, callback$state$path)
 }
 
 #' Callback to find the learner logs and append them to the tuning archive.
@@ -187,32 +193,28 @@ callback_archive_logs_impl = function(callback, context) {
 #' @examples
 #' save_lrntab()
 save_lrntab <- function(path = here::here("attic", "learners.csv")) {
-  lrnlist <- list(
-    KM = list(learner = "surv.kaplan", params = 0),
-    NL = list(learner = "surv.nelson", params = 0),
-    AK = list(learner = "surv.akritas", params = 1),
-    CPH = list(learner = "surv.coxph", params = 0),
-    GLMN = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
-    Pen = list(learner = "surv.penalized", params = 2),
-    AFT = list(learner = "surv.parametric", params = 1, grid = TRUE),
-    Flex = list(learner = "surv.flexible", params = 1, grid = TRUE),
-    RFSRC = list(learner = "surv.rfsrc", params = 5),
-    RAN = list(learner = "surv.ranger", params = 5),
-    CIF = list(learner = "surv.cforest", params = 5),
-    ORSF = list(learner = "surv.aorsf", params = 2),
-    RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
-    MBST = list(learner = "surv.mboost", params = 4),
-    CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
-    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 5, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 7, .form = "aft"),
-    SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
-  ) |>
-    lapply(data.table::as.data.table) |>
-    data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x))) |>
-    # setNames(c("learner_id", "learner_id_long", "params", "encode", "internal_cv", "grid", "scale")) |>
-    dplyr::select(learner_id = .id, learner_id_long = learner, params, internal_cv, encode = .encode, scale = .scale, grid)
-
+  lrnlist <- mlr3misc::rowwise_table(
+    ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
+    "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "NL"      , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "AK"      , "akritas"     , "surv.akritas"     , 1 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
+    "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
+    "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
+    "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RAN"     , "ranger"     , "surv.ranger"       , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CIF"     , "cforest"    , "surv.cforest"      , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "ORSF"    , "aorsf"      , "surv.aorsf"        , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RRT"     , "rpart"      , "surv.rpart"        , 1 ,    FALSE , FALSE ,        TRUE,  FALSE,
+    "MBSTCox" , "mboost_cox" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "MBSTAFT" , "mboost_aft" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CoxB"    , "coxboost"   , "surv.cv_coxboost"  , 0 ,    TRUE  , TRUE  ,        FALSE, FALSE,
+    "XGBCox"  , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE
+  )
 
   lrnlist |>
     write.csv(file = path, row.names = FALSE)
