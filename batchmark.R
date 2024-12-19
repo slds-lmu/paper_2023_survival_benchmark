@@ -408,7 +408,7 @@ for (measure in measures) {
 
     # XGB/cox, uses breslow estimator internally via mlr3proba
     XGBCox = wrap_auto_tune(
-      bl("surv.xgboost.cox", id = "xgboost.cox",
+      bl("surv.xgboost.cox", id = "xgb_cox",
          tree_method = "hist",
          booster = "gbtree",
          early_stopping_rounds = 50,
@@ -430,7 +430,7 @@ for (measure in measures) {
     # AFT version
     # - Tune distributions (as per JZ)
     XGBAFT = wrap_auto_tune(
-      bl("surv.xgboost.aft", id = "xgboost.aft",
+      bl("surv.xgboost.aft", id = "xgb_aft",
          tree_method = "hist",
          booster = "gbtree",
          early_stopping_rounds = 50,
