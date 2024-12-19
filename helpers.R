@@ -193,7 +193,7 @@ callback_archive_logs_impl = function(callback, context) {
 #' @examples
 #' save_lrntab()
 save_lrntab <- function(path = here::here("attic", "learners.csv")) {
-  lrnlist <- mlr3misc::rowwise_table(
+  lrntab <- mlr3misc::rowwise_table(
     ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
     "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
     "NL"      , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
@@ -216,10 +216,16 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE
   )
 
-  lrnlist |>
+  lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
+    "threads" %in% unlist(lrn(x)$param_set$tags)
+    }, logical(1))
+
+
+
+  lrntab |>
     write.csv(file = path, row.names = FALSE)
 
-  lrnlist
+  lrntab
 }
 
 load_lrntab = function(path = here::here("attic", "learners.csv")) {
