@@ -175,13 +175,6 @@ callback_archive_logs_impl = function(callback, context) {
     context$aggregated_performance[, log := list(logs)]
   }
 
-  # !! This appears to be not necessary and also caused an issue by removing the
-  # internal_tuned_valuescolumn which needs to be present for early stopping to function
-  # For XGBoost's internally tuned nrounds param, we pry it out of the list-column to simplify things
-  # if (hasName(context$aggregated_performance, "internal_tuned_values")) {
-  #   context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
-  # }
-
 }
 
 # Utilities for analysis ----------------------------------------------------------------------
@@ -635,13 +628,7 @@ convert_archives_csv = function(conf = config::get()) {
 
   # Having to fix XGBoost split not corresponding to learner IDs at time of benchmark
   learners = load_lrntab()
-  learners = learners[, c("learner_id", "learner_id_long")]
-
-  # learners$learner_id_long = dplyr::case_when(
-  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-  #   .default = learners$learner_id_long
-  # )
+  learners = learners[, c("id", "base_id")]
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   purrr::walk(tuning_files, \(file) {
@@ -653,11 +640,11 @@ convert_archives_csv = function(conf = config::get()) {
       stringi::stri_split_fixed(pattern = "__")
 
     components = components[[1]]
-    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
-    components = components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")]
+    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
+    components = components[c("tune_measure", "base_id", "task_id", "iter_hash")]
 
     to_csv = cbind(
-      data.table::data.table(t(components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")])),
+      data.table::data.table(t(components[c("tune_measure", "base_id", "task_id", "iter_hash")])),
       archive
     )
 
