@@ -580,13 +580,8 @@ reassemble_archives = function(
   }
 
   learners = load_lrntab()
-  learners = learners[, c("learner_id", "learner_id_long")]
+  learners = learners[, c("id", "base_id")]
 
-  # learners$learner_id_long = dplyr::case_when(
-  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-  #   .default = learners$learner_id_long
-  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
@@ -596,11 +591,6 @@ reassemble_archives = function(
     if (!keep_logs & "log" %in% names(archive)) {
       # Temp fix because objects became to large
       archive[, log := NULL]
-    } else {
-      # Including the fallback log at all was a mistake
-      # mlr3misc::walk(archive$log, \(log) {
-      #   mlr3misc::remove_named(log, "fallback_log")
-      # })
     }
 
     components = fs::path_file(file) |>
@@ -621,7 +611,6 @@ reassemble_archives = function(
 
   archives = archives[learners, on = "learner_id_long"]
   archives = archives[!is.na(tune_measure), ]
-  archives[, learner_id_long := NULL]
 
   saveRDS(archives, archive_path)
 
