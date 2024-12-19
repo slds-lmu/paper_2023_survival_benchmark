@@ -597,19 +597,19 @@ reassemble_archives = function(
       fs::path_ext_remove() |>
       stringi::stri_split_fixed(pattern = "__")
     components = components[[1]]
-    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
+    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
 
     ret = data.table::data.table(
       t(components),
       archive = list(archive),
-      file = file,
+      file = fs::path_rel(file),
       warnings_sum = sum(archive$warnings),
       errors_sum = sum(archive$errors)
     )
   }))
   cli::cli_progress_done(id = pb)
 
-  archives = archives[learners, on = "learner_id_long"]
+  archives = archives[learners, on = "base_id"]
   archives = archives[!is.na(tune_measure), ]
 
   saveRDS(archives, archive_path)
