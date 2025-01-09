@@ -801,19 +801,6 @@ rename_learners = function(x) {
   xdat[]
 }
 
-combine_bma = function(bma_harrell_c, bma_isbs) {
-  checkmate::assert_class(bma_harrell_c, classes = "BenchmarkAggr")
-  checkmate::assert_class(bma_isbs, classes = "BenchmarkAggr")
-
-  bma1 = data.table::copy(bma_harrell_c$data)
-  bma1[, tuned := "harrell_c"]
-
-  bma2 = data.table::copy(bma_isbs$data)
-  bma2[, tuned := "isbs"]
-
-  data.table::rbindlist(list(bma1, bma2))
-}
-
 add_learner_groups = function(x) {
   if (checkmate::test_class(x, classes = "BenchmarkAggr")) {
     x = data.table::copy(x$data)
@@ -833,49 +820,6 @@ add_learner_groups = function(x) {
       )
     )
 }
-
-#' Collect individually `$score()`'d or `$aggregate()`'d results from `conf$result_path`.
-#' @param conf `list()` of conf, `config::get()`
-#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"isbs"`
-#' @param type `character(1)`, one of `"scores"` or `"aggr"`
-combine_scores_aggrs = function(
-    conf = config::get(),
-    tuning_measure = "harrell_c",
-    type = "scores"
-) {
-
-  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "isbs"))
-  checkmate::assert_subset(type, choices = c("scores", "aggr"))
-
-  # Load all scores from files
-  files = fs::dir_ls(fs::path(conf$result_path, tuning_measure, type))
-  dts = lapply(files, readRDS)
-  dts
-
-  if (type == "scores") {
-    base_cols = c("uhash", "nr", "task_id", "learner_id", "resampling_id",
-                  "iteration", "warnings", "errors")
-  }
-
-  # Paranoid check that alle base columns are identical across all dts
-  basecollist = unname(lapply(dts, \(x) x[, ..base_cols]))
-  stopifnot(sapply(2:(length(dts) - 1), \(i) {
-    identical(basecollist[[1]], basecollist[[i]])
-  }))
-
-  # Create base dt of only base columns for identificiation that's the same
-  # across all dts and consecutively cbind score columns
-  basedt = basecollist[[1]]
-  for (dti in seq_along(dts)) {
-    measure_col = setdiff(names(dts[[dti]]), base_cols)
-    basedt = cbind(basedt, dts[[dti]][, ..measure_col])
-  }
-
-  basedt[, tuned := ..tuning_measure][]
-}
-
-
-
 
 tablify = function(x, caption = NULL, ...) {
   x |>
