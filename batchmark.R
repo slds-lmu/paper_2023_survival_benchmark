@@ -212,7 +212,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
 
   callback_archive_logs = callback_batch_tuning(
     id = "mlr3tuning.archive_logs",
-    label = "Add tuning logs to archive to detect fallback usage",
+    label = "Add tuning logs to archive for potential debugging",
     on_eval_before_archive = callback_archive_logs_impl
   )
 
@@ -413,16 +413,16 @@ for (measure in measures) {
          booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      xgboost.cox.nrounds = p_int(
+      xgb_cox.nrounds = p_int(
         upper = 5000,
         tags = "internal_tuning",
         aggr = function(x) as.integer(mean(unlist(x)))
       ),
-      xgboost.cox.max_depth = p_int(1, 20),
-      xgboost.cox.subsample = p_dbl(0, 1),
-      xgboost.cox.colsample_bytree = p_dbl(0, 1),
-      xgboost.cox.eta = p_dbl(0, 1),
-      xgboost.cox.grow_policy = p_fct(c("depthwise", "lossguide"))
+      xgb_cox.max_depth = p_int(1, 20),
+      xgb_cox.subsample = p_dbl(0, 1),
+      xgb_cox.colsample_bytree = p_dbl(0, 1),
+      xgb_cox.eta = p_dbl(0, 1),
+      xgb_cox.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
 
     ,
@@ -435,18 +435,18 @@ for (measure in measures) {
          booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      xgboost.aft.nrounds = p_int(
+      xgb_aft.nrounds = p_int(
         upper = 5000,
         tags = "internal_tuning",
         aggr = function(x) as.integer(mean(unlist(x)))
       ),
-      xgboost.aft.max_depth = p_int(1, 20),
-      xgboost.aft.subsample = p_dbl(0, 1),
-      xgboost.aft.colsample_bytree = p_dbl(0, 1),
-      xgboost.aft.eta = p_dbl(0, 1),
-      xgboost.aft.grow_policy = p_fct(c("depthwise", "lossguide")),
-      xgboost.aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
-      xgboost.aft.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
+      xgb_aft.max_depth = p_int(1, 20),
+      xgb_aft.subsample = p_dbl(0, 1),
+      xgb_aft.colsample_bytree = p_dbl(0, 1),
+      xgb_aft.eta = p_dbl(0, 1),
+      xgb_aft.grow_policy = p_fct(c("depthwise", "lossguide")),
+      xgb_aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
+      xgb_aft.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
     )
 
     ,
@@ -506,5 +506,4 @@ for (measure in measures) {
 }
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
-
 cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {conf$reg_name}}")
