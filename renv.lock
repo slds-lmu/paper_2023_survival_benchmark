@@ -1771,7 +1771,8 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "mlr3extralearners",
       "RemoteUsername": "mlr-org",
-      "RemotePkgRef": "mlr-org/mlr3extralearners",
+      "RemotePkgRef": "mlr-org/mlr3extralearners@dd5e37c6aac46a2ce50d0e98cbb6c0737426b0ce",
+      "RemoteRef": "dd5e37c6aac46a2ce50d0e98cbb6c0737426b0ce",
       "RemoteSha": "dd5e37c6aac46a2ce50d0e98cbb6c0737426b0ce",
       "Requirements": [
         "R",
@@ -1878,7 +1879,8 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "mlr3proba",
       "RemoteUsername": "mlr-org",
-      "RemotePkgRef": "mlr-org/mlr3proba",
+      "RemotePkgRef": "mlr-org/mlr3proba@5cc5c427f66d4c47e9ee2259bb656ba6fbca797b",
+      "RemoteRef": "5cc5c427f66d4c47e9ee2259bb656ba6fbca797b",
       "RemoteSha": "5cc5c427f66d4c47e9ee2259bb656ba6fbca797b",
       "Requirements": [
         "R",
