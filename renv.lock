@@ -36,9 +36,10 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "binderh",
       "RemoteRepo": "CoxBoost",
-      "RemoteRef": "master",
+      "RemoteUsername": "binderh",
+      "RemotePkgRef": "binderh/CoxBoost@1dc47d7051f660b28520670b34d031143f9eadfd",
+      "RemoteRef": "1dc47d7051f660b28520670b34d031143f9eadfd",
       "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd",
       "Requirements": [
         "Matrix",
@@ -49,7 +50,7 @@
         "stats",
         "survival"
       ],
-      "Hash": "246646093cea30e34891e988bd5c779e"
+      "Hash": "c210d6eaa33f95ce15b3c8e15c860332"
     },
     "DiagrammeR": {
       "Package": "DiagrammeR",
@@ -162,9 +163,9 @@
     },
     "MASS": {
       "Package": "MASS",
-      "Version": "7.3-61",
+      "Version": "7.3-64",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "grDevices",
@@ -173,7 +174,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "0cafd6f0500e5deba33be22c46bf6055"
+      "Hash": "49d2d8090b74c1179df1aff16201caf8"
     },
     "Matrix": {
       "Package": "Matrix",
@@ -236,13 +237,6 @@
       ],
       "Hash": "470851b6d5d0ac559e9d01bb352b4021"
     },
-    "RApiSerialize": {
-      "Package": "RApiSerialize",
-      "Version": "0.1.4",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "363cffb978c5b0e8042623638e984574"
-    },
     "RColorBrewer": {
       "Package": "RColorBrewer",
       "Version": "1.1-3",
@@ -255,14 +249,14 @@
     },
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.0.13",
+      "Version": "1.0.13-1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "methods",
         "utils"
       ],
-      "Hash": "f27411eb6d9c3dada5edd444b8416675"
+      "Hash": "6b868847b365672d6c1677b1608da9ed"
     },
     "RcppArmadillo": {
       "Package": "RcppArmadillo",
@@ -290,16 +284,6 @@
         "utils"
       ],
       "Hash": "4ac8e423216b8b70cb9653d1b3f71eb9"
-    },
-    "RcppParallel": {
-      "Package": "RcppParallel",
-      "Version": "5.1.9",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R"
-      ],
-      "Hash": "f38a72a419b91faac0ce5d9eee04c120"
     },
     "RcppTOML": {
       "Package": "RcppTOML",
@@ -377,16 +361,6 @@
         "utils"
       ],
       "Hash": "759167e07dc9ce177a96bc94f331f761"
-    },
-    "askpass": {
-      "Package": "askpass",
-      "Version": "1.2.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "sys"
-      ],
-      "Hash": "c39f4155b3ceb1a9a2799d700fbd4b6a"
     },
     "assertthat": {
       "Package": "assertthat",
@@ -474,14 +448,9 @@
     },
     "bbotk": {
       "Package": "bbotk",
-      "Version": "1.2.0.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
-      "RemoteRepo": "bbotk",
-      "RemoteRef": "main",
-      "RemoteSha": "ac26edd7cecac255fb2ffc5580d554a8ed87a3d7",
+      "Version": "1.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -492,7 +461,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "adacf6a9fa01df01a579ea413996bc84"
+      "Hash": "6958d27bdd186793af1ac164931d44f7"
     },
     "bdsmatrix": {
       "Package": "bdsmatrix",
@@ -748,26 +717,16 @@
       ],
       "Hash": "859d96e65ef198fd43e82b9628d593ef"
     },
-    "curl": {
-      "Package": "curl",
-      "Version": "5.2.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R"
-      ],
-      "Hash": "d91263322a58af798f6cf3b13fd56dde"
-    },
     "data.table": {
       "Package": "data.table",
-      "Version": "1.16.2",
+      "Version": "1.16.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods"
       ],
-      "Hash": "2e00b378fc3be69c865120d9f313039a"
+      "Hash": "38bbf05fc2503143db4c734a7e5cab66"
     },
     "data.tree": {
       "Package": "data.tree",
@@ -805,22 +764,6 @@
         "stats"
       ],
       "Hash": "0a861334beb4eb8ca0d24a27b28b6679"
-    },
-    "dendextend": {
-      "Package": "dendextend",
-      "Version": "1.18.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "datasets",
-        "ggplot2",
-        "magrittr",
-        "stats",
-        "utils",
-        "viridis"
-      ],
-      "Hash": "735689b7975ad5a4d72b571857d60a33"
     },
     "diagram": {
       "Package": "diagram",
@@ -863,9 +806,10 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "xoopR",
       "RemoteRepo": "distr6",
-      "RemoteRef": "main",
+      "RemoteUsername": "xoopR",
+      "RemotePkgRef": "xoopR/distr6@a642cd312c51fba7ede7336036f907dbe279889e",
+      "RemoteRef": "a642cd312c51fba7ede7336036f907dbe279889e",
       "RemoteSha": "a642cd312c51fba7ede7336036f907dbe279889e",
       "Requirements": [
         "R6",
@@ -877,7 +821,7 @@
         "set6",
         "stats"
       ],
-      "Hash": "5a5afc70c3794a7a67f9edfa93ca164e"
+      "Hash": "8efe99f5a71e99c95d9fe26db138acf3"
     },
     "doParallel": {
       "Package": "doParallel",
@@ -1087,7 +1031,7 @@
       "Package": "foreign",
       "Version": "0.8-87",
       "Source": "Repository",
-      "Repository": "https://packagemanager.rstudio.com/all/latest",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods",
@@ -1370,21 +1314,6 @@
         "yaml"
       ],
       "Hash": "04291cc45198225444a397606810ac37"
-    },
-    "httr": {
-      "Package": "httr",
-      "Version": "1.4.7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "R6",
-        "curl",
-        "jsonlite",
-        "mime",
-        "openssl"
-      ],
-      "Hash": "ac107251d9d9fd72f0ca8049988f1d7f"
     },
     "igraph": {
       "Package": "igraph",
@@ -1757,17 +1686,17 @@
     },
     "mlbench": {
       "Package": "mlbench",
-      "Version": "2.1-5",
+      "Version": "2.1-6",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R"
       ],
-      "Hash": "3a46a0a463d4afcf10df9a3f4e627eca"
+      "Hash": "438eb751e9e5a8f5782b816913a056f9"
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.21.1",
+      "Version": "0.22.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1788,7 +1717,7 @@
         "parallelly",
         "uuid"
       ],
-      "Hash": "09408d75c7e8b0aae2870a82da85e990"
+      "Hash": "4fd3f5cb0454ee68906a78d3fd6590d6"
     },
     "mlr3batchmark": {
       "Package": "mlr3batchmark",
@@ -1796,9 +1725,10 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3batchmark",
-      "RemoteRef": "main",
+      "RemoteUsername": "mlr-org",
+      "RemotePkgRef": "mlr-org/mlr3batchmark@59a7efa8511cc5d3621886f455b555854d25dd00",
+      "RemoteRef": "59a7efa8511cc5d3621886f455b555854d25dd00",
       "RemoteSha": "59a7efa8511cc5d3621886f455b555854d25dd00",
       "Requirements": [
         "R",
@@ -1810,7 +1740,7 @@
         "mlr3misc",
         "uuid"
       ],
-      "Hash": "e0ec88b0fb34651f91e6aa330ff7a18e"
+      "Hash": "b54de10f9710a3caf0b0113c4ca68f6a"
     },
     "mlr3benchmark": {
       "Package": "mlr3benchmark",
@@ -1818,9 +1748,10 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3benchmark",
-      "RemoteRef": "fix_bd_plot",
+      "RemoteUsername": "mlr-org",
+      "RemotePkgRef": "mlr-org/mlr3benchmark@d70a9ebeffe2f77c332d48c2d32401e8067c6f1d",
+      "RemoteRef": "d70a9ebeffe2f77c332d48c2d32401e8067c6f1d",
       "RemoteSha": "d70a9ebeffe2f77c332d48c2d32401e8067c6f1d",
       "Requirements": [
         "R",
@@ -1830,18 +1761,18 @@
         "ggplot2",
         "mlr3misc"
       ],
-      "Hash": "555d410ae9502fad3938deef4492bd31"
+      "Hash": "18998db0e4e7d1eef8f5435cc1c41b33"
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
-      "Version": "0.9.0-9000",
+      "Version": "1.0.0",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3extralearners",
-      "RemoteRef": "main",
-      "RemoteSha": "e09b94693a17565df8e7cb561a38b238acc7c5b2",
+      "RemoteUsername": "mlr-org",
+      "RemotePkgRef": "mlr-org/mlr3extralearners",
+      "RemoteSha": "dd5e37c6aac46a2ce50d0e98cbb6c0737426b0ce",
       "Requirements": [
         "R",
         "R6",
@@ -1852,7 +1783,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "d234037e05bbe15215fdce5bf0f0e797"
+      "Hash": "4794bb0979fc79821ab189c34d7461b7"
     },
     "mlr3learners": {
       "Package": "mlr3learners",
@@ -1905,7 +1836,7 @@
     },
     "mlr3misc": {
       "Package": "mlr3misc",
-      "Version": "0.15.1",
+      "Version": "0.16.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1917,36 +1848,11 @@
         "digest",
         "methods"
       ],
-      "Hash": "465c3a7a04caf09a431bef1b9c5ec89b"
-    },
-    "mlr3oml": {
-      "Package": "mlr3oml",
-      "Version": "0.10.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "R6",
-        "backports",
-        "bit64",
-        "checkmate",
-        "curl",
-        "data.table",
-        "jsonlite",
-        "lgr",
-        "methods",
-        "mlr3",
-        "mlr3misc",
-        "paradox",
-        "stringi",
-        "uuid",
-        "withr"
-      ],
-      "Hash": "5a16e979056b6d32a6469dd245b8e422"
+      "Hash": "7a55cccc9782bdb9132d880fa4b5970a"
     },
     "mlr3pipelines": {
       "Package": "mlr3pipelines",
-      "Version": "0.7.0",
+      "Version": "0.7.1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1962,18 +1868,18 @@
         "paradox",
         "withr"
       ],
-      "Hash": "51d218914e579258819a085dc40cc1d1"
+      "Hash": "490f06168c93a2c4f0ebabc4c0709aca"
     },
     "mlr3proba": {
       "Package": "mlr3proba",
-      "Version": "0.7.1",
+      "Version": "0.7.4",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "mlr-org",
       "RemoteRepo": "mlr3proba",
-      "RemoteRef": "main",
-      "RemoteSha": "de18eb589c6a1c675b9e8895fe1a5c3bd7d1a6c5",
+      "RemoteUsername": "mlr-org",
+      "RemotePkgRef": "mlr-org/mlr3proba",
+      "RemoteSha": "5cc5c427f66d4c47e9ee2259bb656ba6fbca797b",
       "Requirements": [
         "R",
         "R6",
@@ -1985,22 +1891,16 @@
         "mlr3",
         "mlr3misc",
         "mlr3pipelines",
-        "mlr3viz",
         "paradox",
         "survival"
       ],
-      "Hash": "f67a06ef187bc285725ae9a21a8d71a2"
+      "Hash": "29143d2f6e385124f7d899113dab7bb3"
     },
     "mlr3tuning": {
       "Package": "mlr3tuning",
-      "Version": "1.1.0.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteUsername": "mlr-org",
-      "RemoteRepo": "mlr3tuning",
-      "RemoteRef": "main",
-      "RemoteSha": "c6cabfcf39a859260d5126d5103e69b61f9c0fd4",
-      "RemoteHost": "api.github.com",
+      "Version": "1.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "R6",
@@ -2012,7 +1912,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "55308c5dab6a29510dcd755b269fb8d3"
+      "Hash": "bf758ac8bea6431bd53bb113560aac1d"
     },
     "mlr3viz": {
       "Package": "mlr3viz",
@@ -2030,21 +1930,6 @@
         "viridis"
       ],
       "Hash": "7f551adf4e2419d42adfe075921d72c8"
-    },
-    "modeldata": {
-      "Package": "modeldata",
-      "Version": "1.4.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "MASS",
-        "R",
-        "dplyr",
-        "purrr",
-        "rlang",
-        "tibble"
-      ],
-      "Hash": "a88b3cef9f6a41e075163e767ad8c8fa"
     },
     "modeltools": {
       "Package": "modeltools",
@@ -2133,7 +2018,7 @@
       "Package": "nlme",
       "Version": "3.1-166",
       "Source": "Repository",
-      "Repository": "https://packagemanager.rstudio.com/all/latest",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "graphics",
@@ -2181,16 +2066,6 @@
         "R6"
       ],
       "Hash": "d08f1154dfa13239db1ae3ffded5adb2"
-    },
-    "openssl": {
-      "Package": "openssl",
-      "Version": "2.2.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "askpass"
-      ],
-      "Hash": "d413e0fef796c9401a4419485f709ca1"
     },
     "palmerpenguins": {
       "Package": "palmerpenguins",
@@ -2244,7 +2119,7 @@
     },
     "parallelly": {
       "Package": "parallelly",
-      "Version": "1.38.0",
+      "Version": "1.41.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -2252,7 +2127,7 @@
         "tools",
         "utils"
       ],
-      "Hash": "6e8b139c1904f5e9e14c69db64453bbe"
+      "Hash": "f5ae11e8e15ee84950752e7b01c55295"
     },
     "param6": {
       "Package": "param6",
@@ -2260,9 +2135,9 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "xoopR",
       "RemoteRepo": "param6",
-      "RemoteRef": "main",
+      "RemoteUsername": "xoopR",
+      "RemotePkgRef": "xoopR/param6",
       "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
       "Requirements": [
         "R6",
@@ -2271,7 +2146,7 @@
         "dictionar6",
         "set6"
       ],
-      "Hash": "f6948611ff164d8375e70fb49c15eed7"
+      "Hash": "5b753f7d094358dd870b0506dcc715fd"
     },
     "partykit": {
       "Package": "partykit",
@@ -2327,12 +2202,11 @@
     },
     "pillar": {
       "Package": "pillar",
-      "Version": "1.9.0",
+      "Version": "1.10.1",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "cli",
-        "fansi",
         "glue",
         "lifecycle",
         "rlang",
@@ -2340,7 +2214,7 @@
         "utils",
         "vctrs"
       ],
-      "Hash": "15da5a8412f317beeee6175fbc76f4bb"
+      "Hash": "8b16b6097daef84cd3c40a6a7c5c9d86"
     },
     "pkgconfig": {
       "Package": "pkgconfig",
@@ -2533,20 +2407,6 @@
       ],
       "Hash": "1cba04a4e9414bdefc9dcaa99649a8dc"
     },
-    "qs": {
-      "Package": "qs",
-      "Version": "0.27.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "BH",
-        "R",
-        "RApiSerialize",
-        "Rcpp",
-        "stringfish"
-      ],
-      "Hash": "54716cfa710dfa4fa63eae0244661478"
-    },
     "quadprog": {
       "Package": "quadprog",
       "Version": "1.5-8",
@@ -2669,22 +2529,6 @@
         "vroom"
       ],
       "Hash": "9de96463d2117f6ac49980577939dfb3"
-    },
-    "relations": {
-      "Package": "relations",
-      "Version": "0.6-13",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "cluster",
-        "grDevices",
-        "graphics",
-        "sets",
-        "slam",
-        "stats"
-      ],
-      "Hash": "5b298128a355b7366d9c5e76c9552508"
     },
     "relsurv": {
       "Package": "relsurv",
@@ -2957,11 +2801,11 @@
       "Version": "0.2.6",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteUsername": "xoopR",
-      "RemoteRepo": "set6",
-      "RemoteRef": "main",
-      "RemoteSha": "a901255c26614a0ece317dc849621420f9393d42",
       "RemoteHost": "api.github.com",
+      "RemoteRepo": "set6",
+      "RemoteUsername": "xoopR",
+      "RemotePkgRef": "xoopR/set6",
+      "RemoteSha": "a901255c26614a0ece317dc849621420f9393d42",
       "Requirements": [
         "R6",
         "Rcpp",
@@ -2969,21 +2813,7 @@
         "ooplah",
         "utils"
       ],
-      "Hash": "819facf7dcf2fea85e25142900ae176e"
-    },
-    "sets": {
-      "Package": "sets",
-      "Version": "1.0-25",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "grDevices",
-        "graphics",
-        "stats",
-        "utils"
-      ],
-      "Hash": "cf00a3c090a54979990af2e89506a1d3"
+      "Hash": "884a34275d6c91af260c199e5135c631"
     },
     "shape": {
       "Package": "shape",
@@ -3017,17 +2847,6 @@
         "survival"
       ],
       "Hash": "cc359ae289e5ac8485c7d6e154195794"
-    },
-    "slam": {
-      "Package": "slam",
-      "Version": "0.1-54",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "stats"
-      ],
-      "Hash": "ac3e35b2fb2c202ff6b222e4c39f7b43"
     },
     "smcure": {
       "Package": "smcure",
@@ -3079,18 +2898,6 @@
       ],
       "Hash": "26e158d12052c279bdd4ba858b80fb1f"
     },
-    "stringfish": {
-      "Package": "stringfish",
-      "Version": "0.16.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "Rcpp",
-        "RcppParallel"
-      ],
-      "Hash": "b7eb79470319ae71d4b5ed9cd7bf7294"
-    },
     "stringi": {
       "Package": "stringi",
       "Version": "1.8.4",
@@ -3123,7 +2930,7 @@
     },
     "survival": {
       "Package": "survival",
-      "Version": "3.7-0",
+      "Version": "3.8-3",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -3135,7 +2942,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "5aaa9cbaf4aba20f8e06fdea1850a398"
+      "Hash": "fe42836742a4f065b3f3f5de81fccab9"
     },
     "survivalmodels": {
       "Package": "survivalmodels",
@@ -3143,14 +2950,15 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "RaphaelS1",
       "RemoteRepo": "survivalmodels",
-      "RemoteRef": "main",
+      "RemoteUsername": "RaphaelS1",
+      "RemotePkgRef": "RaphaelS1/survivalmodels@e7af58c7d8aec9f253bfed9f3814308ba2952e43",
+      "RemoteRef": "e7af58c7d8aec9f253bfed9f3814308ba2952e43",
       "RemoteSha": "e7af58c7d8aec9f253bfed9f3814308ba2952e43",
       "Requirements": [
         "Rcpp"
       ],
-      "Hash": "fd938d919c129edc278c6125477d2b88"
+      "Hash": "0ecc59a8a02ce6648b1763feea9670ed"
     },
     "survivalsvm": {
       "Package": "survivalsvm",
@@ -3180,13 +2988,6 @@
       ],
       "Hash": "124a41fdfa23e8691cb744c762f10516"
     },
-    "sys": {
-      "Package": "sys",
-      "Version": "3.4.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "de342ebfebdbf40477d0758d05426646"
-    },
     "systemfonts": {
       "Package": "systemfonts",
       "Version": "1.1.0",
@@ -3203,7 +3004,7 @@
       "Package": "textshaping",
       "Version": "0.4.0",
       "Source": "Repository",
-      "Repository": "https://packagemanager.posit.co/cran/latest",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "cpp11",
