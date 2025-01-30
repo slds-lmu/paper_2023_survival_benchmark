@@ -4,6 +4,8 @@ default:
   reg_dir: !expr here::here("registries", reg_name)
   result_path: !expr here::here("results", reg_name)
   seed: 123
+  learners:
+    threads: 1
   outer_eval:
     resampling: "repeated_cv"
     folds: 3
@@ -41,14 +43,16 @@ production:
 # Lower budget, just checking everything works, close to "production"
 trial:
   reg_name: "trial"
+  learners:
+    threads: 2
   fallback:
     inner: true
-    outer: false
+    outer: true
   store:
     tuning_instance: false
     models: false
   budget:
-    evals_constant: 10
+    evals_constant: 5
     evals_multiplier: 0
 
 debug:

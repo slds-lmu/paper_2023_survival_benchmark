@@ -38,7 +38,7 @@ if (FALSE) {
 
   # Non-CRAN pkgs for manual installation/updating
   renv::install("mlr-org/mlr3proba", prompt = FALSE)
-  renv::install("mlr-org/mlr3extralearners@surv_updates", prompt = FALSE, lock = TRUE)
+  renv::install("mlr-org/mlr3extralearners", prompt = FALSE)
   #renv::install("xoopR/distr6", prompt = FALSE)
   renv::install("RaphaelS1/survivalmodels", prompt = FALSE)
 

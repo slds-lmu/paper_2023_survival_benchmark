@@ -149,8 +149,14 @@ callback_backup_impl = function(callback, context) {
   # Assemble path based on directory and filename, store in state just in case.
   callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
 
+  archive = data.table::as.data.table(context$instance$archive)
+  archive[, learner_id := callback$state$learner_id]
+  archive[, task_id := ..task_id]
+  archive[, tuning_measure := callback$state$tuning_measure]
+  archive[, resampling_hash := ..iter_hash]
+
   # cli::cli_alert_info("Writing archive to {callback$state$path}")
-  saveRDS(data.table::as.data.table(context$instance$archive), callback$state$path)
+  saveRDS(archive, callback$state$path)
 }
 
 #' Callback to find the learner logs and append them to the tuning archive.
@@ -169,13 +175,6 @@ callback_archive_logs_impl = function(callback, context) {
     context$aggregated_performance[, log := list(logs)]
   }
 
-  # !! This appears to be not necessary and also caused an issue by removing the
-  # internal_tuned_valuescolumn which needs to be present for early stopping to function
-  # For XGBoost's internally tuned nrounds param, we pry it out of the list-column to simplify things
-  # if (hasName(context$aggregated_performance, "internal_tuned_values")) {
-  #   context$aggregated_performance = batchtools::unwrap(context$aggregated_performance, "internal_tuned_values")
-  # }
-
 }
 
 # Utilities for analysis ----------------------------------------------------------------------
@@ -187,37 +186,39 @@ callback_archive_logs_impl = function(callback, context) {
 #' @examples
 #' save_lrntab()
 save_lrntab <- function(path = here::here("attic", "learners.csv")) {
-  lrnlist <- list(
-    KM = list(learner = "surv.kaplan", params = 0),
-    NL = list(learner = "surv.nelson", params = 0),
-    AK = list(learner = "surv.akritas", params = 1),
-    CPH = list(learner = "surv.coxph", params = 0),
-    GLMN = list(learner = "surv.cv_glmnet", .encode = TRUE, params = 1, internal_cv = TRUE),
-    Pen = list(learner = "surv.penalized", params = 2),
-    AFT = list(learner = "surv.parametric", params = 1, grid = TRUE),
-    Flex = list(learner = "surv.flexible", params = 1, grid = TRUE),
-    RFSRC = list(learner = "surv.rfsrc", params = 5),
-    RAN = list(learner = "surv.ranger", params = 5),
-    CIF = list(learner = "surv.cforest", params = 5),
-    ORSF = list(learner = "surv.aorsf", params = 2),
-    RRT = list(learner = "surv.rpart", params = 1, grid = TRUE),
-    MBST = list(learner = "surv.mboost", params = 4),
-    CoxB = list(learner = "surv.cv_coxboost", .encode = TRUE, params = 0, internal_cv = TRUE),
-    XGBCox = list(learner = "surv.xgboost.cox", .encode = TRUE, params = 5, .form = "ph"),
-    XGBAFT = list(learner = "surv.xgboost.aft", .encode = TRUE, params = 7, .form = "aft"),
-    SSVM = list(learner = "surv.svm", .encode = TRUE, .scale = TRUE, params = 4)
-  ) |>
-    lapply(data.table::as.data.table) |>
-    data.table::rbindlist(fill = TRUE, idcol = TRUE) |>
-    dplyr::mutate(dplyr::across(dplyr::where(is.logical), ~ifelse(is.na(.x), FALSE, .x))) |>
-    # setNames(c("learner_id", "learner_id_long", "params", "encode", "internal_cv", "grid", "scale")) |>
-    dplyr::select(learner_id = .id, learner_id_long = learner, params, internal_cv, encode = .encode, scale = .scale, grid)
+  lrntab <- mlr3misc::rowwise_table(
+    ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
+    "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "NL"      , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "AK"      , "akritas"     , "surv.akritas"     , 1 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
+    "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
+    "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
+    "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RAN"     , "ranger"     , "surv.ranger"       , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CIF"     , "cforest"    , "surv.cforest"      , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "ORSF"    , "aorsf"      , "surv.aorsf"        , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "RRT"     , "rpart"      , "surv.rpart"        , 1 ,    FALSE , FALSE ,        TRUE,  FALSE,
+    "MBSTCox" , "mboost_cox" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "MBSTAFT" , "mboost_aft" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "CoxB"    , "coxboost"   , "surv.cv_coxboost"  , 0 ,    TRUE  , TRUE  ,        FALSE, FALSE,
+    "XGBCox"  , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,
+    "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE
+  )
+
+  lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
+    "threads" %in% unlist(lrn(x)$param_set$tags)
+    }, logical(1))
 
 
-  lrnlist |>
+
+  lrntab |>
     write.csv(file = path, row.names = FALSE)
 
-  lrnlist
+  lrntab
 }
 
 load_lrntab = function(path = here::here("attic", "learners.csv")) {
@@ -246,17 +247,17 @@ get_measures_eval = function() {
     msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
     msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
-    msr("surv.brier",        id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
-    msr("surv.brier",        id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
+    msr("surv.brier",       id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
+    msr("surv.brier",       id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
-    # Unsued, kept for completeness
+    # Unused, kept for completeness
     # msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
     # msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
     msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
-    # Unsued, kept for completeness
+    # Unused, kept for completeness
     # msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
 
   )
@@ -572,13 +573,8 @@ reassemble_archives = function(
   }
 
   learners = load_lrntab()
-  learners = learners[, c("learner_id", "learner_id_long")]
+  learners = learners[, c("id", "base_id")]
 
-  # learners$learner_id_long = dplyr::case_when(
-  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-  #   .default = learners$learner_id_long
-  # )
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
@@ -588,32 +584,26 @@ reassemble_archives = function(
     if (!keep_logs & "log" %in% names(archive)) {
       # Temp fix because objects became to large
       archive[, log := NULL]
-    } else {
-      # Including the fallback log at all was a mistake
-      # mlr3misc::walk(archive$log, \(log) {
-      #   mlr3misc::remove_named(log, "fallback_log")
-      # })
     }
 
     components = fs::path_file(file) |>
       fs::path_ext_remove() |>
       stringi::stri_split_fixed(pattern = "__")
     components = components[[1]]
-    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
+    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
 
     ret = data.table::data.table(
       t(components),
       archive = list(archive),
-      file = file,
+      file = fs::path_rel(file),
       warnings_sum = sum(archive$warnings),
       errors_sum = sum(archive$errors)
     )
   }))
   cli::cli_progress_done(id = pb)
 
-  archives = archives[learners, on = "learner_id_long"]
+  archives = archives[learners, on = "base_id"]
   archives = archives[!is.na(tune_measure), ]
-  archives[, learner_id_long := NULL]
 
   saveRDS(archives, archive_path)
 
@@ -638,13 +628,7 @@ convert_archives_csv = function(conf = config::get()) {
 
   # Having to fix XGBoost split not corresponding to learner IDs at time of benchmark
   learners = load_lrntab()
-  learners = learners[, c("learner_id", "learner_id_long")]
-
-  # learners$learner_id_long = dplyr::case_when(
-  #   learners$learner_id == "XGBCox" ~ "surv.xgboostcox",
-  #   learners$learner_id == "XGBAFT" ~ "surv.xgboostaft",
-  #   .default = learners$learner_id_long
-  # )
+  learners = learners[, c("id", "base_id")]
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   purrr::walk(tuning_files, \(file) {
@@ -656,11 +640,11 @@ convert_archives_csv = function(conf = config::get()) {
       stringi::stri_split_fixed(pattern = "__")
 
     components = components[[1]]
-    names(components) = c("tune_measure", "learner_id_long", "task_id", "time_epoch", "iter_hash")
-    components = components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")]
+    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
+    components = components[c("tune_measure", "base_id", "task_id", "iter_hash")]
 
     to_csv = cbind(
-      data.table::data.table(t(components[c("tune_measure", "learner_id_long", "task_id", "iter_hash")])),
+      data.table::data.table(t(components[c("tune_measure", "base_id", "task_id", "iter_hash")])),
       archive
     )
 
@@ -817,19 +801,6 @@ rename_learners = function(x) {
   xdat[]
 }
 
-combine_bma = function(bma_harrell_c, bma_isbs) {
-  checkmate::assert_class(bma_harrell_c, classes = "BenchmarkAggr")
-  checkmate::assert_class(bma_isbs, classes = "BenchmarkAggr")
-
-  bma1 = data.table::copy(bma_harrell_c$data)
-  bma1[, tuned := "harrell_c"]
-
-  bma2 = data.table::copy(bma_isbs$data)
-  bma2[, tuned := "isbs"]
-
-  data.table::rbindlist(list(bma1, bma2))
-}
-
 add_learner_groups = function(x) {
   if (checkmate::test_class(x, classes = "BenchmarkAggr")) {
     x = data.table::copy(x$data)
@@ -849,49 +820,6 @@ add_learner_groups = function(x) {
       )
     )
 }
-
-#' Collect individually `$score()`'d or `$aggregate()`'d results from `conf$result_path`.
-#' @param conf `list()` of conf, `config::get()`
-#' @param tuning_measure `character(1)`, one of `"harrell_c"` or `"isbs"`
-#' @param type `character(1)`, one of `"scores"` or `"aggr"`
-combine_scores_aggrs = function(
-    conf = config::get(),
-    tuning_measure = "harrell_c",
-    type = "scores"
-) {
-
-  checkmate::assert_subset(tuning_measure, choices = c("harrell_c", "isbs"))
-  checkmate::assert_subset(type, choices = c("scores", "aggr"))
-
-  # Load all scores from files
-  files = fs::dir_ls(fs::path(conf$result_path, tuning_measure, type))
-  dts = lapply(files, readRDS)
-  dts
-
-  if (type == "scores") {
-    base_cols = c("uhash", "nr", "task_id", "learner_id", "resampling_id",
-                  "iteration", "warnings", "errors")
-  }
-
-  # Paranoid check that alle base columns are identical across all dts
-  basecollist = unname(lapply(dts, \(x) x[, ..base_cols]))
-  stopifnot(sapply(2:(length(dts) - 1), \(i) {
-    identical(basecollist[[1]], basecollist[[i]])
-  }))
-
-  # Create base dt of only base columns for identificiation that's the same
-  # across all dts and consecutively cbind score columns
-  basedt = basecollist[[1]]
-  for (dti in seq_along(dts)) {
-    measure_col = setdiff(names(dts[[dti]]), base_cols)
-    basedt = cbind(basedt, dts[[dti]][, ..measure_col])
-  }
-
-  basedt[, tuned := ..tuning_measure][]
-}
-
-
-
 
 tablify = function(x, caption = NULL, ...) {
   x |>

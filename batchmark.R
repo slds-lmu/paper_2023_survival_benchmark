@@ -50,11 +50,13 @@ source(here::here("tasks.R"))
 # Base learner setup ------------------------------------------------------
 #' Base learner with fallback + encapsulation, preprocessing pipeline and composition
 #' @param key Learner key passed to `lrn()`.
+#' @param id The (mandatory) base learner id needed for disambiguation in case a learner is used multiple times, such as `surv.mboost` for Cox and AFT variants.
 #' @param ... Additional arguments passed to `lrn()`.
 #' @param .encode Use `po("encode", method = "treatment")`? Set `TRUE` for e.g. XGBoost.
 #' @param .scale Use `po("scale")`? Set `TRUE` for e.g. SSVM.
-bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
-  cli::cli_h2("Constructing {.val {key}}")
+#' @param .threads `(integer(1))` Number of threads to use for parallel processing, set via `mlr3::set_threads`. If `NULL`, defaults to `max(1, conf$learners$threads)`
+bl = function(key, id,..., .encode = FALSE, .scale = FALSE, .threads = NULL) {
+  cli::cli_h2("Constructing {.val {id}} from {.val {key}}")
 
   # 1. fixfactors ensures factor levels are the same during train and predict
   # - might introduce missings, hence
@@ -93,7 +95,7 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
   # Stack preprocessing on top of learner + distr stuff.
   graph_learner = preproc %>>%
     po("removeconstants") %>>%
-    lrn(key, ...) |>
+    lrn(key, id = id, ...) |>
     as_learner()
 
   graph_learner$predict_type = "crank"
@@ -127,6 +129,12 @@ bl = function(key, ..., .encode = FALSE, .scale = FALSE) {
     checkmate::assert_true(graph_learner$validate == "test")
   }
 
+  if (is.null(.threads)) {
+    .threads = max(1, conf$learners$threads)
+  }
+  cli::cli_alert_info("Setting threads to {.val {(.threads)}}")
+  set_threads(graph_learner, n = .threads)
+
   graph_learner
 }
 
@@ -151,7 +159,6 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     "repeated_cv" = rsmp("repeated_cv", folds = conf$tuning$folds, repeats = conf$tuning$repeats),
     "holdout"     = rsmp("holdout", ratio = conf$tuning$ratio)
   )
-
 
   # Need to switch tuner/trm since some learners have very small search spaces
   # Here, we use grid search to efficiently search the limited (fewer than 50 unique HPCs)
@@ -195,23 +202,17 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
     on_optimization_end = callback_backup_impl
   )
 
-  # Check learner_id, used for disambiguation of individually saved tuning archives
-  known_learners = c("surv.kaplan", "surv.nelson", "surv.akritas", "surv.coxph",
-                     "surv.cv_glmnet", "surv.penalized", "surv.parametric", "surv.flexible",
-                     "surv.rfsrc", "surv.ranger", "surv.cforest", "surv.aorsf", "surv.rpart",
-                     "surv.mboost", "surv.cv_coxboost", "surv.xgboost.cox", "surv.xgboost.aft",
-                     "surv.svm")
-  pattern = paste0(known_learners, collapse = "|")
-  learner_id = stringr::str_extract(learner$id, pattern)
-  checkmate::assert_string(learner_id, min.chars = 7, pattern = "^surv")
-
+  # store context for callback to write archives with information needed for disambiguation
+  # - path_dir: where to store the archives, context specific based on config
+  # - learner_id: id of the **base** learner, needs to be set and unique!
+  # - tuning_measure: id of the measure used for tuning
   callback_backup$state$path_dir = fs::path(conf$reg_dir, "tuning_archives")
-  callback_backup$state$learner_id = learner_id
+  callback_backup$state$learner_id = learner$base_learner()$id
   callback_backup$state$tuning_measure = measure$id
 
   callback_archive_logs = callback_batch_tuning(
     id = "mlr3tuning.archive_logs",
-    label = "Add tuning logs to archive to detect fallback usage",
+    label = "Add tuning logs to archive for potential debugging",
     on_eval_before_archive = callback_archive_logs_impl
   )
 
@@ -263,49 +264,47 @@ for (measure in measures) {
   cli::cli_h1("Assembling learners for {.val {measure$id}}")
 
   learners = list(
-    KM = bl("surv.kaplan")
+    KM = bl("surv.kaplan", id = "kaplan")
 
     ,
 
-    `NA` = bl("surv.nelson")
+    `NA` = bl("surv.nelson", id = "kaplan")
 
     ,
 
     # survivalmodels::akritas
     # https://raphaels1.github.io/survivalmodels/reference/akritas.html
     AK = wrap_auto_tune(
-      bl("surv.akritas"),
-      surv.akritas.lambda = p_dbl(0, 1)
+      bl("surv.akritas", id = "akritas"),
+      akritas.lambda = p_dbl(0, 1)
     )
 
     ,
 
-    CPH = bl("surv.coxph")
+    CPH = bl("surv.coxph", id = "cph")
 
     ,
 
     GLMN = wrap_auto_tune(
-      bl("surv.cv_glmnet", .encode = TRUE),
-      surv.cv_glmnet.alpha = p_dbl(0, 1)
+      bl("surv.cv_glmnet", id = "cv_glmnet", .encode = TRUE),
+      cv_glmnet.alpha = p_dbl(0, 1)
     )
 
     ,
 
     Pen = wrap_auto_tune(
-      bl("surv.penalized"),
-      surv.penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
-      surv.penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
+      bl("surv.penalized", id = "penalized"),
+      penalized.lambda1 = p_dbl(-10, 10, trafo = function(x) 2^x),
+      penalized.lambda2 = p_dbl(-10, 10, trafo = function(x) 2^x)
     )
 
     ,
 
     # Use grid search due to small + finite search space
-    # AFT version needs
-    # - to pass .form to bl() for distrcompositor
-    # - Tune distributions within range of what's sensible/discussed with RS
+    # AFT version needs to tune distributions within range of what's sensible/discussed with RS
     Par = wrap_auto_tune(
-      bl("surv.parametric", form = "aft", discrete = TRUE),
-      surv.parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
+      bl("surv.parametric", id = "parametric", discrete = TRUE),
+      parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
     )
 
@@ -313,8 +312,8 @@ for (measure in measures) {
 
     # Use grid search due to small + finite search space
     Flex = wrap_auto_tune(
-      bl("surv.flexible"),
-      surv.flexible.k = p_int(1, 10),
+      bl("surv.flexible", id = "flexible"),
+      flexible.k = p_int(1, 10),
       use_grid_search = TRUE
     )
 
@@ -323,45 +322,45 @@ for (measure in measures) {
     RFSRC = wrap_auto_tune(
       # Fixing ntime = 150 (current default) just to be explicit, as ranger's time.interest
       # is set to a non-default value and we ensure both use 150 time points for evaluation
-      bl("surv.rfsrc", ntree = 1000, ntime = 150),
-      surv.rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
-      surv.rfsrc.mtry.ratio = p_dbl(0, 1),
-      surv.rfsrc.nodesize = p_int(1, 50),
-      surv.rfsrc.samptype = p_fct(c("swr", "swor")),
-      surv.rfsrc.sampsize.ratio = p_dbl(0, 1)
+      bl("surv.rfsrc", id = "rfsrc", ntree = 1000, ntime = 150),
+      rfsrc.splitrule = p_fct(c("bs.gradient", "logrank")),
+      rfsrc.mtry.ratio = p_dbl(0, 1),
+      rfsrc.nodesize = p_int(1, 50),
+      rfsrc.samptype = p_fct(c("swr", "swor")),
+      rfsrc.sampsize.ratio = p_dbl(0, 1)
     )
 
     ,
 
     RAN = wrap_auto_tune(
       # Adjusting time.interest (new as of 0.16.0) to 150, same as current RFSRC default
-      bl("surv.ranger", num.trees = 1000, time.interest = 150),
-      surv.ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
-      surv.ranger.mtry.ratio = p_dbl(0, 1),
-      surv.ranger.min.node.size = p_int(1, 50),
-      surv.ranger.replace = p_lgl(),
-      surv.ranger.sample.fraction = p_dbl(0, 1)
+      bl("surv.ranger", id = "ranger", num.trees = 1000, time.interest = 150),
+      ranger.splitrule = p_fct(c("C", "maxstat", "logrank")),
+      ranger.mtry.ratio = p_dbl(0, 1),
+      ranger.min.node.size = p_int(1, 50),
+      ranger.replace = p_lgl(),
+      ranger.sample.fraction = p_dbl(0, 1)
     )
 
     ,
 
     CIF = wrap_auto_tune(
-      bl("surv.cforest", ntree = 1000),
-      surv.cforest.mtryratio = p_dbl(0, 1),
-      surv.cforest.minsplit = p_int(1, 50),
-      surv.cforest.mincriterion = p_dbl(0, 1),
-      surv.cforest.replace = p_lgl(),
-      surv.cforest.fraction = p_dbl(0, 1)
+      bl("surv.cforest", id = "cforest", ntree = 1000),
+      cforest.mtryratio = p_dbl(0, 1),
+      cforest.minsplit = p_int(1, 50),
+      cforest.mincriterion = p_dbl(0, 1),
+      cforest.replace = p_lgl(),
+      cforest.fraction = p_dbl(0, 1)
     )
 
     ,
 
     ORSF = wrap_auto_tune(
-      bl("surv.aorsf", n_tree = 1000, control_type = "fast"),
-      surv.aorsf.mtry_ratio = p_dbl(0, 1),
-      surv.aorsf.leaf_min_events = p_int(5, 50),
+      bl("surv.aorsf", id = "aorsf", n_tree = 1000, control_type = "fast"),
+      aorsf.mtry_ratio = p_dbl(0, 1),
+      aorsf.leaf_min_events = p_int(5, 50),
       .extra_trafo = function(x, param_set) {
-        x$surv.aorsf.split_min_obs = x$surv.aorsf.leaf_min_events + 5L
+        x$aorsf.split_min_obs = x$aorsf.leaf_min_events + 5L
         x
       }
     )
@@ -369,25 +368,36 @@ for (measure in measures) {
     ,
 
     RRT = wrap_auto_tune(
-      bl("surv.rpart"),
-      surv.rpart.minbucket = p_int(5, 50),
+      bl("surv.rpart", id = "rpart"),
+      rpart.minbucket = p_int(5, 50),
       use_grid_search = TRUE
     )
 
     ,
 
-    MBST = wrap_auto_tune(
-      bl("surv.mboost"),
-      surv.mboost.family = p_fct(c("gehan", "cindex", "coxph", "weibull")),
-      surv.mboost.mstop = p_int(10, 5000),
-      surv.mboost.nu = p_dbl(0, 0.1),
-      surv.mboost.baselearner = p_fct(c("bols", "btree"))
+    # Split based on family, omitting "cindex" which is different entirely
+    MBSTCox = wrap_auto_tune(
+      bl("surv.mboost", id = "mboost_cox", family = "coxph"),
+      mboost_cox.family = p_fct(c("coxph")),
+      mboost_cox.mstop = p_int(10, 5000),
+      mboost_cox.nu = p_dbl(0, 0.1),
+      mboost_cox.baselearner = p_fct(c("bols", "btree"))
+    )
+
+    ,
+
+    MBSTAFT = wrap_auto_tune(
+      bl("surv.mboost", id = "mboost_aft"),
+      mboost_aft.family = p_fct(c("gehan", "weibull")),
+      mboost_aft.mstop = p_int(10, 5000),
+      mboost_aft.nu = p_dbl(0, 0.1),
+      mboost_aft.baselearner = p_fct(c("bols", "btree"))
     )
 
     ,
 
     # Does not use our inner resampling
-    CoxB = bl("surv.cv_coxboost",
+    CoxB = bl("surv.cv_coxboost", id = "coxboost",
               penalty = "optimCoxBoostPenalty",
               maxstepno = 5000,
               # Number of inner tuning folds: analogous to other AutoTuners
@@ -398,19 +408,21 @@ for (measure in measures) {
 
     # XGB/cox, uses breslow estimator internally via mlr3proba
     XGBCox = wrap_auto_tune(
-      bl("surv.xgboost.cox", tree_method = "hist", booster = "gbtree",
+      bl("surv.xgboost.cox", id = "xgb_cox",
+         tree_method = "hist",
+         booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.cox.nrounds = p_int(
+      xgb_cox.nrounds = p_int(
         upper = 5000,
         tags = "internal_tuning",
         aggr = function(x) as.integer(mean(unlist(x)))
       ),
-      surv.xgboost.cox.max_depth = p_int(1, 20),
-      surv.xgboost.cox.subsample = p_dbl(0, 1),
-      surv.xgboost.cox.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.cox.eta = p_dbl(0, 1),
-      surv.xgboost.cox.grow_policy = p_fct(c("depthwise", "lossguide"))
+      xgb_cox.max_depth = p_int(1, 20),
+      xgb_cox.subsample = p_dbl(0, 1),
+      xgb_cox.colsample_bytree = p_dbl(0, 1),
+      xgb_cox.eta = p_dbl(0, 1),
+      xgb_cox.grow_policy = p_fct(c("depthwise", "lossguide"))
     )
 
     ,
@@ -418,44 +430,38 @@ for (measure in measures) {
     # AFT version
     # - Tune distributions (as per JZ)
     XGBAFT = wrap_auto_tune(
-      bl("surv.xgboost.aft", tree_method = "hist", booster = "gbtree",
+      bl("surv.xgboost.aft", id = "xgb_aft",
+         tree_method = "hist",
+         booster = "gbtree",
          early_stopping_rounds = 50,
          .encode = TRUE),
-      surv.xgboost.aft.nrounds = p_int(
+      xgb_aft.nrounds = p_int(
         upper = 5000,
         tags = "internal_tuning",
         aggr = function(x) as.integer(mean(unlist(x)))
       ),
-      surv.xgboost.aft.max_depth = p_int(1, 20),
-      surv.xgboost.aft.subsample = p_dbl(0, 1),
-      surv.xgboost.aft.colsample_bytree = p_dbl(0, 1),
-      surv.xgboost.aft.eta = p_dbl(0, 1),
-      surv.xgboost.aft.grow_policy = p_fct(c("depthwise", "lossguide")),
-      surv.xgboost.aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
-      surv.xgboost.aft.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
+      xgb_aft.max_depth = p_int(1, 20),
+      xgb_aft.subsample = p_dbl(0, 1),
+      xgb_aft.colsample_bytree = p_dbl(0, 1),
+      xgb_aft.eta = p_dbl(0, 1),
+      xgb_aft.grow_policy = p_fct(c("depthwise", "lossguide")),
+      xgb_aft.aft_loss_distribution = p_fct(c("normal", "logistic", "extreme")),
+      xgb_aft.aft_loss_distribution_scale = p_dbl(0.5, 2.0)
     )
 
     ,
 
     SSVM = wrap_auto_tune(
-      bl("surv.svm", type = "hybrid",
+      bl("surv.svm", id = "svm",
+         type = "hybrid",
          diff.meth = "makediff3",
          # Set initial values but unused due to tuning
          gamma = 1, mu = 0,
          .encode = TRUE, .scale = TRUE),
-      surv.svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
-      surv.svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
-      surv.svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
-      surv.svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x)#,
-      # Trafo no longer need when https://github.com/mlr-org/mlr3extralearners/pull/385
-      # is merged
-      # .extra_trafo = function(x, param_set) {
-      #   # learner has tuple param gamma.mu = c(x, y)
-      #   # we tune separately and reassemble via trafo
-      #   x$surv.svm.gamma.mu = c(x$surv.svm.gamma, x$surv.svm.mu)
-      #   x$surv.svm.gamma = x$surv.svm.mu = NULL
-      #   x
-      # }
+      svm.kernel = p_fct(c("lin_kernel", "rbf_kernel", "add_kernel")),
+      svm.gamma = p_dbl(-10, 10, trafo = function(x) 10^x),
+      svm.mu = p_dbl(-10, 10, trafo = function(x) 10^x),
+      svm.kernel.pars = p_dbl(-5, 5, trafo = function(x) 2^x)
     )
 
   )
@@ -465,6 +471,9 @@ for (measure in measures) {
   cli::cli_h2("Cleaning up and adding to registry")
 
   if (measure$id == "isbs") {
+    cli::cli_alert_warning("Skipping {.val MBSTAFT} for ISBS measure!")
+    learners$MBSTAFT = NULL
+
     cli::cli_alert_warning("Skipping {.val RRT} for ISBS measure!")
     learners$RRT = NULL
 
@@ -497,5 +506,4 @@ for (measure in measures) {
 }
 
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
-
 cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {conf$reg_name}}")
