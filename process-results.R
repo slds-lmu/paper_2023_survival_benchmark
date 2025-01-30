@@ -195,6 +195,9 @@ scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
 
+save_obj(aggr, "aggr")
+save_obj(scores, "scores")
+
 # Creating bma objects --------------------------------------------------------------
 # bmas can be created from aggr tables and are lightweight, but useful for mlr3benchmark functionality
 # We need to get the aggrs for the untuned learners with tune_measure == "harrell_c,isbs"
