@@ -22,9 +22,8 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 options(TZ = "Europe/Berlin")
 
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
-settings = config::get()
 
-source(here::here("helpers.R"))
+source(here::here("R/helpers.R"))
 
 library(data.table)
 library(batchtools)
@@ -33,38 +32,40 @@ library(dplyr)
 library(ggplot2)
 
 # Assumes batchmark.R is run beforehand
-reg_dir = here::here(settings$reg_name)
-reg = loadRegistry(reg_dir, writeable = FALSE)
+reg = loadRegistry(conf$reg_dir, writeable = FALSE)
 ```
 
 # Current Job Status
 
 ```{r}
-alljobs = collect_job_table(
+tab = collect_job_table(
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id"),
   optional_columns = c("time.running", "submitted", "started", "done")
 )
 
-alljobs[, time.running := as.numeric(time.running, unit = "secs")]
-alljobs[, time.running.hms := hms::hms(seconds = round(time.running, 1))]
-alljobs[, time.running.days := round(time.running / 3600 / 24, 2)]
+# Subset to jobs relevant for runtime estimate
+if (conf$reg_name == "runtime") tab = tab[repl == 1 & measure != "isbs", ]
 
-job_completion = alljobs |>
+tab[, time.running := as.numeric(time.running, unit = "secs")]
+tab[, time.running.hms := hms::hms(seconds = round(time.running, 1))]
+tab[, time.running.days := round(time.running / 3600 / 24, 2)]
+
+job_completion = tab |>
   filter(!is.na(done)) |>
   arrange(done) |>
   mutate(
     k = row_number(),
-    prop = k / nrow(alljobs)
+    prop = k / nrow(tab)
   )
 
 complete_n = nrow(job_completion)
-complete_perc = round(100 * complete_n / nrow(alljobs), 1)
+complete_perc = round(100 * complete_n / nrow(tab), 1)
 
 job_milestones = tibble::tribble(
   ~type, ~first, ~last,
-  "submitted", min(alljobs$submitted, na.rm = TRUE), max(alljobs$submitted, na.rm = TRUE),
-  "started",   min(alljobs$started, na.rm = TRUE), max(alljobs$started, na.rm = TRUE),
-  "done",      min(alljobs$done, na.rm = TRUE), max(alljobs$done, na.rm = TRUE)
+  "submitted", min(tab$submitted, na.rm = TRUE), max(tab$submitted, na.rm = TRUE),
+  "started",   min(tab$started, na.rm = TRUE), max(tab$started, na.rm = TRUE),
+  "done",      min(tab$done, na.rm = TRUE), max(tab$done, na.rm = TRUE)
 )
 
 job_milestones = job_milestones |>
@@ -73,13 +74,13 @@ job_milestones = job_milestones |>
   )
 
 
-took_days = round(as.numeric(difftime(max(alljobs$done), min(alljobs$submitted), units = "days")), 1)
+took_days = round(as.numeric(difftime(max(tab$done), min(tab$submitted), units = "days")), 1)
 
 # Sequential runtime?
-took_days_sequential = sum(alljobs$time.running.days)
+took_days_sequential = sum(tab$time.running.days)
 ```
 
-Overall completion: **`r complete_n`** / `r nrow(alljobs)` (**`r complete_perc`%**).  
+Overall completion: **`r complete_n`** / `r nrow(tab)` (**`r complete_perc`%**).  
 
 It took **`r took_days`** days all in all, with a sequential runtime of **`r took_days_sequential`** days.
 
@@ -127,7 +128,7 @@ job_completion |>
     breaks = seq(0, 1, .2),
     labels = scales::label_percent(), 
     limits = c(0, 1),
-    sec.axis = sec_axis(trans = \(x) x * nrow(alljobs))
+    sec.axis = sec_axis(transform = \(x) x * nrow(tab))
   ) +
   scale_x_datetime(
     date_breaks = "7 days", 
@@ -137,7 +138,7 @@ job_completion |>
   labs(
     title = "Survival Benchmark Progress",
     subtitle = "Cumulative percentage of finished jobs over time",
-    x = "Date", y = "% of total jobs [5088]"
+    x = "Date", y = glue::glue("% of total jobs [{nrow(tab)}]")
   ) +
   theme_minimal(base_size = 14)
 ```
@@ -154,7 +155,7 @@ job_completion |>
 ### Currently running jobs
 
 ```{r, eval=nrow(batchtools::findRunning()) > 0}
-alljobs[batchtools::findRunning()] |>
+tab[batchtools::findRunning()] |>
   arrange(desc(time.running)) |>
   select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
   reactable::reactable(
