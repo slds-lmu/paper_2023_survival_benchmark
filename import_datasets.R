@@ -265,6 +265,27 @@ cat_adoption = mlr3misc::load_dataset("cat_adoption", "modeldata") |>
 
 save_data(cat_adoption)
 
+
+# modeldata::check_times ---------------------------------------------------------------------
+# https://modeldata.tidymodels.org/reference/check_times.html
+
+check_times = mlr3misc::load_dataset("check_times", "modeldata") |>
+  select(-package) |> # identifier variable
+  rename(time = check_time)
+
+save_data(check_times)
+
+
+# modeldata::wa_churn ---------------------------------------------------------------------
+# https://modeldata.tidymodels.org/reference/wa_churn.html
+
+wa_churn = mlr3misc::load_dataset("wa_churn", "modeldata") |>
+  mutate(status = ifelse(churn == "Yes", 1, 0))  |> # No missings, so this suffices
+  select(-churn) |>
+  rename(time = tenure)
+
+save_data(wa_churn)
+
 # locfit::livmet ----------------------------------------------------------
 # Survival times for 622 patients diagnosed with Liver Metastases.
 # "Beware, the censoring variable is coded as 1 = uncensored, so use cens=1-z
@@ -303,7 +324,6 @@ save_data(dataFTR)
 # RISCA::dataSTR --------------------------------------------------------
 # Data were extracted from the DIVAT cohort. It corresponds to the relative
 # sample constituted by second transplant recipients (STR).
-
 # "Tattente2cl" = Waiting time between consecutive transplants, ok to include?
 
 dataSTR = mlr3misc::load_dataset("dataSTR", "RISCA") |>
