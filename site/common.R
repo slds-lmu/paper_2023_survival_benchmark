@@ -1,6 +1,6 @@
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, dev = "ragg_png")
 
-source(here::here("helpers.R"))
+source(here::here("R/helpers.R"))
 
 settings = config::get(config = "beartooth")
 reg_dir = here::here(settings$reg_name)

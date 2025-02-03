@@ -1,11 +1,9 @@
 library(batchtools)
 
-conf_profile = Sys.getenv('R_CONFIG_ACTIVE', 'default')
-cli::cli_alert_info("Loading config {.val {conf_profile}}")
-if (conf_profile != "runtime") {
-  cli::cli_alert_warning("Expecting profile {.val runtime} but profile set to {.val {conf_profile}}")
+if (Sys.getenv('R_CONFIG_ACTIVE', 'default') != "runtime") {
+  cli::cli_warn("Expecting profile {.val runtime} but profile set to {.val {conf_profile}}")
 }
-settings = config::get()
+
 reg = loadRegistry(settings$reg_dir, writeable = TRUE)
 tab = collect_job_table(reg = reg)
 
