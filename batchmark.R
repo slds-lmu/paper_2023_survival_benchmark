@@ -17,7 +17,6 @@ library("mlr3tuning")
 library("mlr3mbo")
 library("batchtools", warn.conflicts = FALSE)
 library("mlr3batchmark")
-# renv::install("mlr-org/mlr3extralearners@surv_updates")
 requireNamespace("mlr3extralearners")
 
 # Create Registry ---------------------------------------------------------

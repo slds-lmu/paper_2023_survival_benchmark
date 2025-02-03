@@ -31,10 +31,16 @@ for (i in seq_along(files)) {
 
     if (conf$outer_eval$repeats == "auto") {
 
+      # Make number of repeats depending on number of events in dataset (sum(task$status()))
+      # For less than 500 events -> 10 repeats
+      # between 500 and 2500 events -> 5 repeats
+      # over 2500 events: 1 repeat (i.e. only 1 iteration)
+      num_events = sum(task$status())
+
       repeats = data.table::fcase(
-        task$nrow < 500, 10,
-        task$nrow >= 500 & task$nrow < 5000, 5,
-        task$nrow > 5000, 1
+        num_events < 500, 10,
+        num_events >= 500 & num_events < 2500, 5,
+        num_events > 2500, 1
       )
       cli::cli_alert_info("Adjusting number of repeats to {.val {repeats}} based on number of observations in task")
     } else {
