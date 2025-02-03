@@ -356,7 +356,12 @@ for (measure in measures) {
 
     # See https://github.com/mlr-org/mlr3extralearners/issues/383
     ORSF = wrap_auto_tune(
-      bl("surv.aorsf", id = "aorsf", n_tree = 1000, control_type = "fast", leaf_min_events = 1),
+      bl("surv.aorsf", id = "aorsf", 
+        n_tree = 1000, 
+        control_type = "fast", 
+        importance = "none", # Just for speed-up
+        leaf_min_events = 1
+      ),
       aorsf.mtry_ratio = p_dbl(0, 1),
       aorsf.leaf_min_obs = p_int(5, 50)
       # .extra_trafo = function(x, param_set) {
