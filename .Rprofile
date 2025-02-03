@@ -33,7 +33,7 @@ options(
 )
 
 # Load script with helpers here to ensure its contents are available always
-source("helpers.R")
+source("R/helpers.R")
 
 # Make renv pick up learner dependencies
 if (FALSE) {

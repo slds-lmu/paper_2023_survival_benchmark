@@ -5,7 +5,7 @@
 # b) used targets instead of re-running the script a bunch.
 
 # Setup ---------------------------------------------------------------------------------------
-if (!exists(".canary")) source(here::here("helpers.R")) # Source only if not already sourced via .Rprofile
+if (!exists(".canary")) source(here::here("R/helpers.R")) # Source only if not already sourced via .Rprofile
 
 # Packages
 # requires package PMCMRplus, not included in renv because of issues installing it on cluster (libmpfr.so.6)

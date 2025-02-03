@@ -6,7 +6,7 @@ mem_knl = 5457
 
 library("batchtools")
 library("mlr3batchmark")
-source(here::here("helpers.R"))
+source(here::here("R/helpers.R"))
 
 # Assumes batchmark.R is run beforehand
 reg = loadRegistry(conf$reg_dir, writeable = TRUE)
