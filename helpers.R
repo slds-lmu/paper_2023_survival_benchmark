@@ -61,7 +61,7 @@ create_resampling_from_csv = function(task, resampling_dir = here::here("resampl
   resampling
 }
 
-#' Store additional data fro tasks
+#' Store additional data for tasks
 #'
 #' Useful to augment job table and later results with e.g. n, p, number of unique event times, ...
 #' Repeatedly refreshed in case there are changes with the included tasks in the benchmark.

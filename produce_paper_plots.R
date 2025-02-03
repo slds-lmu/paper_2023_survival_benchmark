@@ -30,8 +30,8 @@ msr_tbl = msr_tbl[!(id %in% c("risbs", "risbs_erv", "caliba_diff")), ]
 # msr_tbl[(erv)]
 
 # bma is the BenchmarkAggr for use with mlr3benchmark
-bma_harrell_c = readRDS(fs::path(result_path, "bma_clean_harrell_c.rds"))
-bma_isbs      = readRDS(fs::path(result_path, "bma_clean_isbs.rds"))
+bma_harrell_c = readRDS(fs::path(result_path, "bma_harrell_c.rds"))
+bma_isbs      = readRDS(fs::path(result_path, "bma_isbs.rds"))
 
 # These are data.tables with additional columns for presentation
 aggr_scores = readRDS(fs::path(result_path, "aggr_scores.rds"))

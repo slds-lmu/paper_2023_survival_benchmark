@@ -28,7 +28,7 @@ default:
     evals_constant: 0
     evals_multiplier: 50
     # Time limit for tuning process, run_time terminator, will be converted to seconds
-    runtime_hours: 144 # 6 * 24
+    runtime_hours: 150 # 6.25 * 24
   timeout:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
@@ -43,8 +43,6 @@ production:
 # Lower budget, just checking everything works, close to "production"
 trial:
   reg_name: "trial"
-  learners:
-    threads: 2
   fallback:
     inner: true
     outer: true
@@ -70,11 +68,11 @@ debug:
   store:
     tuning_instance: false
 
-debug_simple:
-  reg_name: "debug_simple"
-  fallback:
-    inner: false
-    outer: false
+# For runtime estimation
+runtime:
+  reg_name: "runtime"
   budget:
-    evals_constant: 1
-    evals_multiplier: 0
+    evals_constant: 5
+    evals_multiplier: 1
+  tuning:
+    repeats: 1 # Only one iter of 3fold cv
