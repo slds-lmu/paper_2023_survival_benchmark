@@ -354,14 +354,15 @@ for (measure in measures) {
 
     ,
 
+    # See https://github.com/mlr-org/mlr3extralearners/issues/383
     ORSF = wrap_auto_tune(
-      bl("surv.aorsf", id = "aorsf", n_tree = 1000, control_type = "fast"),
+      bl("surv.aorsf", id = "aorsf", n_tree = 1000, control_type = "fast", leaf_min_events = 1),
       aorsf.mtry_ratio = p_dbl(0, 1),
-      aorsf.leaf_min_events = p_int(5, 50),
-      .extra_trafo = function(x, param_set) {
-        x$aorsf.split_min_obs = x$aorsf.leaf_min_events + 5L
-        x
-      }
+      aorsf.leaf_min_obs = p_int(5, 50)
+      # .extra_trafo = function(x, param_set) {
+      #   x$aorsf.split_min_obs = x$aorsf.leaf_min_events + 5L
+      #   x
+      # }
     )
 
     ,
