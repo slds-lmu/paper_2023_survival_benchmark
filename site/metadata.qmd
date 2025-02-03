@@ -30,7 +30,7 @@ Unfortunately, the identifiers used under the hood do not directly correspond to
 | `isbs`     | `surv.brier`       | Integrated Survival Brier Score (ISBS)                       |
 | `isbs_erv` | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]                 |
 | `dcalib`             | `surv.dcalib`      | D-Calibration                                                |
-| `caliba_ratio`       | `surv.calib_alpha` | Van Houwelingen's Alpha                                      |
+| `alpha_calib`       | `surv.calib_alpha` | Van Houwelingen's Alpha                                      |
 
 
 ## Tasks {#sec-tasks}
@@ -80,4 +80,3 @@ lrntab |>
   kableExtra::column_spec(4, width = "20%") |>
   kableExtra::column_spec(7, width = "25%") 
 ``` 
-

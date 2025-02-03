@@ -40,7 +40,7 @@ reg = makeExperimentRegistry(
   work.dir = here::here(),
   seed = conf$seed,
   packages = c("mlr3", "mlr3proba"),
-  source = here::here("helpers.R")
+  source = here::here("R/helpers.R")
 )
 
 # Tasks ---------------------------------------------------------------------------------------

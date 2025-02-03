@@ -252,7 +252,7 @@ For this measure, calibration is indicated by a score close to 1.
 
 ```{r calibration-alpha-ratio}
 for (tuned_on in c("harrell_c", "isbs")) {
-  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
+  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
     geom_point() +
     geom_vline(xintercept = 1) +
     scale_x_log10() +
@@ -298,8 +298,7 @@ for (tuned_on in c("harrell_c", "isbs")) {
 | `isbs`      | `dbl` | Evaluation measure score |
 | `isbs_erv`  | `dbl` | Evaluation measure score |
 | `dcalib`              | `dbl` | Evaluation measure score |
-| `caliba_ratio`        | `dbl` | Evaluation measure score |
-| `caliba_diff`         | `dbl` | Evaluation measure score |
+| `alpha_calib`        | `dbl` | Evaluation measure score |
 | `tuned`               | `chr` | Tuning measure, one of `harrell_c`, `isbs` |
 | `learner_group`       | `fct` | Model / learner group, one of "Baseline", "Classical"m "Trees", "Boosting" |
 

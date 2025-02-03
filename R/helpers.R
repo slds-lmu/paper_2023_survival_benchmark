@@ -222,11 +222,11 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
 }
 
 load_lrntab = function(path = here::here("attic", "learners.csv")) {
-  read.csv(path)
+  data.table::fread(path)
 }
 
 load_tasktab = function(path = here::here("attic", "tasktab.csv")) {
-  read.csv(path)
+  data.table::fread(path)
 }
 
 #' Quickly recreate list of evaluation measures
@@ -256,9 +256,7 @@ get_measures_eval = function() {
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
-    msr("surv.calib_alpha", id = "caliba_ratio", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
-    # Unused, kept for completeness
-    # msr("surv.calib_alpha", id = "caliba_diff",  method = "diff",  label = "Van Houwelingen's Alpha [Difference Method]")
+    msr("surv.calib_alpha", id = "alpha_calib", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
 
   )
   names(measures_eval) = mlr3misc::ids(measures_eval)
@@ -290,10 +288,7 @@ measures_tbl = function() {
     # "surv.brier",       "risbs_erv",    "Scoring Rule",
 
     "surv.dcalib",      "dcalib",       "Calibration",
-    "surv.calib_alpha", "caliba_ratio", "Calibration"
-    # Unused, kept for completeness
-    # "surv.calib_alpha", "caliba_diff",  "Calibration"
-    # "surv.calib_alpha", "caliba",
+    "surv.calib_alpha", "alpha_calib",  "Calibration"
   )
 
   measures_eval = get_measures_eval()

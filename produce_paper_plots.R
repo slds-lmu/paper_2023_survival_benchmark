@@ -23,7 +23,7 @@ stopifnot(ensure_directory(plot_path))
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
 # Exclude measures which aren't used in the paper
-msr_tbl = msr_tbl[!(id %in% c("risbs", "risbs_erv", "caliba_diff")), ]
+msr_tbl = msr_tbl[!(id %in% c("risbs", "risbs_erv")), ]
 
 # Sanity check print
 # msr_tbl[!(erv)]
@@ -258,7 +258,7 @@ for (tuned_on in c("harrell_c", "isbs")) {
 # Alpha Calibration
 
 for (tuned_on in c("harrell_c", "isbs")) {
-  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = caliba_ratio)) +
+  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
     geom_point() +
     geom_vline(xintercept = 1) +
     scale_x_log10() +
