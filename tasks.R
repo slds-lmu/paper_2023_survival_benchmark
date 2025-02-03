@@ -42,7 +42,7 @@ for (i in seq_along(files)) {
         num_events >= 500 & num_events < 2500, 5,
         num_events > 2500, 1
       )
-      cli::cli_alert_info("Adjusting number of repeats to {.val {repeats}} based on number of observations in task")
+      cli::cli_alert_info("Adjusting number of repeats to {.val {repeats}} based on number of events {.val {num_events}} in task")
     } else {
       repeats = conf$outer_eval$repeats
     }
