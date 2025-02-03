@@ -6,6 +6,9 @@ tmp/*
 upload-*
 # attic/
 ^tmp-*
+*.tar.gz
+*.tgz
+*.tar
 
 attic/*.html
 *_files
