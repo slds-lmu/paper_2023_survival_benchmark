@@ -6,7 +6,7 @@ registry*
 registries*
 results
 attic/_dependencies.R
-attic/check*.R
+attic/*.R
 analysis.qmd
 tmp
 produce_paper_plots.R
