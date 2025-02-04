@@ -150,7 +150,7 @@ callback_backup_impl = function(callback, context) {
   callback$state$path = fs::path(callback$state$path_dir, callback$state$file_name)
 
   archive = data.table::as.data.table(context$instance$archive)
-  archive[, learner_id := callback$state$learner_id]
+  archive[, base_id := callback$state$learner_id]
   archive[, task_id := ..task_id]
   archive[, tuning_measure := callback$state$tuning_measure]
   archive[, resampling_hash := ..iter_hash]
@@ -569,12 +569,21 @@ reassemble_archives = function(
 
   learners = load_lrntab()
   learners = learners[, c("id", "base_id")]
-
+  names(learners) = c("learner_id", "base_id")
 
   pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
     cli::cli_progress_update(id = pb)
     archive = readRDS(file)
+
+    # Since we keep track of the tuning measure as a separate variable,
+    # it's easier to rename the score variale such that it's easier later to just rbind the tuning archives (I think)
+    data.table::setnames(
+      archive,
+      old = c("harrell_c", "isbs"),
+      new = c("score", "score"),
+      skip_absent = TRUE
+    )
 
     if (!keep_logs & "log" %in% names(archive)) {
       # Temp fix because objects became to large
@@ -585,7 +594,7 @@ reassemble_archives = function(
       fs::path_ext_remove() |>
       stringi::stri_split_fixed(pattern = "__")
     components = components[[1]]
-    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
+    names(components) = c("tuning_measure", "base_id", "task_id", "iter_hash", "time_epoch")
 
     ret = data.table::data.table(
       t(components),
@@ -598,8 +607,9 @@ reassemble_archives = function(
   cli::cli_progress_done(id = pb)
 
   archives = archives[learners, on = "base_id"]
-  archives = archives[!is.na(tune_measure), ]
-
+  archives[, base_id := NULL]
+  archives = archives[!is.na(tuning_measure), ]
+  data.table::setcolorder(archives, c("learner_id", "task_id", "tuning_measure", "iter_hash", "time_epoch", "warnings_sum", "errors_sum", "archive", "file"))
   saveRDS(archives, archive_path)
 
   archives[]
@@ -635,11 +645,11 @@ convert_archives_csv = function(conf = config::get()) {
       stringi::stri_split_fixed(pattern = "__")
 
     components = components[[1]]
-    names(components) = c("tune_measure", "base_id", "task_id", "iter_hash", "time_epoch")
-    components = components[c("tune_measure", "base_id", "task_id", "iter_hash")]
+    names(components) = c("tuning_measure", "base_id", "task_id", "iter_hash", "time_epoch")
+    components = components[c("tuning_measure", "base_id", "task_id", "iter_hash")]
 
     to_csv = cbind(
-      data.table::data.table(t(components[c("tune_measure", "base_id", "task_id", "iter_hash")])),
+      data.table::data.table(t(components[c("tuning_measure", "base_id", "task_id", "iter_hash")])),
       archive
     )
 
@@ -647,7 +657,7 @@ convert_archives_csv = function(conf = config::get()) {
     if (!fs::file_exists(out_path)) {
 
       # cli::cli_alert_info("Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
-      #                   {.val {components[['tune_measure']]}} on {.val {components[['task_id']]}} \\
+      #                   {.val {components[['tuning_measure']]}} on {.val {components[['task_id']]}} \\
       #                   (iter {.val {components[['iter_hash']]}}) to CSV")
 
       readr::write_csv(x = to_csv, file = out_path, append = FALSE)
@@ -677,14 +687,14 @@ clean_duplicate_archives = function(
 
   archives = reassemble_archives(conf, keep_logs = FALSE)
 
-  counts = archives[, .(n = .N), by = .(tune_measure, task_id, learner_id, iter_hash)]
+  counts = archives[, .(n = .N), by = .(tuning_measure, task_id, learner_id, iter_hash)]
 
-  archives = archives[counts, on = .(tune_measure, task_id, learner_id, iter_hash)]
+  archives = archives[counts, on = .(tuning_measure, task_id, learner_id, iter_hash)]
   archives = archives[n > 1, ]
 
   if (nrow(archives) > 0) {
     dupes = archives |>
-      dplyr::group_by(tune_measure, task_id, learner_id, iter_hash) |>
+      dplyr::group_by(tuning_measure, task_id, learner_id, iter_hash) |>
       dplyr::filter(time_epoch == min(time_epoch))
 
     cli::cli_alert_info("There are {nrow(dupes)} duplicates")
