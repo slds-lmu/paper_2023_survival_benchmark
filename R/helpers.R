@@ -617,9 +617,9 @@ reassemble_archives = function(
 
 #' Read tuning archives stored in registry and convert to CSV in results dir
 #' @param conf `config::get()` for result paths.
-#'
+#' @param verbose `FALSE` Diligently report file writes.
 #' @return Nothing, only writes files.
-convert_archives_csv = function(conf = config::get()) {
+convert_archives_csv = function(conf = config::get(), verbose = FALSE) {
 
   archive_csv_dir = fs::path(conf$result_path, "tuning_archives")
   ensure_directory(archive_csv_dir)
@@ -655,14 +655,14 @@ convert_archives_csv = function(conf = config::get()) {
 
     out_path = fs::path(archive_csv_dir, paste(components, collapse = "__"), ext = "csv")
     if (!fs::file_exists(out_path)) {
-
-      # cli::cli_alert_info("Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
-      #                   {.val {components[['tuning_measure']]}} on {.val {components[['task_id']]}} \\
-      #                   (iter {.val {components[['iter_hash']]}}) to CSV")
+      if (verbose) {
+        cli::cli_alert_info("Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
+                          {.val {components[['tuning_measure']]}} on {.val {components[['task_id']]}} \\
+                          (iter {.val {components[['iter_hash']]}}) to CSV")
+      }
 
       readr::write_csv(x = to_csv, file = out_path, append = FALSE)
     }
-
   })
   cli::cli_progress_done(id = pb)
 }
@@ -818,7 +818,7 @@ add_learner_groups = function(x) {
       learner_group = dplyr::case_match(
         learner_id,
         c("KM", "NA", "AK") ~ "Baseline",
-        c("CPH", "GLMN", "Pen", "AFT", "Flex") ~ "Classical",
+        c("CPH", "GLMN", "Pen", "AFT", "Flex", "SSVM") ~ "Classical",
         c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
         c("MBST", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
         .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
