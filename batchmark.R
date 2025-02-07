@@ -267,7 +267,7 @@ for (measure in measures) {
 
     ,
 
-    `NA` = bl("surv.nelson", id = "kaplan")
+    NEL = bl("surv.nelson", id = "nelson")
 
     ,
 
@@ -301,7 +301,7 @@ for (measure in measures) {
 
     # Use grid search due to small + finite search space
     # AFT version needs to tune distributions within range of what's sensible/discussed with RS
-    Par = wrap_auto_tune(
+    AFT = wrap_auto_tune(
       bl("surv.parametric", id = "parametric", discrete = TRUE),
       parametric.dist = p_fct(c("weibull", "exponential", "lognormal",  "loglogistic")),
       use_grid_search = TRUE
@@ -510,5 +510,15 @@ for (measure in measures) {
   addJobTags(ids, measure$id)
 }
 
+# Sanity checking at the end to ensure all learners are accounted for correctly
+lrntab = load_lrntab()
 experiments = summarizeExperiments(by = c("task_id", "learner_id"))
+
+miss_ids = setdiff(lrntab$id, experiments$learner_id)
+if (length(miss_ids) > 0) {
+  cli::cli_warn("Mismatching learner IDs not in learners.csv: {.val {miss_ids}}")
+}
+
 cli::cli_alert_success("Added {.val {sum(experiments$.count)}} experiments to registry {.val {conf$reg_name}}")
+cli::cli_li("{length(unique(experiments$learner_id))} learners")
+cli::cli_li("{length(unique(experiments$task_id))} tasks")

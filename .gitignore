@@ -56,9 +56,7 @@ vignettes/*.pdf
 
 .DS_Store
 
-registry/
 batchtools.conf.R
-resamplings/*rds
 
 Rplots.pdf
 attic/*

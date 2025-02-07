@@ -18,8 +18,8 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
   cli::cli_alert_info("Saving resampling to {.file {fs::path_rel(file_csv)}}")
 
   resampling_tab = as.data.table(resampling)
+  readr::write_csv(x = resampling_tab, file = file_csv, append = FALSE)
 
-  write.csv(resampling_tab, file_csv, row.names = FALSE)
 }
 
 #' Reconstruct a Resampling object from stored resampling CSV
@@ -31,7 +31,7 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
 #'
 #' @return Object of class `mlr3::ResamplingCustomCV` reconstructing the stored resampling folds.
 #'
-#' @examples
+#' @example
 #' data = readRDS("datasets/cost.rds")
 #' task = as_task_surv(data, target = "time", event = "status", id = "cost")
 #' task$set_col_roles("status", add_to = "stratum")
@@ -69,20 +69,20 @@ create_resampling_from_csv = function(task, resampling_dir = here::here("resampl
 #'
 #' @param tasks List of `TaskSurv` objects.
 #' @param path Path to store CSV file of results.
-#' @examples
+#' @example
 #'
 #' tasks = load_task_data()
 #' save_tasktab(tasks)
-save_tasktab = function(tasks, path = here::here("attic", "tasktab.csv")) {
-
-  names = names(tasks)
+save_tasktab = function(tasks, path = here::here("tables", "tasktab.csv")) {
+  ensure_directory(path)
+  task_names = names(tasks)
 
   # Save overview of tasks with some metadata which comes in handy later
   tasktab = data.table::rbindlist(lapply(seq_along(tasks), \(x) {
     task_data = tasks[[x]]
 
     if (!(inherits(task_data, "TaskSurv"))) {
-      task = as_task_surv(task_data, target = "time", event = "status", id = names[x])
+      task = as_task_surv(task_data, target = "time", event = "status", id = task_names[x])
       task$set_col_roles("status", add_to = "stratum")
     } else {
       task = task_data
@@ -183,14 +183,18 @@ callback_archive_logs_impl = function(callback, context) {
 #'
 #' @param path Path to store CSV file.
 #'
-#' @examples
+#' @example
 #' save_lrntab()
-save_lrntab <- function(path = here::here("attic", "learners.csv")) {
+save_lrntab <- function(path = here::here("tables", "learners.csv")) {
+  require(mlr3proba)
+  requireNamespace("mlr3extralearners", quietly = TRUE)
+  ensure_directory(path)
+
   lrntab <- mlr3misc::rowwise_table(
     ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
     "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "NL"      , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "AK"      , "akritas"     , "surv.akritas"     , 1 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "NEL"     , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
+    "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,
     "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
     "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
     "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
@@ -213,19 +217,24 @@ save_lrntab <- function(path = here::here("attic", "learners.csv")) {
     "threads" %in% unlist(lrn(x)$param_set$tags)
     }, logical(1))
 
+  if (fs::file_exists(path)) {
+    cli::cli_alert_warning("Overwriting {.val {fs::path_rel(path)}}")
+  }
 
-
-  lrntab |>
-    write.csv(file = path, row.names = FALSE)
+  readr::write_csv(x = lrntab, file = path, append = FALSE)
 
   lrntab
 }
 
-load_lrntab = function(path = here::here("attic", "learners.csv")) {
-  data.table::fread(path)
+load_lrntab = function(path = here::here("tables", "learners.csv")) {
+  ensure_directory(path)
+  cli::cli_alert_info("Loading {.file {path}}")
+  data.table::fread(path, na.strings = "")
 }
 
-load_tasktab = function(path = here::here("attic", "tasktab.csv")) {
+load_tasktab = function(path = here::here("tables", "tasktab.csv")) {
+  ensure_directory(path)
+  cli::cli_alert_info("Loading {.file {path}}")
   data.table::fread(path)
 }
 
@@ -237,9 +246,6 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
-    # msr("surv.rcll",        id = "rcll",     ERV = FALSE,  label = "Right-Censored Log Loss (RCLL)"),
-    # msr("surv.rcll",        id = "rcll_erv", ERV = TRUE,   label = "Right-Censored Log Loss (RCLL) [ERV]"),
-
     # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
     msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
     msr("surv.logloss",     id = "rnll_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
@@ -249,10 +255,6 @@ get_measures_eval = function() {
 
     msr("surv.brier",       id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
     msr("surv.brier",       id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
-
-    # Unused, kept for completeness
-    # msr("surv.brier",        id = "risbs",     proper = TRUE,   ERV = FALSE, label = "Re-weighted Integrated Survival Brier Score (RISBS)"),
-    # msr("surv.brier",        id = "risbs_erv", proper = TRUE,   ERV = TRUE,  label = "Re-weighted Integrated Survival Brier Score (RISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
 
@@ -271,9 +273,6 @@ measures_tbl = function() {
     "surv.cindex",      "harrell_c",    "Discrimination",
     "surv.cindex",      "uno_c",        "Discrimination",
 
-    # "surv.rcll",        "rcll",         "Scoring Rule",
-    # "surv.rcll",        "rcll_erv",     "Scoring Rule",
-
     "surv.risll",       "risll",        "Scoring Rule",
     "surv.risll",       "risll_erv",    "Scoring Rule",
 
@@ -282,10 +281,6 @@ measures_tbl = function() {
 
     "surv.brier",       "isbs",         "Scoring Rule",
     "surv.brier",       "isbs_erv",     "Scoring Rule",
-
-    # Unsued, kept for completeness
-    # "surv.brier",       "risbs",        "Scoring Rule",
-    # "surv.brier",       "risbs_erv",    "Scoring Rule",
 
     "surv.dcalib",      "dcalib",       "Calibration",
     "surv.calib_alpha", "alpha_calib",  "Calibration"
@@ -300,236 +295,12 @@ measures_tbl = function() {
   msr_tbl[, label := vapply(msr_tbl$measure, \(x) x$label, "", USE.NAMES = FALSE)]
   # ERV is either a logical param or not present --> implies ERV = FALSE
   msr_tbl[, erv := vapply(measure, \(x) isTRUE(x$param_set$values$ERV), logical(1), USE.NAMES = FALSE)]
-  # minimize argument should be FALSE if measure is ERV or C-index (suffixes _erv or _c)
-  # msr_tbl[, erv := grepl("_erv$", id)]
-  # msr_tbl[, minimize := !(erv | grepl("_c$", id))]
 
   # Minimize is taken from measure-encoded value, but overridden if ERV = TRUE as ERV can't be minimized
   msr_tbl[, minimize := vapply(measure, \(x) x$minimize, logical(1), USE.NAMES = FALSE)]
   msr_tbl[, minimize := fifelse(erv, FALSE, minimize)]
 
   msr_tbl[]
-}
-
-
-
-#' Collect and save benchmark results
-#'
-#' @param conf `config::get()` for registry names, paths, ...
-#' @param tuning_measure E.g. "harrell_c"
-#' @param measures_eval List of mlr3 measures used for evaluation
-#' @param result_path `here::here("results")`, where to store results.
-#'   A subfolder based on registry folder name will be created.
-#'
-#' @return Nothing
-#'
-#' @examples
-collect_results = function(
-    conf,
-    tuning_measure = "harrell_c",
-    measures_eval = get_measures_eval(),
-    include_scores = FALSE,
-    id_filter = NULL
-) {
-
-  tictoc::tic("The whole shebang")
-
-  reg = suppressWarnings(suppressMessages(batchtools::loadRegistry(
-    conf$reg_dir, writeable = TRUE
-  )))
-
-  cli::cli_alert_info("Using registry {.file {conf$reg_name}}")
-  cli::cli_alert_info("Processing results ({tuning_measure}) in {fs::path_rel(conf$result_path)}")
-  ensure_directory(conf$result_path)
-
-  selected_ids = batchtools::findTagged(tuning_measure, reg = reg)
-  done_ids = batchtools::findDone(selected_ids)
-  done_perc = round(100 * nrow(done_ids)/nrow(selected_ids), 3)
-  cli::cli_alert_info("Found {nrow(selected_ids)} job ids of which {nrow(done_ids)} are done ({done_perc}%)")
-
-  if (!is.null(id_filter)) {
-    done_ids = ijoin(done_ids, id_filter)
-    cli::cli_alert_info("Filtering down to {nrow(done_ids)} ids")
-  }
-
-  path_bmr     = glue::glue("{conf$result_path}/bmr_{tuning_measure}.rds")
-  path_bmr_tab = glue::glue("{conf$result_path}/bmrtab_{tuning_measure}.rds")
-  path_bma     = glue::glue("{conf$result_path}/bma_{tuning_measure}.rds")
-  path_scores  = glue::glue("{conf$result_path}/scores_{tuning_measure}.rds")
-
-  if (all(fs::file_exists(c(path_bmr, path_bma, path_bmr_tab))) & (fs::file_exists(path_scores) | !include_scores)) {
-    return(cli::cli_alert_success("bmr, bma and aggr already exist!"))
-  }
-
-  if (!file.exists(path_bmr)) {
-    tictoc::tic(msg = glue::glue("Reducing results ({tuning_measure})"))
-    bmr = mlr3batchmark::reduceResultsBatchmark(
-      ids = done_ids,
-      store_backends = TRUE,
-      reg = reg
-    )
-    tictoc::toc()
-
-    gc()
-
-    bmr_tab = bmr$aggregate(measures = list(), conditions = TRUE)
-    bmr_tab = data.table::as.data.table(bmr_tab)
-    bmr_tab[, resample_result := NULL]
-    saveRDS(bmr_tab, path_bmr_tab)
-
-    # benchmark result
-    tictoc::tic(msg = glue::glue("Saving bmr ({tuning_measure})"))
-    saveRDS(bmr, file = path_bmr)
-    tictoc::toc()
-
-  } else if (!fs::file_exists(path_bma)) {
-
-    cli::cli_alert_info("Reading bmr from disk ({tuning_measure})")
-    tictoc::tic(msg = glue::glue("Reading bmr"))
-    bmr = readRDS(path_bmr)
-    tictoc::toc()
-
-  }
-
-  gc()
-
-  # bma via mlr3benchmark
-  if (!fs::file_exists(path_bma)) {
-    cli::cli_alert_info("as_benchmark_aggr'ing results ({tuning_measure})")
-    tictoc::tic(msg = "as_benchmark_aggr'ing")
-    bma = mlr3benchmark::as_benchmark_aggr(bmr, measures = measures_eval)
-    tictoc::toc()
-
-    cli::cli_alert_info("Saving bma ({tuning_measure})")
-    saveRDS(bma, path_bma)
-  } else {
-    cli::cli_alert_success("bma already saved!")
-  }
-
-  tictoc::toc()
-}
-
-#' Score bmr with a measure and store results
-#'
-#' While collect_results() creates the bmr and bma,
-#' it's probably useful to separately store aggregates and scores
-#' which makes it easier to re-score with certain measures without
-#' having to apply all measures again.
-#'
-#' @param conf `config::get()`
-#' @param tuning_measure (`character(1)`, `"harrell_c"`) The tuning measure used to filter the `bmr`
-#' @param measure One or a list of `MeasureSurv`s
-#' @param nthreads (`1`) Parallelize using forking with `plan("multicore")`.
-#'   **Does not work on Windows or in RStudio**
-
-#' @examples
-#' score_bmr(config::get(), "harrell_c",  msr("surv.isbs"))
-score_bmr = function(
-    conf = config::get(),
-    tuning_measure = "harrell_c",
-    measure,
-    nthreads = 1
-) {
-
-  if (!is.list(measure)) measure = list(measure)
-  sapply(measure, checkmate::assert_class, "MeasureSurv")
-  checkmate::assert_int(nthreads, lower = 1, upper = future::availableCores())
-
-  path_bmr = fs::path(conf$result_path, glue::glue("bmr_{tuning_measure}.rds"))
-  checkmate::assert_file_exists(path_bmr)
-
-  cli::cli_alert_info("Reading bmr ({tuning_measure})")
-  bmr = readRDS(path_bmr)
-
-  if (nthreads > 1 & length(measure) > 1) {
-    future::plan("multicore", workers = nthreads)
-  } else {
-    future::plan("sequential")
-  }
-
-  pb = cli::cli_progress_bar("Scoring", total = length(measure))
-  future.apply::future_lapply(measure, \(m) {
-    cli::cli_progress_update(id = pb)
-    path_scores = fs::path(conf$result_path, tuning_measure, "scores", glue::glue("scores_{m$id}.rds"))
-    ensure_directory(fs::path_dir(path_scores))
-
-    if (fs::file_exists(path_scores)) {
-      cli::cli_alert_warning("{fs::path_file(path_scores)} already exists!")
-      return()
-    }
-
-    cli::cli_alert_info("$score'ing results with {m$id} ({tuning_measure})")
-    tictoc::tic(msg ="$score'ing")
-    scores = bmr$score(measures = m, conditions = TRUE)
-    tictoc::toc()
-
-    # Trimming some fat
-    scores = data.table::setDT(scores)
-    scores = mlr3misc::remove_named(
-      scores, c("task", "resampling", "learner", "prediction")
-    )
-    saveRDS(scores, path_scores)
-  }, future.seed = NULL)
-
-  cli::cli_progress_done(id = pb)
-}
-
-#' Aggregate bmr with a measure and store results
-#'
-#' @param conf `config::get()`
-#' @param tuning_measure
-#' @param measure One or a list of `MeasureSurv`s
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' aggr_bmr(config::get(), "harrell_c", msr("surv.isbs"))
-aggr_bmr = function(
-    conf = config::get(),
-    tuning_measure = "harrell_c",
-    measure,
-    nthreads = 1
-) {
-
-  if (!is.list(measure)) measure = list(measure)
-  sapply(measure, checkmate::assert_class, "MeasureSurv")
-
-  path_bmr = fs::path(conf$result_path, glue::glue("bmr_{tuning_measure}.rds"))
-  checkmate::assert_file_exists(path_bmr)
-
-  cli::cli_alert_info("Reading bmr ({tuning_measure})")
-  bmr = readRDS(path_bmr)
-
-  if (nthreads > 1 & length(measure) > 1) {
-    future::plan("multicore", workers = nthreads)
-  } else {
-    future::plan("sequential")
-  }
-
-  pb = cli::cli_progress_bar("Scoring", total = length(measure))
-  future.apply::future_lapply(measure, \(m) {
-    cli::cli_progress_update(id = pb)
-    path_aggr = fs::path(conf$result_path, tuning_measure, "aggr", glue::glue("aggr_{m$id}.rds"))
-    ensure_directory(fs::path_dir(path_aggr))
-
-    if (fs::file_exists(path_aggr)) {
-      cli::cli_alert_warning("{fs::path_file(path_aggr)} already exists!")
-      return()
-    }
-
-    cli::cli_alert_info("$aggregate'ing results with {m$id} ({tuning_measure})")
-    tictoc::tic(msg ="$aggregate'ing")
-    aggr = bmr$aggregate(measures = m, conditions = TRUE)
-    tictoc::toc()
-
-    # Trimming some fat
-    aggr = data.table::setDT(aggr)
-    aggr = mlr3misc::remove_named(aggr, c("resample_result"))
-    saveRDS(aggr, path_aggr)
-  }, future.seed = NULL)
-
-  cli::cli_progress_done(id = pb)
 }
 
 #' Collect tuning archives saved separately to disk via callback
@@ -546,10 +317,10 @@ reassemble_archives = function(
   if (keep_logs) {
     archive_path = fs::path(conf$result_path, "archives-with-logs.rds")
   } else {
-    archive_path = fs::path(conf$result_path, "archives-no-logs.rds")
+    archive_path = fs::path(conf$result_path, "archives.rds")
   }
 
-  ensure_directory(fs::path_dir(archive_path))
+  ensure_directory(archive_path)
 
   if (fs::file_exists(archive_path)) {
     if (!ignore_cache) {
@@ -577,7 +348,7 @@ reassemble_archives = function(
     archive = readRDS(file)
 
     # Since we keep track of the tuning measure as a separate variable,
-    # it's easier to rename the score variale such that it's easier later to just rbind the tuning archives (I think)
+    # it's easier to rename the score variale to later rbind the tuning archives (I think)
     data.table::setnames(
       archive,
       old = c("harrell_c", "isbs"),
@@ -676,7 +447,7 @@ convert_archives_csv = function(conf = config::get(), verbose = FALSE) {
 #' @param conf `config::get()`
 #' @param tmp_path `here::here("tmp", "archive-backup")`.
 #'
-#' @examples
+#' @example
 #' clean_duplicate_archives(config::get())
 clean_duplicate_archives = function(
   conf,
@@ -712,9 +483,7 @@ clean_duplicate_archives = function(
 #'
 #' Validity in this case only meaning it's neither Inf, NA, nor NaN
 #' @param x `numeric()`
-is_valid = function(x) {
-  is.finite(x) & !is.na(x) & !is.nan(x)
-}
+is_valid = function(x) is.finite(x) & !is.na(x) & !is.nan(x)
 is_invalid = function(x) !is_valid(x)
 
 check_scores = function(bma) {
@@ -774,38 +543,6 @@ remove_results = function(x,
   xdat[]
 }
 
-
-#' When experiments were started less thought was put into the abbreviations we ended
-#' up using for the results etc. plots so this is the "fixing stuff up" function.
-#' @param x A `bma`/`BemcharkAggr` or `data.frame`-like object with appropriate column names.
-rename_learners = function(x) {
-  if (inherits(x, "BenchmarkAggr")) {
-    checkmate::assert_class(x, classes = "BenchmarkAggr")
-    xdat = data.table::copy(x$data)
-  } else if (inherits(x, "data.frame")) {
-    xdat = checkmate::assert_data_table(x)
-  } else (
-    stop("Expecting a BenchmarkAggr or data.frame-like object")
-  )
-
-  xdat[, learner_id := dplyr::case_when(
-    # learner_id == "AF" ~ "AK",    # Akritas
-    # learner_id == "NL" ~ "NA",    # Nelson-Aalen
-    learner_id == "Par" ~ "AFT",  # AFT more standard than "parametric"
-    # learner_id == "MBO" ~ "MBST", # mboost
-    # learner_id == "GLM" ~ "GLMN", # glmnet
-    TRUE ~ learner_id
-  )]
-
-  learner_order = c("KM", "NA", "AK", "CPH", "GLMN", "Pen", "AFT", "Flex", "RFSRC",
-                    "RAN", "CIF", "ORSF", "RRT", "MBST", "CoxB", "XGBCox", "XGBAFT")
-
-  xdat[, learner_id := factor(learner_id, levels = learner_order)]
-
-  if (inherits(x, "BenchmarkAggr")) return(mlr3benchmark::as_benchmark_aggr(xdat))
-  xdat[]
-}
-
 add_learner_groups = function(x) {
   if (checkmate::test_class(x, classes = "BenchmarkAggr")) {
     x = data.table::copy(x$data)
@@ -847,7 +584,7 @@ tablify = function(x, caption = NULL, ...) {
 #' @return
 #' @export
 #'
-#' @examples
+#' @example
 #' plot_results(bma_harrell_c, type = "box")
 #' plot_results(bma_harrell_c, type = "mean")
 #' plot_results(bma_harrell_c, type = "fn")
@@ -1032,7 +769,7 @@ names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 #'
 #' @return
 #'
-#' @examples
+#' @example
 #' plot_aggr_ph(bma, tuning_measure = "harrell_c")
 plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
                         learners_exclude = NULL, tasks_exclude = NULL) {
@@ -1152,62 +889,55 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 
 # Utilities for job management ----------------------------------------------------------------
 
-
 #' Assemble augmented batchtools job table
 #'
 #' Includes regular `getJobTable()` info but also task data (n, p, ...) and
 #' resource usage estimates.
 #'
 #' @param reg Registry, defaulting to `getDefaultRegistry()`.
-#' @param task_tab_file Path to CSV file as created by `save_tasktab()`.
-#' @param resource_est_file See `attic/resource-estimate.qmd`.
+#' @param resource_est_file See `resource-estimate.qmd`.
 #' @param keep_columns Character vector of columsn from `getJobtTable()` to keep.
 #'
 #' @return A data.table keyed with `job.id`.
 #'
-#' @examples
+#' @example
 #' collect_job_table()
 collect_job_table = function(
     reg = batchtools::getDefaultRegistry(),
-    task_tab_file = here::here("attic", "tasktab.csv"),
     resource_est_file = here::here("attic", "resource_est_dec.csv"),
     keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
     optional_columns = c("batch.id", "comment", "memory")
     ) {
-  alljobs = unwrap(getJobTable(reg = reg))
-  checkmate::assert_data_table(alljobs, min.rows = 1)
+  tab = unwrap(getJobTable(reg = reg))
+  checkmate::assert_data_table(tab, min.rows = 1)
 
-  alljobs = alljobs[, c(keep_columns, optional_columns[optional_columns %in% names(alljobs)])
+  tab = tab[, c(keep_columns, optional_columns[optional_columns %in% names(tab)])
                     , with = FALSE]
 
-  data.table::setnames(alljobs, "tags", "measure")
+  data.table::setnames(tab, "tags", "measure")
 
-  tasktab = read.csv(task_tab_file)
+  tasktab = load_tasktab()
 
   # Get resource estimates
-  resource_tab = read.csv(resource_est_file)
-  data.table::setDT(resource_tab)
-  resource_tab = resource_tab[, c("learner_id", "task_id", "hours", "total_h", "mem_gb")]
-  # Reuse XGB results for XGBCox / AFT split
-  resource_tab[learner_id == "XGB", learner_id := "XGBcox"]
-  xgbaft = data.table::copy(resource_tab[learner_id == "XGBcox",])
-  xgbaft[, learner_id := "XGBAFT"]
-
-  resource_tab = rbind(resource_tab, xgbaft)
+  if (fs::file_exists(resource_est_file)) {
+    resource_tab = read.csv(resource_est_file)
+    data.table::setDT(resource_tab)
+    resource_tab = resource_tab[, c("learner_id", "task_id", "hours", "total_h", "mem_gb")]
+    tab = ljoin(tab, resource_tab, by = c("task_id", "learner_id"))
+  }
 
   # Join everything
-  alljobs = ljoin(alljobs, tasktab, by = "task_id")
-  alljobs = ljoin(alljobs, resource_tab, by = c("task_id", "learner_id"))
-  data.table::setkey(alljobs, job.id)
+  tab = ljoin(tab, tasktab, by = "task_id")
+  data.table::setkey(tab, job.id)
 
-  alljobs
+  tab
 }
 
 #' Aggregate job status by measure
 #'
-#' @param alljobs Job table as returned by `collect_job_table()`. notably with column `measure`.
+#' @param tab Job table as returned by `collect_job_table()`. notably with column `measure`.
 #'   Will call `collect_job_table()` if not provided.
-#' @param byvars `character` Vector of variables in `alljobs` to group by, default is `"measure"`
+#' @param byvars `character` Vector of variables in `tab` to group by, default is `"measure"`
 #'
 #' @return A `data.table` with main column `measure` and one column for each job state
 #'   (`queued`, `running`, `errored`, ...)
@@ -1215,26 +945,26 @@ collect_job_table = function(
 #' check_job_state()
 #' check_job_state(byvars = c("measure", "learner_id"))
 #' check_job_state(byvars = "")
-check_job_state = function(alljobs = NULL, byvars = "measure") {
-  if (is.null(alljobs)) {
-    alljobs = collect_job_table()
+check_job_state = function(tab = NULL, byvars = "measure") {
+  if (is.null(tab)) {
+    tab = collect_job_table()
   }
 
-  job_n = alljobs[, .(total = .N), by = byvars]
+  job_n = tab[, .(total = .N), by = byvars]
 
   state_tab = data.table::rbindlist(list(
-    alljobs[findDone(), .(n = .N, state = "done"), by = byvars],
-    alljobs[findRunning(), .(n = .N, state = "running"), by = byvars],
-    alljobs[findErrors(), .(n = .N, state = "errored"), by = byvars],
-    alljobs[findExpired(), .(n = .N, state = "expired"), by = byvars],
-    alljobs[findQueued(), .(n = .N, state = "queued"), by = byvars],
-    alljobs[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars]
+    tab[findDone(), .(n = .N, state = "done"), by = byvars],
+    tab[findRunning(), .(n = .N, state = "running"), by = byvars],
+    tab[findErrors(), .(n = .N, state = "errored"), by = byvars],
+    tab[findExpired(), .(n = .N, state = "expired"), by = byvars],
+    tab[findQueued(), .(n = .N, state = "queued"), by = byvars],
+    tab[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars]
   ))[!is.na(n), ]
 
   if (identical(byvars, "")) {
     state_tab = state_tab[job_n, on = byvars]
   } else {
-    state_tab[, total := nrow(alljobs)]
+    state_tab[, total := nrow(tab)]
   }
 
   state_tab = state_tab[, perc := round(100 * n / total, 1)]
@@ -1262,9 +992,9 @@ check_job_state = function(alljobs = NULL, byvars = "measure") {
 #'
 #' @param ids [`findDone()`] `job.ids` to get result sizes for.
 #' @return A data.table with columns `job.id`, `size` (in MiB).
-#' @examples
+#' @example
 #' res_size = check_result_sizes()
-#' jobs_done = alljobs[findDone(), ]
+#' jobs_done = tab[findDone(), ]
 #' jobs_done = jobs_done[res_size, ]
 #' jobs_done[, .(avg_size = mean(size)), by = c("learner_id")]
 check_result_sizes = function(ids = batchtools::findDone()) {
@@ -1292,7 +1022,19 @@ aggr_result_sizes = function(ids = batchtools::findDone(), by = "learner_id") {
 
 # Misc utils ----------------------------------------------------------------------------------
 
+#' Ensure a directory exists
+#' 
+#' Creates the directory `x`, or if `x` is a file, creates
+#' the enclosing directory to ensure file `x` can be created.
+#' @param x `character()` A filsystem path to a file or directory.
+#' @return `TRUE` if the (enclosing) directory exists, `FALSE` otherwise
 ensure_directory = function(x) {
+
+  # If x is not a directory already and has no file extension
+  if (!fs::is_dir(x) & fs::path_ext(x) != "") {
+    x = fs::path_dir(x)
+  }
+
   if (!fs::dir_exists(x)) {
     fs::dir_create(x, recurse = TRUE)
   }

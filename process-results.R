@@ -1,6 +1,5 @@
 library(batchtools)
 library(mlr3)
-library(mlr3tuning)
 library(mlr3proba)
 library(data.table)
 
@@ -8,10 +7,10 @@ if (!fs::dir_exists(conf$result_path)) {
   fs::dir_create(conf$result_path, recurse = TRUE)
 }
 
-save_obj <- function(obj, name, suffix = NULL) {
+save_obj <- function(obj, name, suffix = NULL, sep = "_") {
   if (!is.null(suffix)) {
-    suffix <- paste(suffix, collapse = "_")
-    name <- paste0(name, "_", suffix)
+    suffix <- paste(suffix, collapse = sep)
+    name <- paste0(name, sep, suffix)
   }
   path <- fs::path(conf$result_path, name, ext = "rds")
   cli::cli_alert_info("Saving {.val {deparse(substitute(obj))}} to {.file {fs::path_rel(path)}}")
@@ -22,7 +21,7 @@ save_obj <- function(obj, name, suffix = NULL) {
 msr_tbl = measures_tbl()
 
 tictoc::tic("Full result processing")
-reg <- loadRegistry(conf$reg_dir, writeable = FALSE)
+reg <- loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
 tab <- collect_job_table(keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "time.running", "mem.used"))
 tab[, time.hours := as.numeric(time.running, unit = "hours")]
 data.table::setkey(tab, job.id)
@@ -35,7 +34,6 @@ runtimes <- tab[!is.na(time.running),
                 by = .(learner_id, task_id)]
 
 save_obj(runtimes, name = "runtimes")
-
 save_obj(tab, name = "jobs")
 
 cli::cli_h1("Processing registry")
@@ -44,6 +42,11 @@ print(getStatus())
 tune_measures = unique(tab$measure)
 learners = unique(tab$learner_id)
 learner_measure_tab = unique(tab[, .(measure, learner_id)])
+
+# For runtime estimate runs we only score using the tuning measures
+if (conf$reg_name == "runtime") {
+  msr_tbl = msr_tbl[id %in% tune_measures, ]
+}
 
 
 # Result processing -----------------------------------------------------------------
@@ -59,20 +62,16 @@ for (tune_measure in tune_measures) {
     "harrell_c" = msr_tbl[type == "Discrimination", measure],
     "isbs" = msr_tbl[type != "Discrimination", measure]
     )
+  
+  # For runtime estimates we also score with timing measures
+  if (conf$reg_name == "runtime") {
+    measures = c(measures, msrs(c("time_train", "time_predict")))
+  }
+
+  cli::cli_alert_info("Using eval measures {.val {mlr3misc::ids(measures)}}")
 
   for (learner in learners) {
     cli::cli_h3("Processing results for {.val {learner}}")
-
-    # learner_output_files = fs::path(
-    #   conf$result_path,
-    #   paste0(result_types, "_", tune_measure, "_", learner),
-    #   ext = "rds"
-    # )
-    #
-    # if (all(fs::file_exists(learner_output_files))) {
-    #   cli::cli_alert_info("Output files for {.val {tune_measure}}/{.val {learner}} already exist, skipping")
-    #   next
-    # }
 
     # Assemble relevant job.ids
     ids_all = tab[learner_id == learner & measure == tune_measure, ]
@@ -186,11 +185,13 @@ for (tune_measure in tune_measures) {
 
 # Combining for all tuning measures
 aggr = fs::path(conf$result_path, glue::glue("aggr_combined_{tune_measures}.rds")) |>
+  purrr::keep(fs::file_exists) |>
   lapply(readRDS) |>
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
 
 scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
+  purrr::keep(fs::file_exists) |>
   lapply(readRDS) |>
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
@@ -223,19 +224,20 @@ save_obj(bma_isbs, "bma", suffix = "isbs")
 cli::cli_h2("Processing tuning archives")
 
 # Archives with logs are very large objects of questionable utility, version without logs should suffice
-if (!fs::file_exists(fs::path(conf$result_path, "archives-with-logs.rds"))) {
+if (!fs::file_exists(fs::path(conf$result_path, "archives.rds"))) {
   cli::cli_alert_info("Reassembling tuning archives including logs")
   tictoc::tic()
   archives = reassemble_archives(conf, keep_logs = TRUE)
+  # Note ressamble_archives() writes archives.rds to result dir already
   tictoc::toc()
 }
 
-if (!fs::file_exists(fs::path(conf$result_path, "archives-no-logs.rds"))) {
-  cli::cli_alert_info("Reassembling tuning archives without logs")
-  tictoc::tic()
-  archives = reassemble_archives(conf, keep_logs = FALSE)
-  tictoc::toc()
-}
+# if (!fs::file_exists(fs::path(conf$result_path, "archives_without-logs.rds"))) {
+#   cli::cli_alert_info("Reassembling tuning archives without logs")
+#   tictoc::tic()
+#   archives_without_logs = reassemble_archives(conf, keep_logs = FALSE)
+#   tictoc::toc()
+# }
 
 # Create zipped collection of tuning archive CSVs
 if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {

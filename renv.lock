@@ -82,14 +82,14 @@
       "License": "GPL-2",
       "RoxygenNote": "7.1.1",
       "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "CoxBoost",
       "RemoteUsername": "binderh",
       "RemotePkgRef": "binderh/CoxBoost@1dc47d7051f660b28520670b34d031143f9eadfd",
       "RemoteRef": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "NeedsCompilation": "yes"
+      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd"
     },
     "DiagrammeR": {
       "Package": "DiagrammeR",
@@ -5453,7 +5453,7 @@
     },
     "parallelly": {
       "Package": "parallelly",
-      "Version": "1.41.0",
+      "Version": "1.42.0",
       "Source": "Repository",
       "Title": "Enhancing the 'parallel' Package",
       "Imports": [
@@ -5506,15 +5506,15 @@
         "testthat"
       ],
       "Remotes": "xoopR/set6",
+      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
+      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "param6",
       "RemoteUsername": "xoopR",
       "RemotePkgRef": "xoopR/param6",
       "RemoteRef": "HEAD",
-      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
-      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
-      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>"
+      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb"
     },
     "partykit": {
       "Package": "partykit",
@@ -6109,16 +6109,16 @@
     },
     "purrr": {
       "Package": "purrr",
-      "Version": "1.0.2",
+      "Version": "1.0.4",
       "Source": "Repository",
       "Title": "Functional Programming Tools",
-      "Authors@R": "c( person(\"Hadley\", \"Wickham\", , \"hadley@rstudio.com\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0003-4757-117X\")), person(\"Lionel\", \"Henry\", , \"lionel@rstudio.com\", role = \"aut\"), person(\"RStudio\", role = c(\"cph\", \"fnd\")) )",
+      "Authors@R": "c( person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0003-4757-117X\")), person(\"Lionel\", \"Henry\", , \"lionel@posit.co\", role = \"aut\"), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"), comment = c(ROR = \"03wc8by49\")) )",
       "Description": "A complete and consistent functional programming toolkit for R.",
       "License": "MIT + file LICENSE",
       "URL": "https://purrr.tidyverse.org/, https://github.com/tidyverse/purrr",
       "BugReports": "https://github.com/tidyverse/purrr/issues",
       "Depends": [
-        "R (>= 3.5.0)"
+        "R (>= 4.0)"
       ],
       "Imports": [
         "cli (>= 3.6.1)",
@@ -6143,13 +6143,15 @@
       ],
       "VignetteBuilder": "knitr",
       "Biarch": "true",
+      "Config/build/compilation-database": "true",
       "Config/Needs/website": "tidyverse/tidytemplate, tidyr",
       "Config/testthat/edition": "3",
+      "Config/testthat/parallel": "TRUE",
       "Encoding": "UTF-8",
-      "RoxygenNote": "7.2.3",
+      "RoxygenNote": "7.3.2",
       "NeedsCompilation": "yes",
-      "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>), Lionel Henry [aut], RStudio [cph, fnd]",
-      "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
+      "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>), Lionel Henry [aut], Posit Software, PBC [cph, fnd] (03wc8by49)",
+      "Maintainer": "Hadley Wickham <hadley@posit.co>",
       "Repository": "CRAN"
     },
     "quadprog": {
