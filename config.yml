@@ -73,6 +73,4 @@ runtime:
   reg_name: "runtime"
   budget:
     evals_constant: 5
-    evals_multiplier: 1
-  tuning:
-    repeats: 1 # Only one iter of 3fold cv
+    evals_multiplier: 0
