@@ -44,7 +44,7 @@ learners = unique(tab$learner_id)
 learner_measure_tab = unique(tab[, .(measure, learner_id)])
 
 # For runtime estimate runs we only score using the tuning measures
-if (conf$reg_name == "runtime") {
+if (config::is_active("runtime")) {
   msr_tbl = msr_tbl[id %in% tune_measures, ]
 }
 
@@ -64,7 +64,7 @@ for (tune_measure in tune_measures) {
     )
   
   # For runtime estimates we also score with timing measures
-  if (conf$reg_name == "runtime") {
+  if (config::is_active("runtime")) {
     measures = c(measures, msrs(c("time_train", "time_predict")))
   }
 
