@@ -9,7 +9,7 @@ upload-*
 *.tar.gz
 *.tgz
 *.tar
-
+*.code-workspace
 attic/*.html
 *_files
 attic/scratch.R
