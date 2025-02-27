@@ -82,14 +82,14 @@
       "License": "GPL-2",
       "RoxygenNote": "7.1.1",
       "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "CoxBoost",
       "RemoteUsername": "binderh",
       "RemotePkgRef": "binderh/CoxBoost@1dc47d7051f660b28520670b34d031143f9eadfd",
       "RemoteRef": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "NeedsCompilation": "yes"
+      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd"
     },
     "DiagrammeR": {
       "Package": "DiagrammeR",
@@ -483,25 +483,28 @@
     },
     "R6": {
       "Package": "R6",
-      "Version": "2.5.1",
+      "Version": "2.6.1",
       "Source": "Repository",
       "Title": "Encapsulated Classes with Reference Semantics",
-      "Authors@R": "person(\"Winston\", \"Chang\", role = c(\"aut\", \"cre\"), email = \"winston@stdout.org\")",
+      "Authors@R": "c( person(\"Winston\", \"Chang\", , \"winston@posit.co\", role = c(\"aut\", \"cre\")), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")) )",
       "Description": "Creates classes with reference semantics, similar to R's built-in reference classes. Compared to reference classes, R6 classes are simpler and lighter-weight, and they are not built on S4 classes so they do not require the methods package. These classes allow public and private members, and they support inheritance, even when the classes are defined in different packages.",
+      "License": "MIT + file LICENSE",
+      "URL": "https://r6.r-lib.org, https://github.com/r-lib/R6",
+      "BugReports": "https://github.com/r-lib/R6/issues",
       "Depends": [
-        "R (>= 3.0)"
+        "R (>= 3.6)"
       ],
       "Suggests": [
-        "testthat",
-        "pryr"
+        "lobstr",
+        "testthat (>= 3.0.0)"
       ],
-      "License": "MIT + file LICENSE",
-      "URL": "https://r6.r-lib.org, https://github.com/r-lib/R6/",
-      "BugReports": "https://github.com/r-lib/R6/issues",
-      "RoxygenNote": "7.1.1",
+      "Config/Needs/website": "tidyverse/tidytemplate, ggplot2, microbenchmark, scales",
+      "Config/testthat/edition": "3",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.2",
       "NeedsCompilation": "no",
-      "Author": "Winston Chang [aut, cre]",
-      "Maintainer": "Winston Chang <winston@stdout.org>",
+      "Author": "Winston Chang [aut, cre], Posit Software, PBC [cph, fnd]",
+      "Maintainer": "Winston Chang <winston@posit.co>",
       "Repository": "CRAN"
     },
     "RColorBrewer": {
@@ -552,11 +555,11 @@
     },
     "RcppArmadillo": {
       "Package": "RcppArmadillo",
-      "Version": "14.2.2-1",
+      "Version": "14.2.3-1",
       "Source": "Repository",
       "Type": "Package",
       "Title": "'Rcpp' Integration for the 'Armadillo' Templated Linear Algebra Library",
-      "Date": "2024-12-05",
+      "Date": "2025-02-05",
       "Authors@R": "c(person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\", \"cre\"), email = \"edd@debian.org\", comment = c(ORCID = \"0000-0001-6419-907X\")), person(\"Romain\", \"Francois\", role = \"aut\", comment = c(ORCID = \"0000-0002-2444-4226\")), person(\"Doug\", \"Bates\", role = \"aut\", comment = c(ORCID = \"0000-0001-8316-9503\")), person(\"Binxiang\", \"Ni\", role = \"aut\"), person(\"Conrad\", \"Sanderson\", role = \"aut\", comment = c(ORCID = \"0000-0002-0049-4501\")))",
       "Description": "'Armadillo' is a templated C++ linear algebra library (by Conrad Sanderson) that aims towards a good balance between speed and ease of use. Integer, floating point and complex numbers are supported, as well as a subset of trigonometric and statistics functions. Various matrix decompositions are provided through optional integration with LAPACK and ATLAS libraries.  The 'RcppArmadillo' package includes the header files from the templated 'Armadillo' library. Thus users do not need to install 'Armadillo' itself in order to use 'RcppArmadillo'. From release 7.800.0 on, 'Armadillo' is licensed under Apache License 2; previous releases were under licensed as MPL 2.0 from version 3.800.0 onwards and LGPL-3 prior to that; 'RcppArmadillo' (the 'Rcpp' bindings/bridge to Armadillo) is licensed under the GNU GPL version 2 or later, as is the rest of 'Rcpp'.",
       "License": "GPL (>= 2)",
@@ -772,8 +775,8 @@
     },
     "aorsf": {
       "Package": "aorsf",
-      "Version": "0.1.5",
-      "Source": "Repository",
+      "Version": "0.1.5.9001",
+      "Source": "GitHub",
       "Title": "Accelerated Oblique Random Forests",
       "Authors@R": "c( person(\"Byron\", \"Jaeger\", , \"bjaeger@wakehealth.edu\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0001-7399-2299\")), person(\"Nicholas\", \"Pajewski\", role = \"ctb\"), person(\"Sawyer\", \"Welden\", , \"swelden@wakehealth.edu\", role = \"ctb\"), person(\"Christopher\", \"Jackson\", , \"chris.jackson@mrc-bsu.cam.ac.uk\", role = \"rev\"), person(\"Marvin\", \"Wright\", role = \"rev\"), person(\"Lukas\", \"Burk\", role = \"rev\") )",
       "Description": "Fit, interpret, and compute predictions with oblique random forests. Includes support for partial dependence, variable importance, passing customized functions for variable importance and identification of linear combinations of features. Methods for the oblique random  survival forest are described in Jaeger et al., (2023) <DOI:10.1080/10618600.2023.2231048>.",
@@ -811,11 +814,18 @@
       "Config/testthat/edition": "3",
       "Encoding": "UTF-8",
       "LazyData": "true",
-      "RoxygenNote": "7.2.3",
+      "Roxygen": "list(markdown = TRUE)",
+      "RoxygenNote": "7.3.2",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "aorsf",
+      "RemoteUsername": "ropensci",
+      "RemotePkgRef": "ropensci/aorsf",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "9d35910ef30b068fa2a16776e0772666650e72d2",
       "NeedsCompilation": "yes",
       "Author": "Byron Jaeger [aut, cre] (<https://orcid.org/0000-0001-7399-2299>), Nicholas Pajewski [ctb], Sawyer Welden [ctb], Christopher Jackson [rev], Marvin Wright [rev], Lukas Burk [rev]",
-      "Maintainer": "Byron Jaeger <bjaeger@wakehealth.edu>",
-      "Repository": "CRAN"
+      "Maintainer": "Byron Jaeger <bjaeger@wakehealth.edu>"
     },
     "assertthat": {
       "Package": "assertthat",
@@ -1451,10 +1461,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "3.6.3",
+      "Version": "3.6.4",
       "Source": "Repository",
       "Title": "Helpers for Developing Command Line Interfaces",
-      "Authors@R": "c( person(\"Gábor\", \"Csárdi\", , \"csardi.gabor@gmail.com\", role = c(\"aut\", \"cre\")), person(\"Hadley\", \"Wickham\", role = \"ctb\"), person(\"Kirill\", \"Müller\", role = \"ctb\"), person(\"Salim\", \"Brüggemann\", , \"salim-b@pm.me\", role = \"ctb\", comment = c(ORCID = \"0000-0002-5329-5987\")), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")) )",
+      "Authors@R": "c( person(\"Gábor\", \"Csárdi\", , \"gabor@posit.co\", role = c(\"aut\", \"cre\")), person(\"Hadley\", \"Wickham\", role = \"ctb\"), person(\"Kirill\", \"Müller\", role = \"ctb\"), person(\"Salim\", \"Brüggemann\", , \"salim-b@pm.me\", role = \"ctb\", comment = c(ORCID = \"0000-0002-5329-5987\")), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")) )",
       "Description": "A suite of tools to build attractive command line interfaces ('CLIs'), from semantic elements: headings, lists, alerts, paragraphs, etc. Supports custom themes via a 'CSS'-like language. It also contains a number of lower level 'CLI' elements: rules, boxes, trees, and 'Unicode' symbols with 'ASCII' alternatives. It support ANSI colors and text styles as well.",
       "License": "MIT + file LICENSE",
       "URL": "https://cli.r-lib.org, https://github.com/r-lib/cli",
@@ -1476,14 +1486,13 @@
         "htmlwidgets",
         "knitr",
         "methods",
-        "mockery",
         "processx",
         "ps (>= 1.3.4.9000)",
         "rlang (>= 1.0.2.9003)",
         "rmarkdown",
         "rprojroot",
         "rstudioapi",
-        "testthat",
+        "testthat (>= 3.2.0)",
         "tibble",
         "whoami",
         "withr"
@@ -1491,10 +1500,10 @@
       "Config/Needs/website": "r-lib/asciicast, bench, brio, cpp11, decor, desc, fansi, prettyunits, sessioninfo, tidyverse/tidytemplate, usethis, vctrs",
       "Config/testthat/edition": "3",
       "Encoding": "UTF-8",
-      "RoxygenNote": "7.2.3",
+      "RoxygenNote": "7.3.2",
       "NeedsCompilation": "yes",
       "Author": "Gábor Csárdi [aut, cre], Hadley Wickham [ctb], Kirill Müller [ctb], Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>), Posit Software, PBC [cph, fnd]",
-      "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
+      "Maintainer": "Gábor Csárdi <gabor@posit.co>",
       "Repository": "CRAN"
     },
     "clipr": {
@@ -5506,15 +5515,15 @@
         "testthat"
       ],
       "Remotes": "xoopR/set6",
+      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
+      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "param6",
       "RemoteUsername": "xoopR",
       "RemotePkgRef": "xoopR/param6",
       "RemoteRef": "HEAD",
-      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
-      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
-      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>"
+      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb"
     },
     "partykit": {
       "Package": "partykit",
