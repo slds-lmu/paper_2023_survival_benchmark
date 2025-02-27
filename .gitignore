@@ -13,6 +13,7 @@ upload-*
 attic/*.html
 *_files
 attic/scratch.R
+.envrc
 
 # History files
 .Rhistory
