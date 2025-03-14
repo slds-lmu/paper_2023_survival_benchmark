@@ -368,11 +368,11 @@ Estimates are partially incomplete as some pretest jobs are not completed yet, h
 ```{r runtime-total-sum}
 #| column: page
 total_estimate <- runtimes |>
-  # Average over measures because we assume no meaningful difference and only submitted harrell_c jobs
+  # Assume average over measures because we assume no meaningful difference and only submitted harrell_c jobs
   dplyr::group_by(learner_id, task_id) |>
   dplyr::summarize(
-    # seconds per 5 evals
-    hours = sum(runtime / 60 / 60 / 5),
+    # seconds per 5 evals, mean in case of multiple repls submitted
+    hours = mean(runtime / 60 / 60 / 5),
     .groups = "drop"
   ) |>
   dplyr::left_join(lrntab, by = c("learner_id" = "id")) |>
