@@ -950,7 +950,7 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 #'
 #' @param reg Registry, defaulting to `getDefaultRegistry()`.
 #' @param resource_est_file See `resource-estimate.qmd`.
-#' @param keep_columns Character vector of columsn from `getJobtTable()` to keep.
+#' @param keep_columns Character vector of columns from `getJobtTable()` to keep.
 #'
 #' @return A data.table keyed with `job.id`.
 #'
@@ -958,7 +958,7 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 #' collect_job_table()
 collect_job_table = function(
   reg = batchtools::getDefaultRegistry(),
-  resource_est_file = here::here("attic", "resource_est_dec.csv"),
+  resource_est_file = here::here("tables", "resource_estimates.csv"),
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
   optional_columns = c("batch.id", "comment", "memory")
 ) {

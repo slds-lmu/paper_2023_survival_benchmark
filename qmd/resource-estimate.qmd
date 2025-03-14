@@ -1,5 +1,5 @@
 ---
-title: "Resource Estimates (December)"
+title: "Resource Estimates"
 author: "Lukas"
 date: now
 date-format: "YYYY-MM-DD HH:mm:ss (z)"
@@ -22,12 +22,12 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 Benchmark setup for resource estimation:
 
 - 1 fold of a 3-fold CV for each learner x task combination
-- Only run jobs tuend on `harrell_c` and untuned learners (plus CoxBoost)
+- Only run jobs tuned on `harrell_c` and untuned learners (plus CoxBoost)
 - Budget:
   - 5 + n_params evaluations for MBO
   - 3-fold CV for tuning (1 iter)
 
-- Etxrapolating outer eval should be straight-forward (tmes 3 for CV, times `n_repeats` as needed)
+- Extrapolating outer eval should be straight-forward (times 3 for CV, times `n_repeats` as needed)
 - Extrapolating tuning budget roughly
 
 
@@ -369,9 +369,10 @@ Estimates are partially incomplete as some pretest jobs are not completed yet, h
 #| column: page
 total_estimate <- runtimes |>
   dplyr::group_by(learner_id, task_id, measure) |>
+  # Summarize only necessary if more than one repl was submitted pr learner/task/measure
   dplyr::summarize(
-    # seconds per 2x train/predict -> hours per one (average, upper estimate)
-    hours = sum(runtime / 60 / 60 / 2),
+    # seconds per 5 evals
+    hours = sum(runtime / 60 / 60 / 5),
     .groups = "drop"
   ) |>
   dplyr::left_join(lrntab, by = c("learner_id" = "id")) |>
@@ -399,10 +400,13 @@ total_estimate <- runtimes |>
     total_years = (total_per_job * n_outer * n_outer_repeats) / 24 / 365,
     total_years_raw = (total_per_job_raw * n_outer * n_outer_repeats) / 24 / 365
   ) |>
-  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 2)))
+  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 2))) |>
+  dplyr::select(
+    learner_id, task_id, measure, params, tune, events, n_outer, n_outer_repeats,
+    total_per_job_raw, total_per_job, total_h, total_years, total_years_raw
+  )
 
 total_estimate |>
-  dplyr::select(-internal_cv, -n_inner, -hours) |>
   dplyr::arrange(-total_h) |>
   reactable::reactable(striped = TRUE, filterable = TRUE)
 
@@ -478,18 +482,16 @@ memtab = tab |>
     mem.used = ifelse(is.na(mem.used), max(mem.used, na.rm = TRUE), mem.used)
   ) |>
   dplyr::group_by(learner_id, task_id) |>
-  dplyr::summarise(mem_gb = mean(mem.used / 1000), .groups = "drop")
+  dplyr::summarise(est_mem_mb = mean(mem.used), .groups = "drop")
 
 resource_est_tab = total_estimate |>
-  dplyr::select(learner_id, task_id, measure, hours, total_h) |>
-  dplyr::left_join(memtab, by = c("learner_id", "task_id"))
-
-resource_est_tab = resource_est_tab |>
+  dplyr::left_join(memtab, by = c("learner_id", "task_id")) |>
   dplyr::mutate(
-    hours = ifelse(is.na(hours), max(hours, na.rm = TRUE), hours),
-    total_h = ifelse(is.na(total_h), max(total_h, na.rm = TRUE), total_h),
-    mem_gb = ifelse(is.na(mem_gb), max(mem_gb, na.rm = TRUE), mem_gb)
-  )
+    est_total_hours = ifelse(is.na(total_per_job), max(total_per_job, na.rm = TRUE), total_per_job),
+    est_total_hours_raw = ifelse(is.na(total_per_job_raw), max(total_per_job_raw, na.rm = TRUE), total_per_job_raw),
+    est_mem_mb = ifelse(is.na(est_mem_mb), max(est_mem_mb, na.rm = TRUE), est_mem_mb)
+  ) |>
+  dplyr::select(learner_id, task_id, measure, est_total_hours, est_total_hours_raw, est_mem_mb) 
 
 readr::write_csv(
   resource_est_tab,
