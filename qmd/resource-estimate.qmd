@@ -368,8 +368,8 @@ Estimates are partially incomplete as some pretest jobs are not completed yet, h
 ```{r runtime-total-sum}
 #| column: page
 total_estimate <- runtimes |>
-  dplyr::group_by(learner_id, task_id, measure) |>
-  # Summarize only necessary if more than one repl was submitted pr learner/task/measure
+  # Average over measures because we assume no meaningful difference and only submitted harrell_c jobs
+  dplyr::group_by(learner_id, task_id) |>
   dplyr::summarize(
     # seconds per 5 evals
     hours = sum(runtime / 60 / 60 / 5),
@@ -402,7 +402,7 @@ total_estimate <- runtimes |>
   ) |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 2))) |>
   dplyr::select(
-    learner_id, task_id, measure, params, tune, events, n_outer, n_outer_repeats,
+    learner_id, task_id, params, tune, events, n_outer, n_outer_repeats,
     total_per_job_raw, total_per_job, total_h, total_years, total_years_raw
   )
 
@@ -452,15 +452,16 @@ total_estimate |>
 ### Totals per measure:
 
 ```{r totals-per-measure}
-total_estimate |>
-  dplyr::group_by(measure) |>
-  dplyr::summarise(
-    total_h = round(sum(total_h), 2),
-    total_years = round(sum(total_years), 2)
-  ) |>
-  dplyr::arrange(-total_h) |>
-  reactable::reactable(striped = TRUE, defaultPageSize = 20)
+# total_estimate |>
+#   dplyr::group_by(measure) |>
+#   dplyr::summarise(
+#     total_h = round(sum(total_h), 2),
+#     total_years = round(sum(total_years), 2)
+#   ) |>
+#   dplyr::arrange(-total_h) |>
+#   reactable::reactable(striped = TRUE, defaultPageSize = 20)
 ```
+
 
 ### Sum total:
 
@@ -474,7 +475,9 @@ total_estimate |>
 ```
 
 
-## Overview
+## Housekeeping
+
+Storing results for later use to ease job submission considerations
 
 ```{r overview}
 memtab = tab |>
@@ -491,7 +494,7 @@ resource_est_tab = total_estimate |>
     est_total_hours_raw = ifelse(is.na(total_per_job_raw), max(total_per_job_raw, na.rm = TRUE), total_per_job_raw),
     est_mem_mb = ifelse(is.na(est_mem_mb), max(est_mem_mb, na.rm = TRUE), est_mem_mb)
   ) |>
-  dplyr::select(learner_id, task_id, measure, est_total_hours, est_total_hours_raw, est_mem_mb) 
+  dplyr::select(learner_id, task_id, est_total_hours, est_total_hours_raw, est_mem_mb) 
 
 readr::write_csv(
   resource_est_tab,
