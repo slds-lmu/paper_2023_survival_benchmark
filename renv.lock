@@ -82,14 +82,14 @@
       "License": "GPL-2",
       "RoxygenNote": "7.1.1",
       "Encoding": "UTF-8",
-      "NeedsCompilation": "yes",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "CoxBoost",
       "RemoteUsername": "binderh",
       "RemotePkgRef": "binderh/CoxBoost@1dc47d7051f660b28520670b34d031143f9eadfd",
       "RemoteRef": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd"
+      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd",
+      "NeedsCompilation": "yes"
     },
     "DiagrammeR": {
       "Package": "DiagrammeR",
@@ -432,13 +432,12 @@
     },
     "PRROC": {
       "Package": "PRROC",
-      "Version": "1.3.1",
+      "Version": "1.4",
       "Source": "Repository",
       "Type": "Package",
       "Title": "Precision-Recall and ROC Curves for Weighted and Unweighted Data",
-      "Date": "2018-06-19",
-      "Author": "Jan Grau and Jens Keilwagen",
-      "Maintainer": "Jan Grau <grau@informatik.uni-halle.de>",
+      "Date": "2025-03-15",
+      "Authors@R": "c(person(given = \"Jan\", family = \"Grau\", role = c(\"aut\", \"cre\"), email = \"grau@informatik.uni-halle.de\"), person(given = \"Jens\", family = \"Keilwagen\", role = \"aut\"))",
       "Description": "Computes the areas under the precision-recall (PR) and ROC curve for weighted (e.g., soft-labeled) and unweighted data. In contrast to other implementations, the interpolation between points of the PR curve is done by a non-linear piecewise function. In addition to the areas under the curves, the curves themselves can also be computed and plotted by a specific S3-method. References: Davis and Goadrich (2006) <doi:10.1145/1143844.1143874>; Keilwagen et al. (2014) <doi:10.1371/journal.pone.0092209>; Grau et al. (2015) <doi:10.1093/bioinformatics/btv153>.",
       "License": "GPL-3",
       "Suggests": [
@@ -446,7 +445,12 @@
         "ggplot2",
         "ROCR"
       ],
+      "Depends": [
+        "rlang"
+      ],
       "NeedsCompilation": "no",
+      "Author": "Jan Grau [aut, cre], Jens Keilwagen [aut]",
+      "Maintainer": "Jan Grau <grau@informatik.uni-halle.de>",
       "Repository": "CRAN"
     },
     "Publish": {
@@ -822,7 +826,7 @@
       "RemoteUsername": "ropensci",
       "RemotePkgRef": "ropensci/aorsf",
       "RemoteRef": "HEAD",
-      "RemoteSha": "9d35910ef30b068fa2a16776e0772666650e72d2",
+      "RemoteSha": "ab23d504edf5c436bbb777b8960fd6dd0b25b0ab",
       "NeedsCompilation": "yes",
       "Author": "Byron Jaeger [aut, cre] (<https://orcid.org/0000-0001-7399-2299>), Nicholas Pajewski [ctb], Sawyer Welden [ctb], Christopher Jackson [rev], Marvin Wright [rev], Lukas Burk [rev]",
       "Maintainer": "Byron Jaeger <bjaeger@wakehealth.edu>"
@@ -1659,19 +1663,19 @@
     },
     "collapse": {
       "Package": "collapse",
-      "Version": "2.0.19",
+      "Version": "2.1.0",
       "Source": "Repository",
       "Title": "Advanced and Fast Data Transformation",
-      "Date": "2025-01-06",
-      "Authors@R": "c( person(\"Sebastian\", \"Krantz\", role = c(\"aut\", \"cre\"),  email = \"sebastian.krantz@graduateinstitute.ch\",  comment = c(ORCID = \"0000-0001-6212-5229\")), person(\"Matt\", \"Dowle\", role = \"ctb\"), person(\"Arun\", \"Srinivasan\", role = \"ctb\"), person(\"Morgan\", \"Jacob\", role = \"ctb\"), person(\"Dirk\", \"Eddelbuettel\", role = \"ctb\"), person(\"Laurent\", \"Berge\", role = \"ctb\"), person(\"Kevin\", \"Tappe\", role = \"ctb\"), person(\"R Core Team and contributors worldwide\", role = \"ctb\"), person(\"Martyn\", \"Plummer\", role = \"cph\"), person(\"1999-2016 The R Core Team\", role = \"cph\") )",
+      "Date": "2025-03-10",
+      "Authors@R": "c( person(\"Sebastian\", \"Krantz\", role = c(\"aut\", \"cre\"),  email = \"sebastian.krantz@graduateinstitute.ch\",  comment = c(ORCID = \"0000-0001-6212-5229\")), person(\"Matt\", \"Dowle\", role = \"ctb\"), person(\"Arun\", \"Srinivasan\", role = \"ctb\"), person(\"Morgan\", \"Jacob\", role = \"ctb\"), person(\"Dirk\", \"Eddelbuettel\", role = \"ctb\"), person(\"Laurent\", \"Berge\", role = \"ctb\"), person(\"Kevin\", \"Tappe\", role = \"ctb\"), person(\"Alina\", \"Cherkas\", role = \"ctb\"), person(\"R Core Team and contributors worldwide\", role = \"ctb\"), person(\"Martyn\", \"Plummer\", role = \"cph\"), person(\"1999-2016 The R Core Team\", role = \"cph\") )",
       "Description": "A C/C++ based package for advanced data transformation and  statistical computing in R that is extremely fast, class-agnostic, robust and  programmer friendly. Core functionality includes a rich set of S3 generic grouped  and weighted statistical functions for vectors, matrices and data frames, which  provide efficient low-level vectorizations, OpenMP multithreading, and skip missing  values by default. These are integrated with fast grouping and ordering algorithms  (also callable from C), and efficient data manipulation functions. The package also  provides a flexible and rigorous approach to time series and panel data in R.  It further includes fast functions for common statistical procedures, detailed  (grouped, weighted) summary statistics, powerful tools to work with nested data,  fast data object conversions, functions for memory efficient R programming, and  helpers to effectively deal with variable labels, attributes, and missing data.  It is well integrated with base R classes, 'dplyr'/'tibble', 'data.table', 'sf', 'units',  'plm' (panel-series and data frames), and 'xts'/'zoo'.",
-      "URL": "https://sebkrantz.github.io/collapse/",
+      "URL": "https://sebkrantz.github.io/collapse/, https://github.com/SebKrantz/collapse",
       "BugReports": "https://github.com/SebKrantz/collapse/issues",
       "License": "GPL (>= 2) | file LICENSE",
       "Encoding": "UTF-8",
       "LazyData": "true",
       "Depends": [
-        "R (>= 3.4.0)"
+        "R (>= 4.1.0)"
       ],
       "Imports": [
         "Rcpp (>= 1.0.1)"
@@ -1705,7 +1709,7 @@
       ],
       "VignetteBuilder": "knitr",
       "NeedsCompilation": "yes",
-      "Author": "Sebastian Krantz [aut, cre] (<https://orcid.org/0000-0001-6212-5229>), Matt Dowle [ctb], Arun Srinivasan [ctb], Morgan Jacob [ctb], Dirk Eddelbuettel [ctb], Laurent Berge [ctb], Kevin Tappe [ctb], R Core Team and contributors worldwide [ctb], Martyn Plummer [cph], 1999-2016 The R Core Team [cph]",
+      "Author": "Sebastian Krantz [aut, cre] (<https://orcid.org/0000-0001-6212-5229>), Matt Dowle [ctb], Arun Srinivasan [ctb], Morgan Jacob [ctb], Dirk Eddelbuettel [ctb], Laurent Berge [ctb], Kevin Tappe [ctb], Alina Cherkas [ctb], R Core Team and contributors worldwide [ctb], Martyn Plummer [cph], 1999-2016 The R Core Team [cph]",
       "Maintainer": "Sebastian Krantz <sebastian.krantz@graduateinstitute.ch>",
       "Repository": "CRAN"
     },
@@ -4342,10 +4346,10 @@
     },
     "mlr3": {
       "Package": "mlr3",
-      "Version": "0.22.1",
+      "Version": "0.23.0",
       "Source": "Repository",
       "Title": "Machine Learning in R - Next Generation",
-      "Authors@R": "c( person(\"Michel\", \"Lang\", , \"michellang@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9754-0393\")), person(\"Bernd\", \"Bischl\", , \"bernd_bischl@gmx.net\", role = \"aut\", comment = c(ORCID = \"0000-0001-6002-6980\")), person(\"Jakob\", \"Richter\", , \"jakob1richter@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-4481-5554\")), person(\"Patrick\", \"Schratz\", , \"patrick.schratz@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-0748-6624\")), person(\"Giuseppe\", \"Casalicchio\", , \"giuseppe.casalicchio@stat.uni-muenchen.de\", role = \"ctb\", comment = c(ORCID = \"0000-0001-5324-5966\")), person(\"Stefan\", \"Coors\", , \"mail@stefancoors.de\", role = \"ctb\", comment = c(ORCID = \"0000-0002-7465-2146\")), person(\"Quay\", \"Au\", , \"quayau@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0002-5252-8902\")), person(\"Martin\", \"Binder\", , \"mlr.developer@mb706.com\", role = \"aut\"), person(\"Florian\", \"Pfisterer\", , \"pfistererf@googlemail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-8867-762X\")), person(\"Raphael\", \"Sonabend\", , \"raphaelsonabend@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9225-4654\")), person(\"Lennart\", \"Schneider\", , \"lennart.sch@web.de\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4152-5308\")), person(\"Marc\", \"Becker\", , \"marcbecker@posteo.de\", role = c(\"cre\", \"aut\"), comment = c(ORCID = \"0000-0002-8115-0400\")), person(\"Sebastian\", \"Fischer\", , \"sebf.fischer@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0002-9609-3197\")), person(\"Lona\", \"Koers\", , \"lona.koers@gmail.com\", role = \"ctb\") )",
+      "Authors@R": "c( person(\"Michel\", \"Lang\", , \"michellang@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9754-0393\")), person(\"Bernd\", \"Bischl\", , \"bernd_bischl@gmx.net\", role = \"aut\", comment = c(ORCID = \"0000-0001-6002-6980\")), person(\"Jakob\", \"Richter\", , \"jakob1richter@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-4481-5554\")), person(\"Patrick\", \"Schratz\", , \"patrick.schratz@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-0748-6624\")), person(\"Giuseppe\", \"Casalicchio\", , \"giuseppe.casalicchio@stat.uni-muenchen.de\", role = \"ctb\", comment = c(ORCID = \"0000-0001-5324-5966\")), person(\"Stefan\", \"Coors\", , \"mail@stefancoors.de\", role = \"ctb\", comment = c(ORCID = \"0000-0002-7465-2146\")), person(\"Quay\", \"Au\", , \"quayau@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0002-5252-8902\")), person(\"Martin\", \"Binder\", , \"mlr.developer@mb706.com\", role = \"aut\"), person(\"Florian\", \"Pfisterer\", , \"pfistererf@googlemail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-8867-762X\")), person(\"Raphael\", \"Sonabend\", , \"raphaelsonabend@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9225-4654\")), person(\"Lennart\", \"Schneider\", , \"lennart.sch@web.de\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4152-5308\")), person(\"Marc\", \"Becker\", , \"marcbecker@posteo.de\", role = c(\"cre\", \"aut\"), comment = c(ORCID = \"0000-0002-8115-0400\")), person(\"Sebastian\", \"Fischer\", , \"sebf.fischer@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0002-9609-3197\")), person(\"Lona\", \"Koers\", , \"lona.koers@gmail.com\", role = \"ctb\"), person(\"John\", \"Zobolas\", , \"bblodfon@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0002-3609-8674\")) )",
       "Description": "Efficient, object-oriented programming on the building blocks of machine learning. Provides 'R6' objects for tasks, learners, resamplings, and measures. The package is geared towards scalability and larger datasets by supporting parallelization and out-of-memory data-backends like databases. While 'mlr3' focuses on the core computational operations, add-on packages provide additional functionality.",
       "License": "LGPL-3",
       "URL": "https://mlr3.mlr-org.com, https://github.com/mlr-org/mlr3",
@@ -4381,15 +4385,15 @@
         "remotes",
         "RhpcBLASctl",
         "rpart",
-        "testthat (>= 3.1.0)"
+        "testthat (>= 3.2.0)"
       ],
       "Encoding": "UTF-8",
       "Config/testthat/edition": "3",
       "Config/testthat/parallel": "false",
       "NeedsCompilation": "no",
       "RoxygenNote": "7.3.2",
-      "Collate": "'mlr_reflections.R' 'BenchmarkResult.R' 'warn_deprecated.R' 'DataBackend.R' 'DataBackendCbind.R' 'DataBackendDataTable.R' 'DataBackendMatrix.R' 'DataBackendRbind.R' 'DataBackendRename.R' 'HotstartStack.R' 'Learner.R' 'LearnerClassif.R' 'mlr_learners.R' 'LearnerClassifDebug.R' 'LearnerClassifFeatureless.R' 'LearnerClassifRpart.R' 'LearnerRegr.R' 'LearnerRegrDebug.R' 'LearnerRegrFeatureless.R' 'LearnerRegrRpart.R' 'Measure.R' 'mlr_measures.R' 'MeasureAIC.R' 'MeasureBIC.R' 'MeasureClassif.R' 'MeasureClassifCosts.R' 'MeasureDebug.R' 'MeasureElapsedTime.R' 'MeasureInternalValidScore.R' 'MeasureOOBError.R' 'MeasureRegr.R' 'MeasureRegrRSQ.R' 'MeasureSelectedFeatures.R' 'MeasureSimilarity.R' 'MeasureSimple.R' 'Prediction.R' 'PredictionClassif.R' 'PredictionData.R' 'PredictionDataClassif.R' 'PredictionDataRegr.R' 'PredictionRegr.R' 'ResampleResult.R' 'Resampling.R' 'mlr_resamplings.R' 'ResamplingBootstrap.R' 'ResamplingCV.R' 'ResamplingCustom.R' 'ResamplingCustomCV.R' 'ResamplingHoldout.R' 'ResamplingInsample.R' 'ResamplingLOO.R' 'ResamplingRepeatedCV.R' 'ResamplingSubsampling.R' 'ResultData.R' 'Task.R' 'TaskSupervised.R' 'TaskClassif.R' 'mlr_tasks.R' 'TaskClassif_breast_cancer.R' 'TaskClassif_german_credit.R' 'TaskClassif_iris.R' 'TaskClassif_penguins.R' 'TaskClassif_pima.R' 'TaskClassif_sonar.R' 'TaskClassif_spam.R' 'TaskClassif_wine.R' 'TaskClassif_zoo.R' 'TaskGenerator.R' 'mlr_task_generators.R' 'TaskGenerator2DNormals.R' 'TaskGeneratorCassini.R' 'TaskGeneratorCircle.R' 'TaskGeneratorFriedman1.R' 'TaskGeneratorMoons.R' 'TaskGeneratorSimplex.R' 'TaskGeneratorSmiley.R' 'TaskGeneratorSpirals.R' 'TaskGeneratorXor.R' 'TaskRegr.R' 'TaskRegr_california_housing.R' 'TaskRegr_mtcars.R' 'TaskUnsupervised.R' 'as_benchmark_result.R' 'as_data_backend.R' 'as_learner.R' 'as_measure.R' 'as_prediction.R' 'as_prediction_classif.R' 'as_prediction_data.R' 'as_prediction_regr.R' 'as_resample_result.R' 'as_resampling.R' 'as_result_data.R' 'as_task.R' 'as_task_classif.R' 'as_task_regr.R' 'as_task_unsupervised.R' 'assertions.R' 'auto_convert.R' 'benchmark.R' 'benchmark_grid.R' 'bibentries.R' 'default_fallback.R' 'default_measures.R' 'fix_factor_levels.R' 'helper.R' 'helper_data_table.R' 'helper_exec.R' 'helper_hashes.R' 'helper_print.R' 'install_pkgs.R' 'marshal.R' 'mlr_sugar.R' 'mlr_test_helpers.R' 'partition.R' 'predict.R' 'reexports.R' 'resample.R' 'set_threads.R' 'set_validate.R' 'task_converters.R' 'worker.R' 'zzz.R'",
-      "Author": "Michel Lang [aut] (<https://orcid.org/0000-0001-9754-0393>), Bernd Bischl [aut] (<https://orcid.org/0000-0001-6002-6980>), Jakob Richter [aut] (<https://orcid.org/0000-0003-4481-5554>), Patrick Schratz [aut] (<https://orcid.org/0000-0003-0748-6624>), Giuseppe Casalicchio [ctb] (<https://orcid.org/0000-0001-5324-5966>), Stefan Coors [ctb] (<https://orcid.org/0000-0002-7465-2146>), Quay Au [ctb] (<https://orcid.org/0000-0002-5252-8902>), Martin Binder [aut], Florian Pfisterer [aut] (<https://orcid.org/0000-0001-8867-762X>), Raphael Sonabend [aut] (<https://orcid.org/0000-0001-9225-4654>), Lennart Schneider [ctb] (<https://orcid.org/0000-0003-4152-5308>), Marc Becker [cre, aut] (<https://orcid.org/0000-0002-8115-0400>), Sebastian Fischer [aut] (<https://orcid.org/0000-0002-9609-3197>), Lona Koers [ctb]",
+      "Collate": "'mlr_reflections.R' 'BenchmarkResult.R' 'CallbackResample.R' 'ContextResample.R' 'warn_deprecated.R' 'DataBackend.R' 'DataBackendCbind.R' 'DataBackendDataTable.R' 'DataBackendMatrix.R' 'DataBackendRbind.R' 'DataBackendRename.R' 'HotstartStack.R' 'Learner.R' 'LearnerClassif.R' 'mlr_learners.R' 'LearnerClassifDebug.R' 'LearnerClassifFeatureless.R' 'LearnerClassifRpart.R' 'LearnerRegr.R' 'LearnerRegrDebug.R' 'LearnerRegrFeatureless.R' 'LearnerRegrRpart.R' 'Measure.R' 'mlr_measures.R' 'MeasureAIC.R' 'MeasureBIC.R' 'MeasureClassif.R' 'MeasureClassifCosts.R' 'MeasureDebug.R' 'MeasureElapsedTime.R' 'MeasureInternalValidScore.R' 'MeasureOOBError.R' 'MeasureRegr.R' 'MeasureRegrRSQ.R' 'MeasureSelectedFeatures.R' 'MeasureSimilarity.R' 'MeasureSimple.R' 'Prediction.R' 'PredictionClassif.R' 'PredictionData.R' 'PredictionDataClassif.R' 'PredictionDataRegr.R' 'PredictionRegr.R' 'ResampleResult.R' 'Resampling.R' 'mlr_resamplings.R' 'ResamplingBootstrap.R' 'ResamplingCV.R' 'ResamplingCustom.R' 'ResamplingCustomCV.R' 'ResamplingHoldout.R' 'ResamplingInsample.R' 'ResamplingLOO.R' 'ResamplingRepeatedCV.R' 'ResamplingSubsampling.R' 'ResultData.R' 'Task.R' 'TaskSupervised.R' 'TaskClassif.R' 'mlr_tasks.R' 'TaskClassif_breast_cancer.R' 'TaskClassif_german_credit.R' 'TaskClassif_iris.R' 'TaskClassif_penguins.R' 'TaskClassif_pima.R' 'TaskClassif_sonar.R' 'TaskClassif_spam.R' 'TaskClassif_wine.R' 'TaskClassif_zoo.R' 'TaskGenerator.R' 'mlr_task_generators.R' 'TaskGenerator2DNormals.R' 'TaskGeneratorCassini.R' 'TaskGeneratorCircle.R' 'TaskGeneratorFriedman1.R' 'TaskGeneratorMoons.R' 'TaskGeneratorSimplex.R' 'TaskGeneratorSmiley.R' 'TaskGeneratorSpirals.R' 'TaskGeneratorXor.R' 'TaskRegr.R' 'TaskRegr_california_housing.R' 'TaskRegr_mtcars.R' 'TaskUnsupervised.R' 'as_benchmark_result.R' 'as_data_backend.R' 'as_learner.R' 'as_measure.R' 'as_prediction.R' 'as_prediction_classif.R' 'as_prediction_data.R' 'as_prediction_regr.R' 'as_resample_result.R' 'as_resampling.R' 'as_result_data.R' 'as_task.R' 'as_task_classif.R' 'as_task_regr.R' 'as_task_unsupervised.R' 'assertions.R' 'auto_convert.R' 'benchmark.R' 'benchmark_grid.R' 'bibentries.R' 'default_fallback.R' 'default_measures.R' 'fix_factor_levels.R' 'helper.R' 'helper_data_table.R' 'helper_exec.R' 'helper_hashes.R' 'helper_print.R' 'install_pkgs.R' 'marshal.R' 'mlr_callbacks.R' 'mlr_sugar.R' 'mlr_test_helpers.R' 'partition.R' 'predict.R' 'reexports.R' 'resample.R' 'set_threads.R' 'set_validate.R' 'task_converters.R' 'worker.R' 'zzz.R'",
+      "Author": "Michel Lang [aut] (<https://orcid.org/0000-0001-9754-0393>), Bernd Bischl [aut] (<https://orcid.org/0000-0001-6002-6980>), Jakob Richter [aut] (<https://orcid.org/0000-0003-4481-5554>), Patrick Schratz [aut] (<https://orcid.org/0000-0003-0748-6624>), Giuseppe Casalicchio [ctb] (<https://orcid.org/0000-0001-5324-5966>), Stefan Coors [ctb] (<https://orcid.org/0000-0002-7465-2146>), Quay Au [ctb] (<https://orcid.org/0000-0002-5252-8902>), Martin Binder [aut], Florian Pfisterer [aut] (<https://orcid.org/0000-0001-8867-762X>), Raphael Sonabend [aut] (<https://orcid.org/0000-0001-9225-4654>), Lennart Schneider [ctb] (<https://orcid.org/0000-0003-4152-5308>), Marc Becker [cre, aut] (<https://orcid.org/0000-0002-8115-0400>), Sebastian Fischer [aut] (<https://orcid.org/0000-0002-9609-3197>), Lona Koers [ctb], John Zobolas [ctb] (<https://orcid.org/0000-0002-3609-8674>)",
       "Maintainer": "Marc Becker <marcbecker@posteo.de>",
       "Repository": "CRAN"
     },
@@ -4477,7 +4481,7 @@
     },
     "mlr3extralearners": {
       "Package": "mlr3extralearners",
-      "Version": "1.0.0",
+      "Version": "1.0.0-9000",
       "Source": "GitHub",
       "Title": "Extra Learners For mlr3",
       "Authors@R": "c( person(\"Raphael\", \"Sonabend\", , \"raphaelsonabend@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9225-4654\")), person(\"Patrick\", \"Schratz\", , \"patrick.schratz@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0003-0748-6624\")), person(\"Lorenz A.\", \"Kapsner\", , \"lorenz.kapsner@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0003-1866-860X\")), person(\"Lennart\", \"Schneider\", , \"lennart.sch@web.de\", role = \"ctb\", comment = c(ORCID = \"0000-0003-4152-5308\")), person(\"Stephen A\", \"Lauer\", , \"stephenalauer@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0003-2948-630X\")), person(\"Pierre\", \"Camilleri\", , \"camilleri_pierre@hotmail.fr\", role = \"ctb\"), person(\"Javier\", \"García\", , \"geshter@hotmail.com\", role = \"ctb\"), person(\"Keenan\", \"Ganz\", , \"ganzkeenan1@gmail.com\", role = \"ctb\"), person(\"Byron\", \"Jaeger\", , \"bjaeger@wakehealth.edu\", role = \"ctb\"), person(\"Sebastian\", \"Fischer\", , \"sebf.fischer@gmail.com\", role = c(\"cre\", \"aut\")), person(\"Zezhi\", \"Wang\", ,\"homura@mail.ustc.edu.cn\", role = \"ctb\"), person(\"John\", \"Zobolas\", ,\"bblodfon@gmail.com\", role = \"ctb\", comment = c(ORCID = \"0000-0002-3609-8674\")), person(\"Lukas\", \"Burk\", , \"burk@leibniz-bips.de\", role = \"ctb\", comment = c(ORCID = \"0000-0001-7528-3795\")), person(\"Lona\", \"Koers\", , \"lona.koers@gmail.com\", role = \"ctb\") )",
@@ -4581,7 +4585,7 @@
       "RemoteUsername": "mlr-org",
       "RemotePkgRef": "mlr-org/mlr3extralearners",
       "RemoteRef": "HEAD",
-      "RemoteSha": "39ba173c0feb272c92ee25b56a0e9bea7c7d2f34",
+      "RemoteSha": "5b2207ef104acb5fe1d74db05fa71324186fd79c",
       "Author": "Raphael Sonabend [aut] (<https://orcid.org/0000-0001-9225-4654>), Patrick Schratz [aut] (<https://orcid.org/0000-0003-0748-6624>), Lorenz A. Kapsner [ctb] (<https://orcid.org/0000-0003-1866-860X>), Lennart Schneider [ctb] (<https://orcid.org/0000-0003-4152-5308>), Stephen A Lauer [ctb] (<https://orcid.org/0000-0003-2948-630X>), Pierre Camilleri [ctb], Javier García [ctb], Keenan Ganz [ctb], Byron Jaeger [ctb], Sebastian Fischer [cre, aut], Zezhi Wang [ctb], John Zobolas [ctb] (<https://orcid.org/0000-0002-3609-8674>), Lukas Burk [ctb] (<https://orcid.org/0000-0001-7528-3795>), Lona Koers [ctb]",
       "Maintainer": "Sebastian Fischer <sebf.fischer@gmail.com>"
     },
@@ -5515,15 +5519,15 @@
         "testthat"
       ],
       "Remotes": "xoopR/set6",
-      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
-      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "param6",
       "RemoteUsername": "xoopR",
       "RemotePkgRef": "xoopR/param6",
       "RemoteRef": "HEAD",
-      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb"
+      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
+      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
+      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>"
     },
     "partykit": {
       "Package": "partykit",
