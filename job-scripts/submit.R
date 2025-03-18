@@ -1,12 +1,9 @@
-root = here::here()
-
-mem_beartooth = 4681
-mem_teton = 4096
-mem_knl = 5457
-
+# Partition memory in MiB per node: RAM per node per CPU core
+mem_beartooth = floor(1024 * (256 / 56))
+mem_teton = floor(1024 * (128 / 32))
+mem_mb = floor(1024 * (1024 / 96))
+#conf = config::get(config = "production")
 library("batchtools")
-library("mlr3batchmark")
-source(here::here("R/helpers.R"))
 
 # Assumes batchmark.R is run beforehand
 reg = loadRegistry(conf$reg_dir, writeable = TRUE)
@@ -18,25 +15,24 @@ print(summarizeExperiments(by = c("task_id", "learner_id")))
 # by number of unique time points (ranked) (higher == more memory needed)
 tab = collect_job_table(reg = reg)
 
-# Estimated runtimes might be missing, so "impute" as 75% quantile for not entirely implausible values
-tab[, hours   := ifelse(is.na(hours),   quantile(hours, na.rm = TRUE,   probs = 0.75), hours),   by = .(task_id)]
-tab[, total_h := ifelse(is.na(total_h), quantile(total_h, na.rm = TRUE, probs = 0.75), total_h), by = .(task_id)]
-tab[, mem_gb  := ifelse(is.na(mem_gb),  quantile(mem_gb, na.rm = TRUE,  probs = 0.75), mem_gb),  by = .(task_id)]
+# tab[is.na(est_total_hours), ]
+# tab[is.na(est_mem_mb), ]
 
-# Non-tuned learners --------------------------------------------------------------------------
-# learners without inner resampling (KM, CoxBoost, ..) so not technically untuned but no inner resampling
-# where measure == "harrell_c,rcll"
+# Shortest jobs ----------------------------------------------------------
+# These are so small that it's probably faster to chunk
+jobs_shortest = tab[est_total_hours <= 1]
+jobs_shortest[, chunk := lpt(est_total_hours, n.chunks = 50)]
+jobs_shortest[, list(hours = sum(est_total_hours), mem = mean(est_mem_mb), count = .N), by = chunk]
 
-jobs_untuned = tab[grepl(",", measure), ]
-jobs_untuned[, chunk := lpt(total_h, 50)]
-chunks_untuned = jobs_untuned[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
+jobs_shortest[, chunk := binpack(est_total_hours, chunk.size = 2 * 24)]
+jobs_shortest[, list(hours = sum(est_total_hours), mem = mean(est_mem_mb), count = .N), by = chunk]
 
-# Tuning on Harrell's C -----------------------------------------------------------------------
-jobs_harrell = tab[measure == "harrell_c", ]
-jobs_harrell[, chunk := lpt(total_h, 100)]
-chunks_harrell = jobs_harrell[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
-
-# Tuning on RCLL -------------------------------------------------------------------
-jobs_isbs = tab[measure == "isbs", ]
-jobs_isbs[, chunk := lpt(total_h, 100)]
-chunks_isbs = jobs_isbs[, list(total_h = sum(total_h), mem = sum(mem_gb), count = .N), by = chunk]
+jobs_shortest |>
+  submitJobs(
+    resources = list(
+      qos = "normal",
+      walltime = 3 * 24 * 3600,
+      memory = mem_teton,
+      partition = "teton"
+    )
+  )
