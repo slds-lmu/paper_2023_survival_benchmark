@@ -23,7 +23,6 @@ options(TZ = "Europe/Berlin")
 
 cli::cli_alert_info("Loading config \"{Sys.getenv('R_CONFIG_ACTIVE', 'default')}\"")
 
-source(here::here("R/helpers.R"))
 
 library(data.table)
 library(batchtools)
@@ -33,6 +32,8 @@ library(ggplot2)
 
 # Assumes batchmark.R is run beforehand
 reg = loadRegistry(conf$reg_dir, writeable = FALSE)
+
+tasktab = load_tasktab()
 ```
 
 # Current Job Status
@@ -40,8 +41,23 @@ reg = loadRegistry(conf$reg_dir, writeable = FALSE)
 ```{r}
 tab = collect_job_table(
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id"),
-  optional_columns = c("time.running", "submitted", "started", "done")
+  optional_columns = c("time.running", "submitted", "started", "done", "comment", "partition", "qos")
 )
+
+tab[,
+  time_cat := data.table::fcase(
+    est_total_hours <= 1,
+    "shortest",
+    est_total_hours <= 10,
+    "fast",
+    est_total_hours <= 2.5 * 24,
+    "normal",
+    est_total_hours < 160,
+    "long",
+    est_total_hours >= 160,
+    "maximum"
+  )
+]
 
 # Subset to jobs relevant for runtime estimate
 if (config::is_active("runtime")) tab = tab[repl == 1 & measure != "isbs", ]
@@ -66,9 +82,7 @@ job_milestones = tibble::tribble(
   "submitted", min(tab$submitted, na.rm = TRUE), max(tab$submitted, na.rm = TRUE),
   "started",   min(tab$started, na.rm = TRUE), max(tab$started, na.rm = TRUE),
   "done",      min(tab$done, na.rm = TRUE), max(tab$done, na.rm = TRUE)
-)
-
-job_milestones = job_milestones |>
+) |>
   dplyr::mutate(
     days_between = round(difftime(last, first, units = "days"), 1)
   )
@@ -84,12 +98,12 @@ Overall completion: **`r complete_n`** / `r nrow(tab)` (**`r complete_perc`%**).
 
 It took **`r took_days`** days all in all, with a sequential runtime of **`r took_days_sequential`** days.
 
-```{r}
+```{r milestones-tab}
 job_milestones |> 
   tablify()
 ```
 
-```{r}
+```{r runtime-per-task-tab}
 job_completion |>
   group_by(task_id) |>
   summarise(
@@ -103,7 +117,9 @@ job_completion |>
   arrange(-mean) |>
   mutate(across(where(is.numeric), \(x) round(x, 1))) |>
   tablify(caption = "Job runtime per task in days")
+```
 
+```{r runtime-per-learner-tab}
 job_completion |>
   group_by(learner_id) |>
   summarise(
@@ -155,7 +171,7 @@ job_completion |>
 ### Currently running jobs
 
 ```{r, eval=nrow(batchtools::findRunning()) > 0}
-tab[batchtools::findRunning()] |>
+tab[findRunning()] |>
   arrange(desc(time.running)) |>
   select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
   reactable::reactable(
@@ -182,12 +198,7 @@ check_job_state(byvars = "learner_id") |>
 
 ```{r}
 check_job_state(byvars = "task_id") |>
+  ijoin(tasktab[, .(task_id, n, p, events)], by = "task_id") |>
+  dplyr::arrange(-events) |>
   tablify()
-```
-
-## Tuning Measure x Learner
-
-```{r}
-check_job_state(byvars = c("measure", "learner_id")) |>
-    tablify()
 ```

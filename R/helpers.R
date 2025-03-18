@@ -1005,41 +1005,44 @@ check_job_state = function(tab = NULL, byvars = "measure") {
   job_n = tab[, .(total = .N), by = byvars]
 
   state_tab = data.table::rbindlist(list(
-    tab[findDone(), .(n = .N, state = "done"), by = byvars],
-    tab[findRunning(), .(n = .N, state = "running"), by = byvars],
-    tab[findErrors(), .(n = .N, state = "errored"), by = byvars],
-    tab[findExpired(), .(n = .N, state = "expired"), by = byvars],
-    tab[findQueued(), .(n = .N, state = "queued"), by = byvars],
-    tab[findNotSubmitted(), .(n = .N, state = "not_submitted"), by = byvars]
+    ijoin(tab, findDone())[, .(n = .N, state = "done"), by = byvars],
+    ijoin(tab, findRunning())[, .(n = .N, state = "running"), by = byvars],
+    ijoin(tab, findErrors())[, .(n = .N, state = "errored"), by = byvars],
+    ijoin(tab, findExpired())[, .(n = .N, state = "expired"), by = byvars],
+    ijoin(tab, findSubmitted())[, .(n = .N, state = "submitted"), by = byvars],
+    ijoin(tab, findQueued())[, .(n = .N, state = "queued"), by = byvars],
+    ijoin(tab, findNotSubmitted())[, .(n = .N, state = "not_submitted"), by = byvars]
   ))[!is.na(n), ]
 
-  if (identical(byvars, "")) {
-    state_tab = state_tab[job_n, on = byvars]
-  } else {
-    state_tab[, total := nrow(tab)]
-  }
-
-  state_tab = state_tab[, perc := round(100 * n / total, 1)]
-  state_tab = state_tab[, val := sprintf("%3.1f%% (%i)", perc, n)][]
-  state_tab[, n := NULL]
-  state_tab[, perc := NULL]
-  state_tab[, total := NULL]
   state_tab = data.table::dcast(
     state_tab,
     ... ~ state,
-    fill = "\u2014",
-    value.var = "val",
-    fun.aggregate = identity
+    fill = 0,
+    value.var = "n" #,
+    #fun.aggregate = identity
   )
+
+  state_tab = state_tab[job_n]
+
+  # state_tab = state_tab[, val := sprintf("%3.1f%% (%i)", perc, n)][]
+  # state_tab[, n := NULL]
+  # state_tab[, perc := NULL]
+  # state_tab[, total := NULL]
+  # state_tab = data.table::dcast(
+  #   state_tab,
+  #   ... ~ state,
+  #   fill = "\u2014",
+  #   value.var = "val",
+  #   fun.aggregate = identity
+  # )
 
   # Sorting cols like this feels less awkward than in base/dt I guess
   dplyr::select(
     state_tab,
     dplyr::any_of(byvars),
-    dplyr::any_of(c("not_submitted", "queued", "running", "errored", "expired", "done"))
+    dplyr::any_of(c("total", "not_submitted", "submitted", "queued", "running", "errored", "expired", "done"))
   )
 }
-
 
 # Debug utilities -----------------------------------------------------------------------------
 
