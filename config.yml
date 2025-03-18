@@ -28,13 +28,13 @@ default:
     evals_constant: 0
     evals_multiplier: 50
     # Time limit for tuning process, run_time terminator, will be converted to seconds
-    runtime_hours: 150 # 6.25 * 24
+    runtime_hours: 160 # of 168 max, must exceed at_*
   timeout:
     # Times in hours (!) need to be converted to seconds at correct places
     bl_train: 12
-    bl_predict: 4
+    bl_predict: 5
     at_train: 156 # of 168 max
-    at_predict: 12 # leave some headroom for job
+    at_predict: 6 # leave some headroom for job
 
 # To allow special treatment of the real benchmark run
 production:
