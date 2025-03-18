@@ -1041,7 +1041,14 @@ check_job_state = function(tab = NULL, byvars = "measure") {
     state_tab,
     dplyr::any_of(byvars),
     dplyr::any_of(c("total", "not_submitted", "submitted", "queued", "running", "errored", "expired", "done"))
-  )
+  ) |>
+    dplyr::mutate(dplyr::across(not_submitted:done, \(x) {
+      data.table::fifelse(
+        x == 0,
+        yes = "\u2014",
+        no = sprintf("%3.1f%% (%i)", 100 * x / total, x)
+      )
+    }))
 }
 
 # Debug utilities -----------------------------------------------------------------------------
