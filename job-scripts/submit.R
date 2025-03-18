@@ -18,12 +18,28 @@ tab = collect_job_table(reg = reg)
 # tab[is.na(est_total_hours), ]
 # tab[is.na(est_mem_mb), ]
 
-# Shortest jobs ----------------------------------------------------------
-# These are so small that it's probably faster to chunk
-jobs_shortest = tab[est_total_hours <= 1]
-jobs_shortest[, chunk := lpt(est_total_hours, n.chunks = 50)]
-jobs_shortest[, list(hours = sum(est_total_hours), mem = mean(est_mem_mb), count = .N), by = chunk]
+# Roughly categorize in alignment qith QoS to make submission easier
+# Chunk shortest together to save overhead
+tab[,
+  time_cat := data.table::fcase(
+    est_total_hours <= 1,
+    "shortest",
+    est_total_hours <= 10,
+    "fast",
+    est_total_hours <= 2.5 * 24,
+    "normal",
+    est_total_hours < max(est_total_hours),
+    "long",
+    est_total_hours == max(est_total_hours),
+    "maximum"
+  )
+]
 
+tab[, .(.N), by = "time_cat"]
+
+# Shortest jobs ----------------------------------------------------------
+# These are so small that it's probably faster to chunk in "normal" qos
+jobs_shortest = tab[time_cat == "shortest"]
 jobs_shortest[, chunk := binpack(est_total_hours, chunk.size = 2 * 24)]
 jobs_shortest[, list(hours = sum(est_total_hours), mem = mean(est_mem_mb), count = .N), by = chunk]
 
