@@ -26,6 +26,7 @@ for (i in seq_along(files)) {
 
     # Make number of folds dependent on number of observations in smallest tasks
     folds = min(floor(task$nrow / conf$outer_eval$min_obs), conf$outer_eval$folds)
+    repeats = conf$outer_eval$repeats
 
     if (conf$outer_eval$resampling == "repeated_cv") {
       if (conf$outer_eval$repeats == "auto") {
@@ -41,7 +42,6 @@ for (i in seq_along(files)) {
         cli::cli_alert_info("Using fixed number of repeats: {.val {num_events}}")
       }
     }
-    repeats = conf$outer_eval$repeats
 
     resampling = switch(
       conf$outer_eval$resampling,
