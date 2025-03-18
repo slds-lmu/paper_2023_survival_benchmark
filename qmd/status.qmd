@@ -44,7 +44,7 @@ tab = collect_job_table(
 )
 
 # Subset to jobs relevant for runtime estimate
-if (conf$reg_name == "runtime") tab = tab[repl == 1 & measure != "isbs", ]
+if (config::is_active("runtime")) tab = tab[repl == 1 & measure != "isbs", ]
 
 tab[, time.running := as.numeric(time.running, unit = "secs")]
 tab[, time.running.hms := hms::hms(seconds = round(time.running, 1))]

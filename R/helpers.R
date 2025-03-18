@@ -19,7 +19,6 @@ save_resampling = function(resampling, task, resampling_dir = here::here("resamp
 
   resampling_tab = as.data.table(resampling)
   readr::write_csv(x = resampling_tab, file = file_csv, append = FALSE)
-
 }
 
 #' Reconstruct a Resampling object from stored resampling CSV
@@ -128,7 +127,6 @@ load_task_data = function() {
 #' The file path for storage is derived from the registry directory, learner, task and resampling hash.
 #' E.g.: `/path/to/reg_dir/tuning_archives/tuning.measure__learner.id__task.id__unix.epoch__hash(task$data()).rds`
 callback_backup_impl = function(callback, context) {
-
   # Ensure the folder containing tuning archives exists
   ensure_directory(callback$state$path_dir)
 
@@ -174,11 +172,28 @@ callback_archive_logs_impl = function(callback, context) {
   if (nrow(logs) > 0) {
     context$aggregated_performance[, log := list(logs)]
   }
-
 }
 
-# Utilities for analysis ----------------------------------------------------------------------
+#' Assign number of repeats
+#'
+#' Number of repeats depending on events in dataset.
+#' @param num_events Integer number of events
+#'
+#' @return Integer number of repeats
+assign_repeats = function(num_events) {
+  data.table::fcase(
+    num_events < 500,
+    10,
+    num_events >= 500 & num_events < 2500,
+    5,
+    num_events > 2500,
+    1
+  )
+}
 
+
+# Utilities for analysis ----------------------------------------------------------------------
+# fmt: skip
 #' List of included learners with short IDs and some extra info
 #'
 #' @param path Path to store CSV file.
@@ -238,6 +253,7 @@ load_tasktab = function(path = here::here("tables", "tasktab.csv")) {
   data.table::fread(path)
 }
 
+# fmt: skip
 #' Quickly recreate list of evaluation measures
 #'
 #' Define once, use everywhere.
@@ -265,6 +281,7 @@ get_measures_eval = function() {
   measures_eval
 }
 
+# fmt: skip
 #' Table of evaluation measures with metadata
 #'
 measures_tbl = function() {
@@ -309,11 +326,10 @@ measures_tbl = function() {
 #'   of the resulting object in memory and on disk
 #' @param ignore_cache [`FALSE`] Whether to ignore a cached result and reassemble from scratch
 reassemble_archives = function(
-    conf = config::get(),
-    keep_logs = TRUE,
-    ignore_cache = FALSE
-  ) {
-
+  conf = config::get(),
+  keep_logs = TRUE,
+  ignore_cache = FALSE
+) {
   if (keep_logs) {
     archive_path = fs::path(conf$result_path, "archives-with-logs.rds")
   } else {
@@ -380,7 +396,20 @@ reassemble_archives = function(
   archives = archives[learners, on = "base_id"]
   archives[, base_id := NULL]
   archives = archives[!is.na(tuning_measure), ]
-  data.table::setcolorder(archives, c("learner_id", "task_id", "tuning_measure", "iter_hash", "time_epoch", "warnings_sum", "errors_sum", "archive", "file"))
+  data.table::setcolorder(
+    archives,
+    c(
+      "learner_id",
+      "task_id",
+      "tuning_measure",
+      "iter_hash",
+      "time_epoch",
+      "warnings_sum",
+      "errors_sum",
+      "archive",
+      "file"
+    )
+  )
   saveRDS(archives, archive_path)
 
   archives[]
@@ -391,7 +420,6 @@ reassemble_archives = function(
 #' @param verbose `FALSE` Diligently report file writes.
 #' @return Nothing, only writes files.
 convert_archives_csv = function(conf = config::get(), verbose = FALSE) {
-
   archive_csv_dir = fs::path(conf$result_path, "tuning_archives")
   ensure_directory(archive_csv_dir)
 
@@ -427,9 +455,11 @@ convert_archives_csv = function(conf = config::get(), verbose = FALSE) {
     out_path = fs::path(archive_csv_dir, paste(components, collapse = "__"), ext = "csv")
     if (!fs::file_exists(out_path)) {
       if (verbose) {
-        cli::cli_alert_info("Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
+        cli::cli_alert_info(
+          "Writing archive for {.val {components[['learner_id_long']]}} tuned with \\
                           {.val {components[['tuning_measure']]}} on {.val {components[['task_id']]}} \\
-                          (iter {.val {components[['iter_hash']]}}) to CSV")
+                          (iter {.val {components[['iter_hash']]}}) to CSV"
+        )
       }
 
       readr::write_csv(x = to_csv, file = out_path, append = FALSE)
@@ -453,7 +483,6 @@ clean_duplicate_archives = function(
   conf,
   tmp_path = here::here("tmp", "archive-backup")
 ) {
-
   ensure_directory(tmp_path)
 
   archives = reassemble_archives(conf, keep_logs = FALSE)
@@ -507,11 +536,7 @@ check_scores = function(bma) {
 #' @param x A `bma`/`BemcharkAggr` or `data.frame`-like object with appropriate column names.
 #' @param learner_id_exclude (`character()`) Learner IDs to exclude.
 #' @param task_id_exclude (`character()`) Task IDs to exclude.
-remove_results = function(x,
-                          learner_id_exclude = NULL,
-                          task_id_exclude = NULL
-) {
-
+remove_results = function(x, learner_id_exclude = NULL, task_id_exclude = NULL) {
   if (inherits(x, "BenchmarkAggr")) {
     checkmate::assert_class(x, classes = "BenchmarkAggr")
     xdat = data.table::copy(x$data)
@@ -536,8 +561,6 @@ remove_results = function(x,
     xdat = xdat[xdat[["task_id"]] != task_id_exclude, ]
     xdat = xdat[, task_id := factor(task_id, levels = setdiff(task_id_orig, task_id_exclude))]
   }
-
-
 
   if (inherits(x, "BenchmarkAggr")) return(mlr3benchmark::as_benchmark_aggr(xdat))
   xdat[]
@@ -590,13 +613,15 @@ tablify = function(x, caption = NULL, ...) {
 #' plot_results(bma_harrell_c, type = "fn")
 #' plot_results(bma_harrell_c, type = "cd_n", ratio = 1)
 plot_results = function(
-    bma, type = "box", measure_id = "harrell_c", tuning_measure_id = "harrell_c",
-    exclude_learners = "",
-    flip = FALSE,
-    dodge = TRUE,
-    ...
+  bma,
+  type = "box",
+  measure_id = "harrell_c",
+  tuning_measure_id = "harrell_c",
+  exclude_learners = "",
+  flip = FALSE,
+  dodge = TRUE,
+  ...
 ) {
-
   checkmate::assert_subset(type, choices = c("mean", "box", "fn", "cd_n", "cd_bd"))
   measure_label = msr_tbl[id == measure_id, label]
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
@@ -617,17 +642,18 @@ plot_results = function(
   )
 
   minimize = msr_tbl[id == measure_id, minimize]
-# browser()
+  # browser()
   if (type %in% c("cd_n", "cd_bd")) {
-
     test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
 
     #cli::cli_alert_info("Performing type {type} and measure {measure_id} and test {test}, minimize = {minimize}")
 
     p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
       labs(
-        caption = glue::glue("Evaluation measure: {measure_label}
-                             Tuning measure: {tuning_measure_label}")
+        caption = glue::glue(
+          "Evaluation measure: {measure_label}
+                             Tuning measure: {tuning_measure_label}"
+        )
       )
   } else if (type %in% c("mean", "box", "fn")) {
     p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
@@ -647,28 +673,34 @@ plot_results = function(
   if (type %in% c("box", "mean")) {
     if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
     if (flip) {
-      p = p + coord_flip() +
-        scale_x_discrete(limits = rev)
+      p = p + coord_flip() + scale_x_discrete(limits = rev)
     }
     p = p + theme_minimal(base_size = 15)
     p = p + theme(plot.background = element_rect(fill = "transparent", color = NA))
   }
 
   if (type == "fn") {
-    p = p + theme(
-      axis.text.x = element_text(angle = 90),
-      axis.text.y = element_text(angle = 0)
-    )
+    p = p +
+      theme(
+        axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(angle = 0)
+      )
   }
 
   p
-
 }
 
 #' Unfortunate partial duplication as above function is for BenchmarkAggr objects but turns out
 #' I want one for "normal" data.frames as well. Should have seen that coming.
 #'
-plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tuning_measure_id = "harrell_c", dodge = FALSE, flip = FALSE) {
+plot_aggr_scores = function(
+  xdf,
+  type = "box",
+  eval_measure_id = "harrell_c",
+  tuning_measure_id = "harrell_c",
+  dodge = FALSE,
+  flip = FALSE
+) {
   checkmate::assert_data_table(xdf)
 
   measure_label = msr_tbl[id == eval_measure_id, label]
@@ -684,8 +716,11 @@ plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tu
     direction_label = "higher is better"
   }
 
-  p = ggplot(xdf[tuned == tuning_measure_id], aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
-    geom_boxplot(alpha = 1/4, key_glyph = "rect") +
+  p = ggplot(
+    xdf[tuned == tuning_measure_id],
+    aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)
+  ) +
+    geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
 
   p = p +
@@ -694,27 +729,34 @@ plot_aggr_scores = function(xdf, type = "box", eval_measure_id = "harrell_c", tu
       subtitle = glue::glue("{plot_type_label} of aggregated scores across all tasks ({direction_label})"),
       x = NULL,
       y = measure_label,
-      color = NULL, fill = NULL,
+      color = NULL,
+      fill = NULL,
       caption = glue::glue("Tuning measure: {tuning_measure_label}")
     )
 
   if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
   if (flip) {
-    p = p + coord_flip() +
-      scale_x_discrete(limits = rev)
+    p = p + coord_flip() + scale_x_discrete(limits = rev)
   }
   p = p + theme_minimal(base_size = 15)
-  p = p + theme(
-    plot.background = element_rect(fill = "transparent", color = NA),
-    legend.position = "bottom",
-    plot.title.position = "plot"
-  )
+  p = p +
+    theme(
+      plot.background = element_rect(fill = "transparent", color = NA),
+      legend.position = "bottom",
+      plot.title.position = "plot"
+    )
 
   print(p)
 }
 
 #' Analogous plotting function but for by-dataset plots, slightly different, could be consolidated though
-plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id = "harrel_c", dodge = FALSE, flip = TRUE) {
+plot_scores = function(
+  scores,
+  eval_measure_id = "harrel_c",
+  tuning_measure_id = "harrel_c",
+  dodge = FALSE,
+  flip = TRUE
+) {
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
   checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
@@ -729,18 +771,19 @@ plot_scores = function(scores, eval_measure_id = "harrel_c", tuning_measure_id =
     dplyr::filter(tuned == tuning_measure_id) |>
     ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
     facet_wrap(vars(task_id), scales = "free_x", ncol = 8) +
-    geom_boxplot(alpha = 1/4) +
+    geom_boxplot(alpha = 1 / 4) +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
     labs(
       title = msr_tbl[id == eval_measure_id, label],
       subtitle = glue::glue("Scores per dataset across outer resampling folds ({direction_label})"),
-      x = "Score", y = NULL,
+      x = "Score",
+      y = NULL,
       color = NULL,
       fill = NULL,
       caption = glue::glue("Tuning measure: {msr_tbl[id == tuning_measure_id, label]}"),
     ) +
     theme_minimal(
-      base_size = 11#,
+      base_size = 11 #,
       # Would want to use custom fonts but reproducibility... :(
       # base_family = "Fira Sans"
     ) +
@@ -771,8 +814,13 @@ names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 #'
 #' @example
 #' plot_aggr_ph(bma, tuning_measure = "harrell_c")
-plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
-                        learners_exclude = NULL, tasks_exclude = NULL) {
+plot_aggr_ph = function(
+  xdf,
+  eval_measure = "harrell_c",
+  tuning_measure = NULL,
+  learners_exclude = NULL,
+  tasks_exclude = NULL
+) {
   checkmate::assert_data_table(xdf)
   checkmate::assert_subset(c("tuned", "p"), choices = colnames(xdf))
   checkmate::assert_subset(eval_measure, colnames(xdf))
@@ -783,19 +831,24 @@ plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
     dplyr::filter(!(eval_measure %in% c("harrell_c", "uno_c")) | !(learner_id %in% c("KM", "NA"))) |>
     ggplot(aes(x = learner_id, y = .data[[eval_measure]], color = p, fill = p)) +
     facet_grid(cols = vars(learner_group), scales = "free_x", space = "free_x") +
-    geom_boxplot(alpha = 1/4, key_glyph = "rect") +
+    geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
     #scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
     scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"), direction = -1) +
     labs(
       title = msr_tbl[id == eval_measure, label],
-      subtitle = paste("Performance separated by PH violation.",
-                       "Based on uncorrected p < 0.05 of global Schoenfeld test per task", sep = "\n"),
+      subtitle = paste(
+        "Performance separated by PH violation.",
+        "Based on uncorrected p < 0.05 of global Schoenfeld test per task",
+        sep = "\n"
+      ),
       caption = glue::glue("Tuned on {msr_tbl[id == tuning_measure, label]}"),
-      x = NULL, y = msr_tbl[id == eval_measure, label],
-      color = NULL, fill = NULL
+      x = NULL,
+      y = msr_tbl[id == eval_measure, label],
+      color = NULL,
+      fill = NULL
     ) +
     theme_minimal(
-      base_size = 15#,
+      base_size = 15 #,
       # Would want to use custom fonts but reproducibility... :(
       # base_family = "Fira Sans"
     ) +
@@ -810,7 +863,6 @@ plot_aggr_ph = function(xdf, eval_measure = "harrell_c", tuning_measure = NULL,
 #' Scale a learner score from 0 (baseline) to 1 (best)
 #' This can produce values <0 but can should never create values greater 1
 scale_score = function(score_learner, score_baseline, score_best, lower_is_better = TRUE) {
-
   denom = (score_best - score_baseline)
 
   # I know I did this weirdly but I somehow messed this up multiple times such that
@@ -852,7 +904,6 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
   aggr_scores_scaled[, (measures_to_drop) := NULL]
 
   for (eval_measure in measures_to_scale) {
-
     # cli::cli_alert_info("scaling for {eval_measure}")
     #if (eval_measure == "harrell_c") browser()
 
@@ -861,8 +912,8 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
     scores_km = aggr_scores_scaled[learner_id == "KM", c("task_id", "tuned", ..eval_measure)]
     setnames(scores_km, c(eval_measure), "score_km")
 
-    scores_best = aggr_scores_scaled[
-      , .SD[which_best(.SD[[eval_measure]], lower_is_better = lower_is_better), ],
+    scores_best = aggr_scores_scaled[,
+      .SD[which_best(.SD[[eval_measure]], lower_is_better = lower_is_better), ],
       by = .(task_id, tuned)
     ][, .SD, .SDcols = c("task_id", "tuned", eval_measure)]
     setnames(scores_best, c(eval_measure), "score_best")
@@ -870,12 +921,15 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
     scores_to_scale_by = scores_km[scores_best, on = c("task_id", "tuned")]
     aggr_scores_scaled = aggr_scores_scaled[scores_to_scale_by, on = c("task_id", "tuned")]
 
-    aggr_scores_scaled[ , (eval_measure) := scale_score(
-      score_learner = .SD[[eval_measure]],
-      score_baseline = score_km,
-      score_best = score_best,
-      lower_is_better = lower_is_better
-    ), .SDcols = eval_measure]
+    aggr_scores_scaled[,
+      (eval_measure) := scale_score(
+        score_learner = .SD[[eval_measure]],
+        score_baseline = score_km,
+        score_best = score_best,
+        lower_is_better = lower_is_better
+      ),
+      .SDcols = eval_measure
+    ]
 
     if (lower_is_better & any(aggr_scores_scaled[[eval_measure]] > 1)) browser()
 
@@ -896,23 +950,22 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 #'
 #' @param reg Registry, defaulting to `getDefaultRegistry()`.
 #' @param resource_est_file See `resource-estimate.qmd`.
-#' @param keep_columns Character vector of columsn from `getJobtTable()` to keep.
+#' @param keep_columns Character vector of columns from `getJobtTable()` to keep.
 #'
 #' @return A data.table keyed with `job.id`.
 #'
 #' @example
 #' collect_job_table()
 collect_job_table = function(
-    reg = batchtools::getDefaultRegistry(),
-    resource_est_file = here::here("attic", "resource_est_dec.csv"),
-    keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
-    optional_columns = c("batch.id", "comment", "memory")
-    ) {
+  reg = batchtools::getDefaultRegistry(),
+  resource_est_file = here::here("tables", "resource_estimates.csv"),
+  keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "log.file", "job.name"),
+  optional_columns = c("batch.id", "comment", "memory")
+) {
   tab = unwrap(getJobTable(reg = reg))
   checkmate::assert_data_table(tab, min.rows = 1)
 
-  tab = tab[, c(keep_columns, optional_columns[optional_columns %in% names(tab)])
-                    , with = FALSE]
+  tab = tab[, c(keep_columns, optional_columns[optional_columns %in% names(tab)]), with = FALSE]
 
   data.table::setnames(tab, "tags", "measure")
 
@@ -920,9 +973,8 @@ collect_job_table = function(
 
   # Get resource estimates
   if (fs::file_exists(resource_est_file)) {
-    resource_tab = read.csv(resource_est_file)
-    data.table::setDT(resource_tab)
-    resource_tab = resource_tab[, c("learner_id", "task_id", "hours", "total_h", "mem_gb")]
+    resource_tab = data.table::fread(resource_est_file)
+    resource_tab = resource_tab[, c("learner_id", "task_id", "est_total_hours", "est_total_hours_raw", "est_mem_mb")]
     tab = ljoin(tab, resource_tab, by = c("task_id", "learner_id"))
   }
 
@@ -973,13 +1025,19 @@ check_job_state = function(tab = NULL, byvars = "measure") {
   state_tab[, perc := NULL]
   state_tab[, total := NULL]
   state_tab = data.table::dcast(
-    state_tab, ...  ~ state,
-    fill = "\u2014", value.var = "val",
+    state_tab,
+    ... ~ state,
+    fill = "\u2014",
+    value.var = "val",
     fun.aggregate = identity
   )
 
   # Sorting cols like this feels less awkward than in base/dt I guess
-  dplyr::select(state_tab, dplyr::any_of(byvars), dplyr::any_of(c("not_submitted", "queued", "running", "errored", "expired", "done")))
+  dplyr::select(
+    state_tab,
+    dplyr::any_of(byvars),
+    dplyr::any_of(c("not_submitted", "queued", "running", "errored", "expired", "done"))
+  )
 }
 
 
@@ -999,11 +1057,15 @@ check_job_state = function(tab = NULL, byvars = "measure") {
 #' jobs_done[, .(avg_size = mean(size)), by = c("learner_id")]
 check_result_sizes = function(ids = batchtools::findDone()) {
   if (nrow(ids) > 0) {
-    sizes = vapply(unlist(ids), \(x) {
-      batchtools::loadResult(x) |>
-        pryr::object_size() |>
-        as.numeric()
-    }, FUN.VALUE = 1)
+    sizes = vapply(
+      unlist(ids),
+      \(x) {
+        batchtools::loadResult(x) |>
+          pryr::object_size() |>
+          as.numeric()
+      },
+      FUN.VALUE = 1
+    )
     ids[, size_bytes := prettyunits::pretty_bytes(bytes = sizes)]
     ids[, size := sizes / 1024^2][]
   } else {
@@ -1023,13 +1085,12 @@ aggr_result_sizes = function(ids = batchtools::findDone(), by = "learner_id") {
 # Misc utils ----------------------------------------------------------------------------------
 
 #' Ensure a directory exists
-#' 
+#'
 #' Creates the directory `x`, or if `x` is a file, creates
 #' the enclosing directory to ensure file `x` can be created.
 #' @param x `character()` A filsystem path to a file or directory.
 #' @return `TRUE` if the (enclosing) directory exists, `FALSE` otherwise
 ensure_directory = function(x) {
-
   # If x is not a directory already and has no file extension
   if (!fs::is_dir(x) & fs::path_ext(x) != "") {
     x = fs::path_dir(x)
@@ -1058,32 +1119,35 @@ convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRU
 
   data_rds = fs::dir_ls(data_dir, glob = "*.rds")
 
-  res = vapply(data_rds, \(path) {
-    path_arff = fs::path_ext_set(path, "arff")
-    path_csv = fs::path_ext_set(path, "csv")
+  res = vapply(
+    data_rds,
+    \(path) {
+      path_arff = fs::path_ext_set(path, "arff")
+      path_csv = fs::path_ext_set(path, "csv")
 
-    xdat = readRDS(path)
+      xdat = readRDS(path)
 
-    cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to arff")
-    farff::writeARFF(
-      x = xdat,
-      path = path_arff,
-      overwrite = overwrite,
-      relation = fs::path_ext_remove(fs::path_file(path))
-    )
+      cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to arff")
+      farff::writeARFF(
+        x = xdat,
+        path = path_arff,
+        overwrite = overwrite,
+        relation = fs::path_ext_remove(fs::path_file(path))
+      )
 
-    cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to CSV")
-    readr::write_csv(
-      x = xdat,
-      file = path_csv,
-      append = !overwrite
-    )
+      cli::cli_alert_info("Converting {.file {fs::path_file(path)}} to CSV")
+      readr::write_csv(
+        x = xdat,
+        file = path_csv,
+        append = !overwrite
+      )
 
-    fs::file_exists(path_arff) & fs::file_exists(path_csv)
-  }, logical(1))
+      fs::file_exists(path_arff) & fs::file_exists(path_csv)
+    },
+    logical(1)
+  )
 
   invisible(all(res))
-
 }
 
 .canary = "Hello! This variable is here to indicate that the helper functions have been loaded."
