@@ -973,9 +973,8 @@ collect_job_table = function(
 
   # Get resource estimates
   if (fs::file_exists(resource_est_file)) {
-    resource_tab = read.csv(resource_est_file)
-    data.table::setDT(resource_tab)
-    resource_tab = resource_tab[, c("learner_id", "task_id", "hours", "total_h", "mem_gb")]
+    resource_tab = data.table::fread(resource_est_file)
+    resource_tab = resource_tab[, c("learner_id", "task_id", "est_total_hours", "est_total_hours_raw", "est_mem_mb")]
     tab = ljoin(tab, resource_tab, by = c("task_id", "learner_id"))
   }
 

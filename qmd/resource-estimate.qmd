@@ -24,19 +24,20 @@ Benchmark setup for resource estimation:
 - 1 fold of a 3-fold CV for each learner x task combination
 - Only run jobs tuned on `harrell_c` and untuned learners (plus CoxBoost)
 - Budget:
-  - 5 + n_params evaluations for MBO
+  - 5 evaluations (MBO)
   - 3-fold CV for tuning (1 iter)
 
-- Extrapolating outer eval should be straight-forward (times 3 for CV, times `n_repeats` as needed)
-- Extrapolating tuning budget roughly
-
+- Extrapolating outer eval using flexible `n_repeats` based on number of events in task times 3-fold CV
+- Inner tuning is 2x3-fold CV
+- Extrapolating tuning budget roughly assuming 50 * n_params evals
+- "Clipping" restimates resources to cluster limits (7 days runtime)
 
 
 ```{r setup2}
 library(batchtools)
 library(ggplot2)
 library(data.table)
-
+conf = config::get(config = "runtime")
 reg = loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = ".")
 tab = unwrap(getJobTable(reg = reg))
 setnames(tab, "tags", "measure")
@@ -60,10 +61,6 @@ tab = tab[bt_est$runtimes, on = "job.id"]
 tab[,
   runtime_hms := hms::hms(seconds = as.numeric(runtime, units = "secs"))
 ]
-
-scores = readRDS(fs::path(conf$result_path, "scores", ext = "rds"))
-scores[, .(n = .N), by = .(learner_id, task_id)]
-
 ```
 
 ```{r helper_funs}
@@ -356,7 +353,7 @@ Assumptions:
 - Here `runtime` is measured on 1 repl of 1 outer resampling fold
 - Budget is `tuning_params * 50` evals random search
 - Outer folds: 3, but repeats set to 10, 5, or 1, depending on number of events
-- Inner folds: 3
+- Inner folds: 3 folds * 2 repeats
 - Some learners are not tuned with inner resampling (KM, CoxBoost (internal CV), ...) 
   -> no params, no tuning
   -> no inner CV in that case
@@ -386,7 +383,7 @@ total_estimate <- runtimes |>
     n_outer = 3,
     n_outer_repeats = assign_repeats(events),
     # No inner resampling if no tuning
-    n_inner = pmax(3 * tune, 1),
+    n_inner = pmax(3 * 2 * tune, 1),
     #n_budget = pmax(50 * params * tune, 1),
     n_budget = dplyr::case_when(
       learner_id == "RRT" ~ 46,
@@ -492,9 +489,19 @@ resource_est_tab = total_estimate |>
   dplyr::mutate(
     est_total_hours = ifelse(is.na(total_per_job), max(total_per_job, na.rm = TRUE), total_per_job),
     est_total_hours_raw = ifelse(is.na(total_per_job_raw), max(total_per_job_raw, na.rm = TRUE), total_per_job_raw),
-    est_mem_mb = ifelse(is.na(est_mem_mb), max(est_mem_mb, na.rm = TRUE), est_mem_mb)
+    est_mem_mb = ifelse(is.na(est_mem_mb), max(est_mem_mb, na.rm = TRUE), est_mem_mb),
+    est_mem_mb = 100 * ceiling(est_mem_mb/100)
   ) |>
   dplyr::select(learner_id, task_id, est_total_hours, est_total_hours_raw, est_mem_mb) 
+
+# Impute missing estimates as maximum observed
+resource_est_tab = resource_est_tab |>
+  tidyr::complete(learner_id, task_id, 
+  fill = list(
+    est_total_hours = max(resource_est_tab$est_total_hours),
+    est_total_hours_raw = max(resource_est_tab$est_total_hours_raw),
+    est_mem_mb = max(resource_est_tab$est_mem_mb)
+  ))
 
 readr::write_csv(
   resource_est_tab,

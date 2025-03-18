@@ -15,7 +15,7 @@ default:
   tuning:
     resampling: "repeated_cv"
     folds: 3
-    repeats: 3 # Only applicable if resampling is "repeated_cv".
+    repeats: 2 # Only applicable if resampling is "repeated_cv".
     ratio: 0.6666667 # Only applicable if resampling is "holdout"
   fallback:
     inner: true

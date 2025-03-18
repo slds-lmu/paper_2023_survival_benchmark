@@ -22,16 +22,23 @@ msr_tbl = measures_tbl()
 
 tictoc::tic("Full result processing")
 reg <- loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
-tab <- collect_job_table(keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "time.running", "mem.used"))
+tab <- collect_job_table(
+  keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "time.running", "mem.used"),
+  resource_est_file = ""
+)
 tab[, time.hours := as.numeric(time.running, unit = "hours")]
 data.table::setkey(tab, job.id)
 
-runtimes <- tab[!is.na(time.running),
-                .(mean_time_hours = mean(time.hours),
-                  min_time_hours = min(time.hours),
-                  max_time_hours = max(time.hours),
-                  mean_mem_used = mean(mem.used, na.rm = TRUE)),
-                by = .(learner_id, task_id)]
+runtimes <- tab[
+  !is.na(time.running),
+  .(
+    mean_time_hours = mean(time.hours),
+    min_time_hours = min(time.hours),
+    max_time_hours = max(time.hours),
+    mean_mem_used = mean(mem.used, na.rm = TRUE)
+  ),
+  by = .(learner_id, task_id)
+]
 
 save_obj(runtimes, name = "runtimes")
 save_obj(tab, name = "jobs")
@@ -61,8 +68,8 @@ for (tune_measure in tune_measures) {
     "harrell_c,isbs" = msr_tbl[, measure],
     "harrell_c" = msr_tbl[type == "Discrimination", measure],
     "isbs" = msr_tbl[type != "Discrimination", measure]
-    )
-  
+  )
+
   # For runtime estimates we also score with timing measures
   if (config::is_active("runtime")) {
     measures = c(measures, msrs(c("time_train", "time_predict")))
@@ -100,20 +107,17 @@ for (tune_measure in tune_measures) {
     # scores[, uhash := NULL]
 
     scores[, tune_measure := ..tune_measure]
-    scores[, errors := sapply(errors, \(x) length(x) > 0, simplify = TRUE)]
-    scores[, warnings := sapply(warnings, \(x) length(x) > 0, simplify = TRUE)]
+    # Count errors and warnings (either empty list = 0 or list of error messages), but preserve originals just in case
+    scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
+    scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
 
     tictoc::toc()
 
     tictoc::tic(msg = "Aggregating results")
     aggr <- bmr$aggregate(measures, conditions = TRUE)
     aggr[, tune_measure := ..tune_measure]
-
-    # aggr <- as.data.table(aggr)
-    # aggr[, resample_result := NULL]
     aggr[, resampling_id := NULL]
     tictoc::toc()
-
 
     tictoc::tic(msg = "Saving to disk: scores, aggr")
     save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
@@ -153,14 +157,15 @@ for (tune_measure in tune_measures) {
     # We keep the Prediction and Resampling object in the individual files just in case,
     # but delete them from the combined object to speed things up significantly and save
     # on RAM. Throwing away these columns here saved me 4GB of RAM for "harrell_c,isbs"
-    # for the scores DT
-    x = readRDS(x)
-    x[, resampling := NULL]
-    x[, prediction_test := NULL]
-    x
+    # for the scores DT. Same with warnign and error messages (we keep the count vars with _cnt suffix)
+    this_score = readRDS(x)
+    this_score[, resampling := NULL]
+    this_score[, prediction_test := NULL]
+    this_score[, errors := NULL]
+    this_score{, warnings := NULL]
+    this_score
   }) |>
     data.table::rbindlist(fill = TRUE)
-
 
   save_obj(scores, name = "scores_combined", suffix = tune_measure)
   tictoc::toc()
@@ -170,17 +175,16 @@ for (tune_measure in tune_measures) {
   aggr_files = mlr3misc::keep(aggr_files, fs::file_exists)
 
   aggr = lapply(aggr_files, \(x) {
-    # Same idea as abive - resample_result contains Prediction objects, roughly 1GB
+    # Same idea as above - resample_result contains Prediction objects, roughly 1GB
     # in one case checked via pryr::object_size.
-    x = readRDS(x)
-    x[, resample_result := NULL]
-    x
+    this_aggr = readRDS(x)
+    this_aggr[, resample_result := NULL]
+    this_aggr
   }) |>
     data.table::rbindlist(fill = TRUE)
 
   save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
   tictoc::toc()
-
 }
 
 # Combining for all tuning measures
@@ -241,7 +245,6 @@ if (!fs::file_exists(fs::path(conf$result_path, "archives.rds"))) {
 
 # Create zipped collection of tuning archive CSVs
 if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {
-
   tictoc::tic("Zipping archives")
   convert_archives_csv(conf)
 
