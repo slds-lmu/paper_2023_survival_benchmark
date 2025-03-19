@@ -141,13 +141,15 @@ grepLogs(expired_fast, pattern = "OOM") |>
 # Normal jobs ----------------------------------------------------------
 # Normal QoS -> 3 days (72 hours) max
 jobs_normal = tab[time_cat == "normal"]
+ijoin(jobs_normal, findNotSubmitted(), by = "job.id")
+
 jobs_normal[, chunk := binpack(est_total_hours, chunk.size = 60)]
 jobs_normal[,
   list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
   by = chunk
 ]
 
-jobs_normal[chunk <= 1600, .(job.id, chunk)] |>
+jobs_normal[chunk <= 2000, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -159,7 +161,7 @@ jobs_normal[chunk <= 1600, .(job.id, chunk)] |>
     )
   )
 
-jobs_normal[chunk <= 1800, .(job.id, chunk)] |>
+jobs_normal[chunk <= 2100, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -195,7 +197,7 @@ jobs_long[,
   by = chunk
 ]
 
-jobs_long[chunk <= 300, .(job.id, chunk)] |>
+jobs_long[chunk <= 400, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
