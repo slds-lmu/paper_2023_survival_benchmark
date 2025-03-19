@@ -84,7 +84,9 @@ took_days = round(as.numeric(difftime(max(tab$done, na.rm = TRUE), min(tab$submi
 took_days_sequential = sum(tab$time.running.days, na.rm = TRUE)
 ```
 
-# Current Job Status (`as.POSIXct(Sys.time(), tz = "Europe/Berlin")`)
+# Current Job Status
+
+Status as of `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`
 
 Overall completion: **`r complete_n`** / `r nrow(tab)` (**`r complete_perc`%**).  
 
@@ -95,6 +97,8 @@ Batchtools' status report:
 ```{r bt-getStatus}
 batchtools::getStatus()
 ```
+
+Note that running jobs are misreported as expired here.
 
 ```{r milestones-tab}
 job_milestones |> 
