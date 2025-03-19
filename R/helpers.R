@@ -989,64 +989,39 @@ collect_job_table = function(
 #'
 #' @param tab Job table as returned by `collect_job_table()`. notably with column `measure`.
 #'   Will call `collect_job_table()` if not provided.
-#' @param byvars `character` Vector of variables in `tab` to group by, default is `"measure"`
+#' @param by `character(1)` Variables in `tab` to group by, default is `"measure"`
 #'
 #' @return A `data.table` with main column `measure` and one column for each job state
 #'   (`queued`, `running`, `errored`, ...)
 #' @example
 #' check_job_state()
-#' check_job_state(byvars = c("measure", "learner_id"))
-#' check_job_state(byvars = "")
-check_job_state = function(tab = NULL, byvars = "measure") {
+#' check_job_state(by = "learner_id")
+#' check_job_state(by = NULL)
+check_job_state = function(tab = NULL, by = "measure") {
   if (is.null(tab)) {
     tab = collect_job_table()
   }
+  if (length(by == 1)) {
+    checkmate::assert_subset(by, choices = names(tab))
+  }
 
-  job_n = tab[, .(total = .N), by = byvars]
-
-  state_tab = data.table::rbindlist(list(
-    ijoin(tab, findDone())[, .(n = .N, state = "done"), by = byvars],
-    ijoin(tab, findRunning())[, .(n = .N, state = "running"), by = byvars],
-    ijoin(tab, findErrors())[, .(n = .N, state = "errored"), by = byvars],
-    ijoin(tab, findExpired())[, .(n = .N, state = "expired"), by = byvars],
-    ijoin(tab, findSubmitted())[, .(n = .N, state = "submitted"), by = byvars],
-    ijoin(tab, findQueued())[, .(n = .N, state = "queued"), by = byvars],
-    ijoin(tab, findNotSubmitted())[, .(n = .N, state = "not_submitted"), by = byvars]
-  ))[!is.na(n), ]
-
-  state_tab = data.table::dcast(
-    state_tab,
-    ... ~ state,
-    fill = 0,
-    value.var = "n" #,
-    #fun.aggregate = identity
-  )
-
-  state_tab = state_tab[job_n]
-
-  # state_tab = state_tab[, val := sprintf("%3.1f%% (%i)", perc, n)][]
-  # state_tab[, n := NULL]
-  # state_tab[, perc := NULL]
-  # state_tab[, total := NULL]
-  # state_tab = data.table::dcast(
-  #   state_tab,
-  #   ... ~ state,
-  #   fill = "\u2014",
-  #   value.var = "val",
-  #   fun.aggregate = identity
-  # )
+  state_tab = data.table::rbindlist(lapply(unique(tab[[by]]), \(cat) {
+    tbl = batchtools:::getStatusTable(ids = tab[tab[[by]] == cat, .(job.id)])
+    tbl[, group := cat]
+  }))
+  setnames(state_tab, "group", by)
 
   # Sorting cols like this feels less awkward than in base/dt I guess
   dplyr::select(
     state_tab,
-    dplyr::any_of(byvars),
-    dplyr::any_of(c("total", "not_submitted", "submitted", "queued", "running", "errored", "expired", "done"))
+    dplyr::any_of(by),
+    dplyr::any_of(c("defined", "submitted", "started", "queued", "running", "errored", "expired", "done"))
   ) |>
-    dplyr::mutate(dplyr::across(not_submitted:done, \(x) {
+    dplyr::mutate(dplyr::across(submitted:done, \(x) {
       data.table::fifelse(
         x == 0,
         yes = "\u2014",
-        no = sprintf("%3.1f%% (%i)", 100 * x / total, x)
+        no = sprintf("%3.1f%% (%i)", 100 * x / defined, x)
       )
     }))
 }

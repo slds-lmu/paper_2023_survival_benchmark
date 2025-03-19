@@ -13,7 +13,7 @@ print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
 # by number of unique time points (ranked) (higher == more memory needed)
-tab = collect_job_table(reg = reg)
+tab = collect_job_table(reg = reg, optional_columns = c("batch.id", "comment", "memory", "walltime", "time.running"))
 
 # tab[is.na(est_total_hours), ]
 # tab[is.na(est_mem_mb), ]
@@ -36,6 +36,21 @@ tab[,
 ]
 
 tab[, .(n = .N, min_time_h = min(est_total_hours), max_time_h = max(est_total_hours)), by = "time_cat"]
+
+expired = findExpired()
+if (nrow(expired) > 0) {
+  expired = ijoin(tab, expired)[, .(job.id, task_id, learner_id, time_cat, est_total_hours, walltime, memory, time.running)]
+  expired[, time.running := as.numeric(time.running)]
+  data.table::setnames(expired, "memory", "previous_memory")
+  data.table::setnames(expired, "walltime", "previous_walltime")
+
+  expired_oom = ijoin(expired, grepLogs(expired, pattern = "OOM"))
+
+  expired[, .(n = .N), by = .(time_cat)]
+ 
+ expired[time_cat == "normal", ]
+}
+
 
 # Shortest jobs ----------------------------------------------------------
 # These are so small that it's probably faster to chunk in "normal" qos
@@ -79,16 +94,46 @@ jobs_fast[, .(job.id, chunk)] |>
     )
   )
 
+expired_fast = expired[time_cat == "fast", ]
+expired_fast[, chunk := binpack(est_total_hours, chunk.size = 10)]
+expired_fast[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+  by = chunk
+]
+
+expired_fast[, .(job.id, chunk)] |>
+  ajoin(findRunning()) |>
+  submitJobs(
+    resources = list(
+      qos = "fast",
+      walltime = 12 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "fast-chunked-resubmit"
+    )
+  )
+
+grepLogs(expired_fast, pattern = "OOM") |>
+    submitJobs(
+    resources = list(
+      qos = "normal",
+      walltime = 72 * 3600,
+      memory = 2 * mem_mb,
+      partition = "mb",
+      comment = "resubmit-oom-normal"
+    )
+  )
+
 # Normal jobs ----------------------------------------------------------
 # Normal QoS -> 3 days (72 hours) max
 jobs_normal = tab[time_cat == "normal"]
-jobs_normal[, chunk := binpack(est_total_hours, chunk.size = 70)]
+jobs_normal[, chunk := binpack(est_total_hours, chunk.size = 60)]
 jobs_normal[,
   list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
   by = chunk
 ]
 
-jobs_normal[chunk <= 1100, .(job.id, chunk)] |>
+jobs_normal[chunk <= 1400, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -100,7 +145,7 @@ jobs_normal[chunk <= 1100, .(job.id, chunk)] |>
     )
   )
 
-jobs_normal[chunk <= 1200, .(job.id, chunk)] |>
+jobs_normal[chunk <= 1300, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -113,14 +158,15 @@ jobs_normal[chunk <= 1200, .(job.id, chunk)] |>
   )
 
 jobs_normal[, .(job.id)] |>
-  ijoin(findErrors()) |>
+  ijoin(expired) |>
+  dplyr::mutate(chunk = binpack(est_total_hours, chunk.size = 60)) |>
   submitJobs(
     resources = list(
       qos = "normal",
       walltime = 3 * 24 * 3600,
       memory = mem_mb,
       partition = "mb",
-      comment = "normal"
+      comment = "normal-resubmit-errs"
     )
   )
 

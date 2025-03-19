@@ -90,6 +90,12 @@ Overall completion: **`r complete_n`** / `r nrow(tab)` (**`r complete_perc`%**).
 
 It took **`r took_days`** days all in all, with a sequential runtime of **`r took_days_sequential`** days (so far).
 
+Batchtools' status report:
+
+```{r bt-getStatus}
+batchtools::getStatus()
+```
+
 ```{r milestones-tab}
 job_milestones |> 
   tablify()
@@ -158,14 +164,14 @@ job_completion |>
   theme_minimal(base_size = 14)
 
 tab |>
-  dplyr::filter(!is.na(done)) |>
+  dplyr::select(job.id, time_cat, done) |>
+  dplyr::group_by(time_cat) |>
   dplyr::arrange(done) |>
   dplyr::mutate(
-    k = dplyr::row_number()
+    k = cumsum(!is.na(done)),
+    prop = k / dplyr::n(),
+    done = as.POSIXct(done, tz = "Europe/Berlin")
   ) |> 
-  dplyr::group_by(time_cat) |>
-  dplyr::mutate(prop = k / dplyr::n()) |>
-  dplyr::mutate(done = as.POSIXct(done, tz = "Europe/Berlin")) |>
   ggplot(aes(x = done, y = prop, color = time_cat)) +
   geom_step(linewidth = 1.5) +
   scale_y_continuous(
@@ -206,7 +212,7 @@ tab_running |>
 ## Runtime Group
 
 ```{r status-by-group}
-check_job_state(tab, byvars = "time_cat") |>
+check_job_state(tab, by = "time_cat") |>
   dplyr::rename(runtime_group = time_cat) |>
   tablify()
 ```
@@ -214,22 +220,26 @@ check_job_state(tab, byvars = "time_cat") |>
 ## Tuning Measure
 
 ```{r status-by-measure}
-check_job_state(tab, byvars = "measure") |>
+check_job_state(tab, by = "measure") |>
   tablify()
 ```
 
 ## Learner
 
 ```{r status-by-learner}
-check_job_state(tab, byvars = "learner_id") |>
+check_job_state(tab, by = "learner_id") |>
   tablify()
 ```
 
 ## Task
 
 ```{r status-by-task}
-check_job_state(tab, byvars = "task_id") |>
+check_job_state(tab, by = "task_id") |>
   ijoin(tasktab[, .(task_id, n, p, events)], by = "task_id") |>
+  dplyr::mutate(
+    task_id = glue::glue("{task_id} ({n} x {p})")
+  ) |>
+  dplyr::select(task_id, events, dplyr::everything(), -n, -p) |>
   dplyr::arrange(-events) |>
   tablify()
 ```
