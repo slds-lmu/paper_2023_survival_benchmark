@@ -52,6 +52,20 @@ if (nrow(expired) > 0) {
 }
 
 
+errored = findErrors()
+if (nrow(errored) > 0) {
+  errored = ijoin(tab, errored)[, .(job.id, task_id, learner_id, time_cat, est_total_hours, walltime, memory, time.running)]
+  errored[, time.running := as.numeric(time.running)]
+  data.table::setnames(errored, "memory", "previous_memory")
+  data.table::setnames(errored, "walltime", "previous_walltime")
+
+  errored = ijoin(errored, grepLogs(errored, pattern = "OOM"))
+
+  errored[, .(n = .N), by = .(time_cat)]
+ 
+ errored[time_cat == "normal", ]
+}
+
 # Shortest jobs ----------------------------------------------------------
 # These are so small that it's probably faster to chunk in "normal" qos
 jobs_shortest = tab[time_cat == "shortest"]
@@ -133,7 +147,7 @@ jobs_normal[,
   by = chunk
 ]
 
-jobs_normal[chunk <= 1400, .(job.id, chunk)] |>
+jobs_normal[chunk <= 1600, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -145,7 +159,7 @@ jobs_normal[chunk <= 1400, .(job.id, chunk)] |>
     )
   )
 
-jobs_normal[chunk <= 1300, .(job.id, chunk)] |>
+jobs_normal[chunk <= 1800, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -181,7 +195,7 @@ jobs_long[,
   by = chunk
 ]
 
-jobs_long[chunk <= 190, .(job.id, chunk)] |>
+jobs_long[chunk <= 300, .(job.id, chunk)] |>
   ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
@@ -203,7 +217,7 @@ jobs_maximum[,
 
 jobs_maximum[, .(job.id)] |>
   ijoin(findNotSubmitted()) |>
-  head(10) |>
+  head(40) |>
   submitJobs(
     resources = list(
       qos = "long",

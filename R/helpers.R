@@ -1018,10 +1018,13 @@ check_job_state = function(tab = NULL, by = "measure") {
     dplyr::any_of(c("defined", "submitted", "started", "queued", "running", "errored", "expired", "done"))
   ) |>
     dplyr::mutate(dplyr::across(submitted:done, \(x) {
-      data.table::fifelse(
+      data.table::fcase(
         x == 0,
         yes = "\u2014",
-        no = sprintf("%3.1f%% (%i)", 100 * x / defined, x)
+        x / defined == 1,
+        "\u2705",
+        x < defined,
+        sprintf("%3.1f%% (%i)", 100 * x / defined, x)
       )
     }))
 }

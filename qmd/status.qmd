@@ -84,7 +84,7 @@ took_days = round(as.numeric(difftime(max(tab$done, na.rm = TRUE), min(tab$submi
 took_days_sequential = sum(tab$time.running.days, na.rm = TRUE)
 ```
 
-# Current Job Status
+# Current Job Status (`as.POSIXct(Sys.time(), tz = "Europe/Berlin")`)
 
 Overall completion: **`r complete_n`** / `r nrow(tab)` (**`r complete_perc`%**).  
 
@@ -138,7 +138,7 @@ job_completion |>
 ```
 
 
-```{r job-completion}
+```{r job-completion-total}
 #| fig-width: 10
 
 job_completion |>
@@ -162,7 +162,9 @@ job_completion |>
     x = "Date", y = glue::glue("% of total jobs [{nrow(tab)}]")
   ) +
   theme_minimal(base_size = 14)
+```
 
+```{r job-completion-runtime-group}
 tab |>
   dplyr::select(job.id, time_cat, done) |>
   dplyr::group_by(time_cat) |>
@@ -185,6 +187,34 @@ tab |>
     subtitle = "Cumulative percentage of finished jobs over time",
     x = "Date", y = glue::glue("% of jobs within group"),
     color = "Runtime Group"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+```{r job-completion-learner-id}
+#| fig-width: 10
+#| fig-height: 13
+tab |>
+  dplyr::select(job.id, learner_id, done) |>
+  dplyr::group_by(learner_id) |>
+  dplyr::arrange(done) |>
+  dplyr::mutate(
+    k = cumsum(!is.na(done)),
+    prop = k / dplyr::n(),
+    done = as.POSIXct(done, tz = "Europe/Berlin")
+  ) |> 
+  ggplot(aes(x = done, y = prop)) +
+  geom_step(linewidth = 1.5) +
+  facet_wrap(vars(learner_id), ncol = 3) +
+  scale_y_continuous(
+    breaks = seq(0, 1, .2),
+    labels = scales::label_percent(), 
+    limits = c(0, 1)
+  ) +
+  labs(
+    title = "Survival Benchmark Progress",
+    subtitle = "Cumulative percentage of finished jobs over time",
+    x = "Date", y = glue::glue("% of jobs within group")
   ) +
   theme_minimal(base_size = 14)
 ```
