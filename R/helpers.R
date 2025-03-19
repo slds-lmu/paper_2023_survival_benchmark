@@ -1015,12 +1015,12 @@ check_job_state = function(tab = NULL, by = "measure") {
   dplyr::select(
     state_tab,
     dplyr::any_of(by),
-    dplyr::any_of(c("defined", "submitted", "started", "queued", "running", "errored", "expired", "done"))
+    dplyr::any_of(c("defined", "submitted", "queued", "running", "errored", "expired", "done"))
   ) |>
     dplyr::mutate(dplyr::across(submitted:done, \(x) {
       data.table::fcase(
         x == 0,
-        yes = "\u2014",
+        "\u2014",
         x / defined == 1,
         "\u2705",
         x < defined,
