@@ -19,7 +19,6 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-options(TZ = "Europe/Berlin")
 
 library(data.table)
 library(batchtools)
@@ -29,9 +28,7 @@ library(ggplot2)
 
 # Assumes batchmark.R is run beforehand
 reg = loadRegistry(conf$reg_dir, writeable = FALSE)
-
 tasktab = load_tasktab()
-
 tab = collect_job_table(
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id"),
   optional_columns = c("time.running", "submitted", "started", "done", "comment", "partition", "qos")
@@ -63,10 +60,10 @@ tab[, time.running.days := round(time.running / 3600 / 24, 2)]
 tab_running = ijoin(tab, findRunning())
 
 job_completion = tab |>
-  filter(!is.na(done)) |>
-  arrange(done) |>
-  mutate(
-    k = row_number(),
+  dplyr::filter(!is.na(done)) |>
+  dplyr::arrange(done) |>
+  dplyr::mutate(
+    k = dplyr::row_number(),
     prop = k / nrow(tab)
   )
 
@@ -83,10 +80,7 @@ job_milestones = tibble::tribble(
     days_between = round(difftime(last, first, units = "days"), 1)
   )
 
-
 took_days = round(as.numeric(difftime(max(tab$done, na.rm = TRUE), min(tab$submitted, na.rm = TRUE), units = "days")), 1)
-
-# Sequential runtime?
 took_days_sequential = sum(tab$time.running.days, na.rm = TRUE)
 ```
 
@@ -102,6 +96,8 @@ job_milestones |>
 ```
 
 ```{r runtime-per-task-tab}
+#| eval: false
+
 job_completion |>
   group_by(task_id) |>
   summarise(
@@ -118,6 +114,8 @@ job_completion |>
 ```
 
 ```{r runtime-per-learner-tab}
+#| eval: false
+
 job_completion |>
   group_by(learner_id) |>
   summarise(
@@ -135,7 +133,10 @@ job_completion |>
 
 
 ```{r job-completion}
+#| fig-width: 10
+
 job_completion |>
+  dplyr::mutate(done = as.POSIXct(done, tz = "Europe/Berlin")) |>
   ggplot(aes(x = done, y = prop)) +
   geom_step(linewidth = 1.5) +
   scale_y_continuous(
@@ -144,15 +145,40 @@ job_completion |>
     limits = c(0, 1),
     sec.axis = sec_axis(transform = \(x) x * nrow(tab))
   ) +
-  scale_x_datetime(
-    date_breaks = "7 days", 
-    date_labels = "%b %d",
-    date_minor_breaks = "1 day"
-  ) +
+#  scale_x_datetime(
+#    date_breaks = "7 days", 
+#    date_labels = "%b %d",
+#    date_minor_breaks = "1 day"
+#  ) +
   labs(
     title = "Survival Benchmark Progress",
     subtitle = "Cumulative percentage of finished jobs over time",
     x = "Date", y = glue::glue("% of total jobs [{nrow(tab)}]")
+  ) +
+  theme_minimal(base_size = 14)
+
+tab |>
+  dplyr::filter(!is.na(done)) |>
+  dplyr::arrange(done) |>
+  dplyr::mutate(
+    k = dplyr::row_number()
+  ) |> 
+  dplyr::group_by(time_cat) |>
+  dplyr::mutate(prop = k / dplyr::n()) |>
+  dplyr::mutate(done = as.POSIXct(done, tz = "Europe/Berlin")) |>
+  ggplot(aes(x = done, y = prop, color = time_cat)) +
+  geom_step(linewidth = 1.5) +
+  scale_y_continuous(
+    breaks = seq(0, 1, .2),
+    labels = scales::label_percent(), 
+    limits = c(0, 1)
+  ) +
+  scale_color_viridis_d() + 
+  labs(
+    title = "Survival Benchmark Progress",
+    subtitle = "Cumulative percentage of finished jobs over time",
+    x = "Date", y = glue::glue("% of jobs within group"),
+    color = "Runtime Group"
   ) +
   theme_minimal(base_size = 14)
 ```
@@ -168,7 +194,7 @@ job_completion |>
 
 ### Currently running jobs
 
-```{r, eval=nrow(batchtools::findRunning()) > 0}
+```{r currently-running, eval=nrow(tab_running) > 0}
 tab_running |>
   arrange(desc(time.running)) |>
   select(learner_id, task_id, job.id, repl, measure, time.running.hms, time.running.days) |>
@@ -179,7 +205,7 @@ tab_running |>
 
 ## Runtime Group
 
-```{r}
+```{r status-by-group}
 check_job_state(tab, byvars = "time_cat") |>
   dplyr::rename(runtime_group = time_cat) |>
   tablify()
@@ -187,21 +213,21 @@ check_job_state(tab, byvars = "time_cat") |>
 
 ## Tuning Measure
 
-```{r}
+```{r status-by-measure}
 check_job_state(tab, byvars = "measure") |>
   tablify()
 ```
 
 ## Learner
 
-```{r}
+```{r status-by-learner}
 check_job_state(tab, byvars = "learner_id") |>
   tablify()
 ```
 
 ## Task
 
-```{r}
+```{r status-by-task}
 check_job_state(tab, byvars = "task_id") |>
   ijoin(tasktab[, .(task_id, n, p, events)], by = "task_id") |>
   dplyr::arrange(-events) |>

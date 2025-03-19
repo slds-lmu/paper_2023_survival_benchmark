@@ -8,7 +8,7 @@ library("batchtools")
 # Assumes batchmark.R is run beforehand
 reg = loadRegistry(conf$reg_dir, writeable = TRUE)
 
-# Expecting 576 task (32) x learner (19) combinations, 5 outer folds (except "veteran"), 2 tuning measures
+# Expecting 646 total
 print(summarizeExperiments(by = c("task_id", "learner_id")))
 
 # Aggregate job table for selective submission, order jobs by tasks and taks
@@ -28,27 +28,142 @@ tab[,
     "fast",
     est_total_hours <= 2.5 * 24,
     "normal",
-    est_total_hours < max(est_total_hours),
+    est_total_hours < 160,
     "long",
-    est_total_hours == max(est_total_hours),
+    est_total_hours >= 160,
     "maximum"
   )
 ]
 
-tab[, .(.N), by = "time_cat"]
+tab[, .(n = .N, min_time_h = min(est_total_hours), max_time_h = max(est_total_hours)), by = "time_cat"]
 
 # Shortest jobs ----------------------------------------------------------
 # These are so small that it's probably faster to chunk in "normal" qos
 jobs_shortest = tab[time_cat == "shortest"]
 jobs_shortest[, chunk := binpack(est_total_hours, chunk.size = 2 * 24)]
-jobs_shortest[, list(hours = sum(est_total_hours), mem = mean(est_mem_mb), count = .N), by = chunk]
+jobs_shortest[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+  by = chunk
+]
 
-jobs_shortest |>
+jobs_shortest[, .(job.id, chunk)] |>
+  ijoin(findNotSubmitted()) |>
   submitJobs(
     resources = list(
       qos = "normal",
       walltime = 3 * 24 * 3600,
       memory = mem_teton,
-      partition = "teton"
+      partition = "teton",
+      comment = "shortest-chunked"
+    )
+  )
+
+# Fast jobs ----------------------------------------------------------
+# Fast QoS -> 12 hours max
+jobs_fast = tab[time_cat == "fast"]
+jobs_fast[, chunk := binpack(est_total_hours, chunk.size = 11)]
+jobs_fast[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+  by = chunk
+]
+
+jobs_fast[, .(job.id, chunk)] |>
+  ijoin(findNotSubmitted()) |>
+  submitJobs(
+    resources = list(
+      qos = "fast",
+      walltime = 12 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "fast-chunked"
+    )
+  )
+
+# Normal jobs ----------------------------------------------------------
+# Normal QoS -> 3 days (72 hours) max
+jobs_normal = tab[time_cat == "normal"]
+jobs_normal[, chunk := binpack(est_total_hours, chunk.size = 70)]
+jobs_normal[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+  by = chunk
+]
+
+jobs_normal[chunk <= 1100, .(job.id, chunk)] |>
+  ijoin(findNotSubmitted()) |>
+  submitJobs(
+    resources = list(
+      qos = "normal",
+      walltime = 3 * 24 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "normal-chunked"
+    )
+  )
+
+jobs_normal[chunk <= 1200, .(job.id, chunk)] |>
+  ijoin(findNotSubmitted()) |>
+  submitJobs(
+    resources = list(
+      qos = "normal",
+      walltime = 3 * 24 * 3600,
+      memory = mem_beartooth,
+      partition = "beartooth",
+      comment = "normal-chunked"
+    )
+  )
+
+jobs_normal[, .(job.id)] |>
+  ijoin(findErrors()) |>
+  submitJobs(
+    resources = list(
+      qos = "normal",
+      walltime = 3 * 24 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "normal"
+    )
+  )
+
+
+# Long jobs ----------------------------------------------------------
+# Long QoS -> 7 days (168 hours) max
+# This is where chunking stops being very useful but still could be.
+jobs_long = tab[time_cat == "long"]
+jobs_long[, chunk := binpack(est_total_hours, chunk.size = 160)]
+jobs_long[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+  by = chunk
+]
+
+jobs_long[chunk <= 190, .(job.id, chunk)] |>
+  ijoin(findNotSubmitted()) |>
+  submitJobs(
+    resources = list(
+      qos = "long",
+      walltime = 7 * 24 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "long-chunked"
+    )
+  )
+
+# Longest / maximum time jobs ----------------------------------------------------------
+# Long QoS -> 7 days (168 hours) max
+# These are the ones most likely to run into walltime kill and starting them at all seems... optimistic.
+jobs_maximum = tab[time_cat == "maximum"]
+jobs_maximum[,
+  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N)
+]
+
+jobs_maximum[, .(job.id)] |>
+  ijoin(findNotSubmitted()) |>
+  head(10) |>
+  submitJobs(
+    resources = list(
+      qos = "long",
+      walltime = 7 * 24 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "maximum"
     )
   )
