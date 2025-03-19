@@ -175,7 +175,6 @@ tab |>
   dplyr::group_by(time_cat) |>
   dplyr::arrange(done) |>
   dplyr::mutate(
-    learner_id = factor(learner_id, levels = unique(tab$learner_id)),
     k = cumsum(!is.na(done)),
     prop = k / dplyr::n(),
     done = as.POSIXct(done, tz = "Europe/Berlin")
@@ -208,6 +207,7 @@ tab |>
   dplyr::group_by(learner_id) |>
   dplyr::arrange(done) |>
   dplyr::mutate(
+    learner_id = factor(learner_id, levels = unique(tab$learner_id)),
     k = cumsum(!is.na(done)),
     prop = k / dplyr::n(),
     done = as.POSIXct(done, tz = "Europe/Berlin")
