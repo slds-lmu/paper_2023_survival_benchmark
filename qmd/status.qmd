@@ -58,6 +58,10 @@ tab[, time.running := as.numeric(time.running, unit = "secs")]
 tab[, time.running.hms := hms::hms(seconds = round(time.running, 1))]
 tab[, time.running.days := round(time.running / 3600 / 24, 2)]
 
+tab[, done := as.POSIXct(done, tz = "Europe/Berlin")]
+tab[, submitted := as.POSIXct(submitted, tz = "Europe/Berlin")]
+tab[, started := as.POSIXct(started, tz = "Europe/Berlin")]
+
 tab_running = ijoin(tab, findRunning())
 
 job_completion = tab |>
@@ -84,8 +88,6 @@ job_milestones = tibble::tribble(
 took_days = round(as.numeric(difftime(max(tab$done, na.rm = TRUE), min(tab$submitted, na.rm = TRUE), units = "days")), 1)
 took_days_sequential = sum(tab$time.running.days, na.rm = TRUE)
 ```
-
-# Current Job Status
 
 Status as of `r format(Sys.time(), tz = "Europe/Berlin", format = "%F %T (%Z)")`
 
@@ -116,8 +118,7 @@ job_completion |>
     median = median(time.running.days),
     mean = mean(time.running.days),
     q75 = quantile(time.running.days, 0.75),
-    total_sequential = sum(time.running.days),
-    total_guesstimated = total_sequential / 5 / 18
+    total_sequential = sum(time.running.days)
   ) |>
   arrange(-mean) |>
   mutate(across(where(is.numeric), \(x) round(x, 1))) |>
@@ -162,7 +163,7 @@ job_completion |>
 #    date_minor_breaks = "1 day"
 #  ) +
   labs(
-    title = "Survival Benchmark Progress",
+    title = "Survival Benchmark Completion Progress",
     subtitle = "Cumulative percentage of finished jobs over time",
     x = "Date", y = glue::glue("% of total jobs [{nrow(tab)}]")
   ) +
@@ -178,8 +179,7 @@ tab |>
   dplyr::arrange(done) |>
   dplyr::mutate(
     k = cumsum(!is.na(done)),
-    prop = k / dplyr::n(),
-    done = as.POSIXct(done, tz = "Europe/Berlin")
+    prop = k / dplyr::n()
   ) |> 
   ggplot(aes(x = done, y = prop, color = time_cat)) +
   geom_step(linewidth = 1.5) +
@@ -190,7 +190,7 @@ tab |>
   ) +
   scale_color_viridis_d() + 
   labs(
-    title = "Survival Benchmark Progress",
+    title = "Survival Benchmark Completion Progress",
     subtitle = "Cumulative percentage of finished jobs over time",
     x = "Date", y = glue::glue("% of jobs within group"),
     color = "Runtime Group"
@@ -203,6 +203,7 @@ Ommitting KM, NEL, CPH because they're basically instant
 ```{r job-completion-learner-id}
 #| fig-width: 12
 #| fig-height: 10
+
 tab |>
   dplyr::select(job.id, learner_id, done) |>
   dplyr::filter(!(learner_id %in% c("KM", "NEL", "CPH"))) |>
@@ -211,8 +212,7 @@ tab |>
   dplyr::mutate(
     learner_id = factor(learner_id, levels = unique(tab$learner_id)),
     k = cumsum(!is.na(done)),
-    prop = k / dplyr::n(),
-    done = as.POSIXct(done, tz = "Europe/Berlin")
+    prop = k / dplyr::n()
   ) |> 
   ggplot(aes(x = done, y = prop)) +
   geom_step(linewidth = 1.5) +
