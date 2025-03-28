@@ -39,16 +39,48 @@ tab[, .(n = .N, min_time_h = min(est_total_hours), max_time_h = max(est_total_ho
 
 expired = findExpired()
 if (nrow(expired) > 0) {
-  expired = ijoin(tab, expired)[, .(job.id, task_id, learner_id, time_cat, est_total_hours, walltime, memory, time.running)]
+  expired = ijoin(tab, expired)[, .(
+    job.id,
+    task_id,
+    learner_id,
+    time_cat,
+    est_total_hours,
+    walltime,
+    memory,
+    time.running
+  )]
   expired[, time.running := as.numeric(time.running)]
   data.table::setnames(expired, "memory", "previous_memory")
   data.table::setnames(expired, "walltime", "previous_walltime")
 
   expired_oom = ijoin(expired, grepLogs(expired, pattern = "OOM"))
+  expired_timeout = ijoin(expired, grepLogs(expired, pattern = "TIME LIMIT"))
 
   expired[, .(n = .N), by = .(time_cat)]
- 
- expired[time_cat == "normal", ]
+
+  expired[time_cat == "normal", ]
+
+  expired |>
+    submitJobs(
+      resources = list(
+        qos = "normal",
+        walltime = 3 * 24 * 3600,
+        memory = mem_mb,
+        partition = "mb",
+        comment = "normal-resubmit-unknown"
+      )
+    )
+
+  expired_timeout |>
+    submitJobs(
+      resources = list(
+        qos = "long",
+        walltime = 7 * 24 * 3600,
+        memory = 2 * mem_mb,
+        partition = "mb",
+        comment = "long-ssvm-catadotpion"
+      )
+    )
 }
 
 
@@ -90,6 +122,9 @@ jobs_shortest[, .(job.id, chunk)] |>
 # Fast jobs ----------------------------------------------------------
 # Fast QoS -> 12 hours max
 jobs_fast = tab[time_cat == "fast"]
+jobs_fast_notdone = ijoin(jobs_fast, findNotDone(), by = "job.id")
+jobs_fast_notdone[, .(.N), by = .(learner_id, task_id)]
+
 jobs_fast[, chunk := binpack(est_total_hours, chunk.size = 11)]
 jobs_fast[,
   list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
@@ -142,6 +177,7 @@ grepLogs(expired_fast, pattern = "OOM") |>
 # Normal QoS -> 3 days (72 hours) max
 jobs_normal = tab[time_cat == "normal"]
 ijoin(jobs_normal, findNotSubmitted(), by = "job.id")
+ijoin(jobs_normal, findNotDone(), by = "job.id")
 
 jobs_normal[, chunk := binpack(est_total_hours, chunk.size = 60)]
 jobs_normal[,
@@ -187,25 +223,28 @@ jobs_normal[, .(job.id)] |>
   )
 
 
+
+
 # Long jobs ----------------------------------------------------------
 # Long QoS -> 7 days (168 hours) max
 # This is where chunking stops being very useful but still could be.
 jobs_long = tab[time_cat == "long"]
-jobs_long[, chunk := binpack(est_total_hours, chunk.size = 160)]
-jobs_long[,
-  list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
-  by = chunk
-]
+# jobs_long[, chunk := binpack(est_total_hours, chunk.size = 160)]
+# jobs_long[,
+#   list(hours = sum(est_total_hours), min_time_h = min(est_total_hours), max_time_h = max(est_total_hours), count = .N),
+#   by = chunk
+# ]
 
-jobs_long[chunk <= 400, .(job.id, chunk)] |>
+jobs_long[, .(job.id)] |>
   ijoin(findNotSubmitted()) |>
+  dplyr::slice_sample(n = 100) |>
   submitJobs(
     resources = list(
       qos = "long",
       walltime = 7 * 24 * 3600,
       memory = mem_mb,
       partition = "mb",
-      comment = "long-chunked"
+      comment = "long"
     )
   )
 
@@ -219,7 +258,7 @@ jobs_maximum[,
 
 jobs_maximum[, .(job.id)] |>
   ijoin(findNotSubmitted()) |>
-  head(40) |>
+  dplyr::slice_sample(n = 300) |>
   submitJobs(
     resources = list(
       qos = "long",
@@ -227,5 +266,30 @@ jobs_maximum[, .(job.id)] |>
       memory = mem_mb,
       partition = "mb",
       comment = "maximum"
+    )
+  )
+
+expired[, .(job.id)] |>
+  ajoin(findRunning()) |>
+  submitJobs(
+    resources = list(
+      qos = "long",
+      walltime = 3 * 24 * 3600,
+      memory = mem_mb,
+      partition = "mb",
+      comment = "final-batch"
+    )
+  )
+
+
+expired[learner_id == "SSVM", .(job.id)] |>
+  ajoin(findRunning()) |>
+  submitJobs(
+    resources = list(
+      qos = "long",
+      walltime = 3 * 24 * 3600,
+      memory = 2 * mem_mb,
+      partition = "mb",
+      comment = "final-batch"
     )
   )
