@@ -580,7 +580,7 @@ add_learner_groups = function(x) {
         c("KM", "NA", "AK") ~ "Baseline",
         c("CPH", "GLMN", "Pen", "AFT", "Flex", "SSVM") ~ "Classical",
         c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
-        c("MBST", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
+        c("MBSTCox", "MBSTAFT", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
         .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
       )
     )
@@ -717,7 +717,7 @@ plot_aggr_scores = function(
   }
 
   p = ggplot(
-    xdf[tuned == tuning_measure_id],
+    xdf[xdf$tune_measure == tuning_measure_id],
     aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)
   ) +
     geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
@@ -768,7 +768,7 @@ plot_scores = function(
   }
 
   p = scores |>
-    dplyr::filter(tuned == tuning_measure_id) |>
+    dplyr::filter(.data[["tune_measure"]] == tuning_measure_id) |>
     ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
     facet_wrap(vars(task_id), scales = "free_x", ncol = 8) +
     geom_boxplot(alpha = 1 / 4) +
@@ -822,12 +822,12 @@ plot_aggr_ph = function(
   tasks_exclude = NULL
 ) {
   checkmate::assert_data_table(xdf)
-  checkmate::assert_subset(c("tuned", "p"), choices = colnames(xdf))
+  checkmate::assert_subset(c("tune_measure", "p"), choices = colnames(xdf))
   checkmate::assert_subset(eval_measure, colnames(xdf))
-  checkmate::assert_subset(tuning_measure, unique(xdf[["tuned"]]))
+  checkmate::assert_subset(tuning_measure, unique(xdf[["tune_measure"]]))
 
   xdf |>
-    dplyr::filter(tuned == tuning_measure) |>
+    dplyr::filter(.data[["tune_measure"]] == tuning_measure) |>
     dplyr::filter(!(eval_measure %in% c("harrell_c", "uno_c")) | !(learner_id %in% c("KM", "NA"))) |>
     ggplot(aes(x = learner_id, y = .data[[eval_measure]], color = p, fill = p)) +
     facet_grid(cols = vars(learner_group), scales = "free_x", space = "free_x") +
@@ -875,7 +875,20 @@ scale_score = function(score_learner, score_baseline, score_best, lower_is_bette
   }
 
   res = numera / denom
-  checkmate::assert_numeric(res, upper = 1)
+
+  if (any(is.infinite(res)) | anyNA(res)) {
+    cli::cli_inform(
+      c(
+        "Generated missing or infinite values by rescaling:",
+        "!" = "{.val {sum(is.infinite(res))}} Infs",
+        "!" = "{.val {sum(is.nan(res))}} NaNs",
+        "!" = "{.val {sum(is.na(res))}} NAs",
+        "!" = "{.val {sum(res < 0, na.rm = TRUE)}} negative values",
+        "!" = "{.val {sum(res > 1, na.rm = TRUE)}} values > 1",
+        "Of {.val {length(res)}} values total."
+      )
+    )
+  }
 
   res
 }
@@ -883,7 +896,7 @@ scale_score = function(score_learner, score_baseline, score_best, lower_is_bette
 #' Find best index depending on whether lower is better
 which_best = function(x, lower_is_better = TRUE) {
   # Make sure to return a single value in case of ties
-  ifelse(lower_is_better, which.min(x), which.max(x)[[1]])
+  ifelse(lower_is_better, which.min(x), which.max(x))[[1]]
 }
 
 #' Take `aggr_scores` and rescale all scores with `scale_score()`,
@@ -909,17 +922,18 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 
     lower_is_better = msr_tbl[id == eval_measure, minimize]
 
-    scores_km = aggr_scores_scaled[learner_id == "KM", c("task_id", "tuned", ..eval_measure)]
-    setnames(scores_km, c(eval_measure), "score_km")
+    scores_km = aggr_scores_scaled[learner_id == "KM", c("task_id", "tune_measure", ..eval_measure)]
+    setnames(scores_km, old = c(eval_measure), new = "score_km")
+    scores_km[, tune_measure := NULL]
 
     scores_best = aggr_scores_scaled[,
       .SD[which_best(.SD[[eval_measure]], lower_is_better = lower_is_better), ],
-      by = .(task_id, tuned)
-    ][, .SD, .SDcols = c("task_id", "tuned", eval_measure)]
-    setnames(scores_best, c(eval_measure), "score_best")
+      by = c("task_id", "tune_measure")
+    ][, .SD, .SDcols = c("task_id", "tune_measure", eval_measure)]
+    setnames(scores_best, old = c(eval_measure), new = "score_best")
 
-    scores_to_scale_by = scores_km[scores_best, on = c("task_id", "tuned")]
-    aggr_scores_scaled = aggr_scores_scaled[scores_to_scale_by, on = c("task_id", "tuned")]
+    scores_to_scale_by = scores_km[scores_best, on = c("task_id")]
+    aggr_scores_scaled = aggr_scores_scaled[scores_to_scale_by, on = c("task_id", "tune_measure")]
 
     aggr_scores_scaled[,
       (eval_measure) := scale_score(
@@ -931,7 +945,7 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
       .SDcols = eval_measure
     ]
 
-    if (lower_is_better & any(aggr_scores_scaled[[eval_measure]] > 1)) browser()
+    # if (lower_is_better & any(aggr_scores_scaled[[eval_measure]] > 1)) browser()
 
     aggr_scores_scaled[, score_best := NULL]
     aggr_scores_scaled[, score_km := NULL]
