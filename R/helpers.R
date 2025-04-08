@@ -266,8 +266,9 @@ get_measures_eval = function() {
     msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
     msr("surv.logloss",     id = "rnll_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
 
-    msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
-    msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
+    # Removed based on learnings from the socring rules paper (via JZ)
+    # msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
+    # msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
 
     msr("surv.brier",       id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
     msr("surv.brier",       id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
