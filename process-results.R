@@ -162,7 +162,7 @@ for (tune_measure in tune_measures) {
     this_score[, resampling := NULL]
     this_score[, prediction_test := NULL]
     this_score[, errors := NULL]
-    this_score{, warnings := NULL]
+    this_score[, warnings := NULL]
     this_score
   }) |>
     data.table::rbindlist(fill = TRUE)
