@@ -291,8 +291,8 @@ measures_tbl = function() {
     "surv.cindex",      "harrell_c",    "Discrimination",
     "surv.cindex",      "uno_c",        "Discrimination",
 
-    "surv.risll",       "risll",        "Scoring Rule",
-    "surv.risll",       "risll_erv",    "Scoring Rule",
+    # "surv.risll",       "risll",        "Scoring Rule",
+    # "surv.risll",       "risll_erv",    "Scoring Rule",
 
     "surv.logloss",     "rnll",         "Scoring Rule",
     "surv.logloss",     "rnll_erv",     "Scoring Rule",
