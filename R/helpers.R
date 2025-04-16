@@ -262,19 +262,14 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
-    # Default has IPCW = FALSE, resulting in RNLL (proper) rather than NLL according to proba docs
-    msr("surv.logloss",     id = "rnll",     ERV = FALSE, label = "Re-weighted Negative Log-Likelihood (RNLL)"),
-    msr("surv.logloss",     id = "rnll_erv", ERV = TRUE,  label = "Re-weighted Negative Log-Likelihood (RNLL) [ERV]"),
-
-    # Removed based on learnings from the socring rules paper (via JZ)
-    # msr("surv.intlogloss",  id = "risll",     ERV = FALSE, proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL)"),
-    # msr("surv.intlogloss",  id = "risll_erv", ERV = TRUE,  proper = TRUE, label = "Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV]"),
+    # Removed RISLL -> added ISLL
+    msr("surv.intlogloss",  id = "isll",     ERV = FALSE, proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL)"),
+    msr("surv.intlogloss",  id = "isll_erv", ERV = TRUE,  proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL) [ERV]"),
 
     msr("surv.brier",       id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
     msr("surv.brier",       id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
 
     msr("surv.dcalib",      id = "dcalib", truncate = 1000, label = "D-Calibration"),
-
     msr("surv.calib_alpha", id = "alpha_calib", method = "ratio", truncate = 1000, label = "Van Houwelingen's Alpha")
 
   )
@@ -291,11 +286,8 @@ measures_tbl = function() {
     "surv.cindex",      "harrell_c",    "Discrimination",
     "surv.cindex",      "uno_c",        "Discrimination",
 
-    # "surv.risll",       "risll",        "Scoring Rule",
-    # "surv.risll",       "risll_erv",    "Scoring Rule",
-
-    "surv.logloss",     "rnll",         "Scoring Rule",
-    "surv.logloss",     "rnll_erv",     "Scoring Rule",
+    "surv.isll",        "isll",         "Scoring Rule",
+    "surv.isll",        "isll_erv",     "Scoring Rule",
 
     "surv.brier",       "isbs",         "Scoring Rule",
     "surv.brier",       "isbs_erv",     "Scoring Rule",
