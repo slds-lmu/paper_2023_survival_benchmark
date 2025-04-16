@@ -16,8 +16,7 @@ library(dplyr, warn.conflicts = FALSE)
 library(data.table)
 
 # Load results --------------------------------------------------------------------------------
-result_path = conf$result_path
-plot_path = fs::path("results_paper")
+plot_path = here::here("results_paper")
 stopifnot(ensure_directory(plot_path))
 
 # Helper table to collect all measures and their attributed
@@ -28,32 +27,45 @@ msr_tbl = measures_tbl()
 # msr_tbl[(erv)]
 
 # bma is the BenchmarkAggr for use with mlr3benchmark
-bma_harrell_c = readRDS(fs::path(result_path, "bma_harrell_c.rds"))
-bma_isbs = readRDS(fs::path(result_path, "bma_isbs.rds"))
+bma_harrell_c = readRDS(fs::path(conf$result_path, "bma_harrell_c.rds"))
+bma_isbs = readRDS(fs::path(conf$result_path, "bma_isbs.rds"))
 
 # These are data.tables with additional columns for presentation
-aggr_scores = readRDS(fs::path(result_path, "aggr.rds"))
-scores = readRDS(fs::path(result_path, "scores.rds"))
+aggr_scores = readRDS(fs::path(conf$result_path, "aggr.rds"))
+scores = readRDS(fs::path(conf$result_path, "scores.rds"))
 
 # Create the scaled version of aggregated scores where KM is 0 and best model is 1
 aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)
 
-stopifnot(any(aggr_scores_scaled[tuned == "harrell_c", harrell_c] == 1))
-stopifnot(!aggr_scores_scaled[tuned == "isbs", isbs] > 1)
+stopifnot(any(aggr_scores_scaled[grepl("harrell_c", tune_measure), harrell_c] == 1))
+stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
 
 
 # Table of errors -----------------------------------------------------------------------------
 
-scores |>
-  dplyr::filter(errors != "") |>
-  dplyr::count(learner_id, task_id, tune_measure, errors, name = "affected_folds") |>
+errs_table = scores |>
+  summarise(
+    affected_iters = sum(errors_cnt),
+    total_iters = n(),
+    errors_perc = 100 * affected_iters / total_iters,
+    .by = c(learner_id, task_id, tune_measure)
+  ) |>
+  filter(affected_iters > 0) |>
   tidyr::pivot_wider(
     id_cols = c("learner_id", "task_id"),
     names_from = "tune_measure",
-    values_from = "affected_folds",
+    values_from = c("affected_iters", "errors_perc"),
     values_fill = 0
   ) |>
-  dplyr::mutate(total = harrell_c + isbs) |>
+  dplyr::mutate(total = affected_iters_harrell_c + affected_iters_isbs)
+
+errs_table |>
+  mutate(
+    harrell_c = glue::glue("{affected_iters_harrell_c} ({round(errors_perc_harrell_c, 1)}%)"),
+    isbs = glue::glue("{affected_iters_isbs} ({round(errors_perc_isbs, 1)}%)")
+  ) |>
+  arrange(learner_id, task_id) |>
+  select(learner_id, task_id, harrell_c, isbs, total) |>
   kableExtra::kbl(
     col.names = c("Model", "Dataset", "Harrell's C", "ISBS", "Total Errors"),
     caption = "Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.",
@@ -240,10 +252,10 @@ measure_scaled = paste0(measure_normal, "_scaled")
 aggr_temp = data.table::copy(aggr_scores)
 aggr_scaled_temp = data.table::copy(aggr_scores_scaled)
 data.table::setnames(aggr_scaled_temp, old = measure_normal, new = measure_scaled)
-aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tuned, learner_group)]
+aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tune_measure, learner_group)]
 
 p = aggr_temp |>
-  dplyr::filter(tuned == "isbs") |>
+  dplyr::filter(.data[["tune_measure"]] == "isbs") |>
   tidyr::pivot_longer(
     cols = tidyselect::all_of(c(measure_normal, measure_erv, measure_scaled)),
     names_to = "measure",

@@ -29,7 +29,7 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
   - Due to limitations on the HPC environment used for the benchmark, R version 4.2.2 is expected.
   (you may want to use [rig](https://github.com/r-lib/rig) for R version management)
   - Additionally, the `PMCMRplus` is required by `mlr3benchmark`, but was not installable in the HPC environment, so it is not included by `renv` and you may need to install it manually from CRAN: `install.packages("PMCMRplus")`.
-- `produce_paper_plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible, but loads helper functions from `helpers.R` for de-duplication and readability.
+- `produce-paper-plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible, but loads helper functions from `helpers.R` for de-duplication and readability.
   - The output path is `./results_paper` by default.
   
 Please note that due to the large file sizes of the `BenchmarkResult` (`bmr`) objects produced by the aggregation of the `batchtools` registry, this repository only contains the processed result files (`./results/registry_beartooth/`) required to produce the main results of the paper.

@@ -9,4 +9,4 @@ attic/_dependencies.R
 attic/*.R
 analysis.qmd
 tmp
-produce_paper_plots.R
+produce-paper-plots.R
