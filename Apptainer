@@ -23,6 +23,8 @@ From: posit/r-base:4.4.3-noble
         python3          \
         git              \
         locales          \
+        ca-certificates  \
+        intel-mkl        \
         && apt-get clean
 
     locale-gen en_US.UTF-8
