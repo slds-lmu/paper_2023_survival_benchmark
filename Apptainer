@@ -1,0 +1,34 @@
+Bootstrap: docker
+From: posit/r-base:4.4.3-noble
+
+%environment
+    export PATH=/usr/local/bin:/usr/bin:/bin
+    export RENV_CONFIG_PAK_ENABLE=true
+
+%post
+    apt-get update && apt-get install -y \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        libpng-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev   \
+        libfribidi-dev   \
+        libglpk-dev      \
+        libharfbuzz-dev  \
+        libjpeg-dev      \
+        libtiff-dev      \
+        libx11-dev       \
+        pandoc           \
+        python3          \
+        git              \
+        locales          \
+        && apt-get clean
+
+    locale-gen en_US.UTF-8
+    update-locale LANG=en_US.UTF-8
+
+    #Rscript -e "install.packages('renv', repos='https://cloud.r-project.org')"
+
+%runscript
+    exec R --no-save --no-restore "$@"
