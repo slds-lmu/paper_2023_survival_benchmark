@@ -4,6 +4,11 @@ From: posit/r-base:4.4.3-noble
 %environment
     export PATH=/usr/local/bin:/usr/bin:/bin
     export RENV_CONFIG_PAK_ENABLE=true
+    # Make sure R finds Intel MKL BLAS
+    export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libmkl_rt.so
+    # These vars are apparently crucial(!!) for correct results?
+    export MKL_INTERFACE_LAYER=GNU,LP64
+    export MKL_THREADING_LAYER=GNU
 
 %post
     apt-get update && apt-get install -y \
@@ -29,8 +34,7 @@ From: posit/r-base:4.4.3-noble
 
     locale-gen en_US.UTF-8
     update-locale LANG=en_US.UTF-8
-
-    #Rscript -e "install.packages('renv', repos='https://cloud.r-project.org')"
+    
 
 %runscript
     exec R --no-save --no-restore "$@"
