@@ -236,7 +236,7 @@ wrap_auto_tune = function(learner, ..., use_grid_search = FALSE) {
   # Ensure AutoTuner also has encapsulation and fallback in case of errors during outer resampling
   # which would not be caught by fallback/encaps during inner resampling with GraphLearner
   if (conf$fallback$outer) {
-    suppressWarnings(at$encapsulate("callr", lrn("surv.kaplan")))
+    suppressWarnings(at$encapsulate("evaluate", lrn("surv.kaplan")))
   } else {
     cli::cli_alert_info("Not applying fallback for outer AutoTuner!")
   }
@@ -382,7 +382,6 @@ for (measure in measures) {
     # Split based on family, omitting "cindex" which is different entirely
     MBSTCox = wrap_auto_tune(
       bl("surv.mboost", id = "mboost_cox", family = "coxph"),
-      mboost_cox.family = p_fct(c("coxph")),
       mboost_cox.mstop = p_int(10, 5000),
       mboost_cox.nu = p_dbl(0, 0.1),
       mboost_cox.baselearner = p_fct(c("bols", "btree"))
