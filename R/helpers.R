@@ -555,7 +555,9 @@ remove_results = function(x, learner_id_exclude = NULL, task_id_exclude = NULL) 
     xdat = xdat[, task_id := factor(task_id, levels = setdiff(task_id_orig, task_id_exclude))]
   }
 
-  if (inherits(x, "BenchmarkAggr")) return(mlr3benchmark::as_benchmark_aggr(xdat))
+  if (inherits(x, "BenchmarkAggr")) {
+    return(mlr3benchmark::as_benchmark_aggr(xdat))
+  }
   xdat[]
 }
 
@@ -620,7 +622,11 @@ plot_results = function(
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
 
   if (type %in% c("box", "mean")) {
-    if (inherits(bma, "BenchmarkAggr")) xdat = bma$data else xdat = bma
+    if (inherits(bma, "BenchmarkAggr")) {
+      xdat = bma$data
+    } else {
+      xdat = bma
+    }
     xdat = bma$data
     bma = mlr3benchmark::as_benchmark_aggr(xdat[!(learner_id %in% exclude_learners), ])
   }
@@ -664,7 +670,9 @@ plot_results = function(
   }
 
   if (type %in% c("box", "mean")) {
-    if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    if (dodge) {
+      p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    }
     if (flip) {
       p = p + coord_flip() + scale_x_discrete(limits = rev)
     }
@@ -727,7 +735,9 @@ plot_aggr_scores = function(
       caption = glue::glue("Tuning measure: {tuning_measure_label}")
     )
 
-  if (dodge) p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+  if (dodge) {
+    p = p + scale_x_discrete(guide = guide_axis(n.dodge = 2))
+  }
   if (flip) {
     p = p + coord_flip() + scale_x_discrete(limits = rev)
   }
