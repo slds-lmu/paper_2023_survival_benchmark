@@ -86,18 +86,19 @@ for (tune_measure in tune_measures) {
 
     cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
     # skip if there's no completed jobs
-    if (nrow(ids) == 0) next
+    if (nrow(ids) == 0) {
+      next
+    }
 
-    tictoc::tic(msg = "Reducing results")
+    cli::cli_progress_step("Reducing results")
     # Disabling the progress bar for speedup with many jobs
     options(batchtools.progress = FALSE)
     bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE)
     options(batchtools.progress = TRUE)
-    tictoc::toc()
 
     cli::cli_h3("Scoring and aggregating")
 
-    tictoc::tic(msg = "Scoring results")
+    cli::cli_progress_step("Scoring results")
     scores <- bmr$score(measures, conditions = TRUE)
     # scores <- as.data.table(scores)
     scores[, task := NULL]
@@ -111,26 +112,17 @@ for (tune_measure in tune_measures) {
     scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
     scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
 
-    tictoc::toc()
-
-    tictoc::tic(msg = "Aggregating results")
+    cli::cli_progress_step("Aggregating results")
     aggr <- bmr$aggregate(measures, conditions = TRUE)
     aggr[, tune_measure := ..tune_measure]
     aggr[, resampling_id := NULL]
-    tictoc::toc()
 
-    tictoc::tic(msg = "Saving to disk: scores, aggr")
+    cli::cli_progress_step("Saving to disk: scores, aggr")
     save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
     save_obj(aggr, name = "aggr", suffix = c(tune_measure, learner))
-    tictoc::toc()
 
-    tictoc::tic("Collecting garbage just in case")
-    gc(reset = TRUE)
     rm(bmr, scores, aggr)
-    memory.mult = c(if (.Machine$sizeof.pointer == 4L) 28L else 56L, 8L)
-    mem.used = sum(gc()[, 1L] * memory.mult)
-    cli::cli_alert_info("Used {.val {prettyunits::pretty_bytes(mem.used)}}")
-    tictoc::toc()
+    gc(reset = TRUE)
   }
 }
 
@@ -139,9 +131,8 @@ cli::cli_h2("Combining results")
 
 # Combine by tuning measure first
 for (tune_measure in tune_measures) {
-  cli::cli_alert_info("Combining results for {.val {tune_measure}}")
+  cli_progress_step("Combining results for {.val {tune_measure}}")
 
-  tictoc::tic("scores")
   # Try to find score files expected given the current learner/measure combination
   current_learners = learner_measure_tab[measure == tune_measure, learner_id]
   score_files = fs::path(conf$result_path, glue::glue("scores_{tune_measure}_{current_learners}.rds"))
@@ -168,9 +159,7 @@ for (tune_measure in tune_measures) {
     data.table::rbindlist(fill = TRUE)
 
   save_obj(scores, name = "scores_combined", suffix = tune_measure)
-  tictoc::toc()
 
-  tictoc::tic("aggrs")
   aggr_files = fs::path(conf$result_path, glue::glue("aggr_{tune_measure}_{current_learners}.rds"))
   aggr_files = mlr3misc::keep(aggr_files, fs::file_exists)
 
@@ -184,7 +173,6 @@ for (tune_measure in tune_measures) {
     data.table::rbindlist(fill = TRUE)
 
   save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
-  tictoc::toc()
 }
 
 # Combining for all tuning measures
@@ -229,23 +217,19 @@ cli::cli_h2("Processing tuning archives")
 
 # Archives with logs are very large objects of questionable utility, version without logs should suffice
 if (!fs::file_exists(fs::path(conf$result_path, "archives.rds"))) {
-  cli::cli_alert_info("Reassembling tuning archives including logs")
-  tictoc::tic()
+  cli::cli_progress_step("Reassembling tuning archives including logs")
   archives = reassemble_archives(conf, keep_logs = TRUE)
   # Note ressamble_archives() writes archives.rds to result dir already
-  tictoc::toc()
 }
 
 # if (!fs::file_exists(fs::path(conf$result_path, "archives_without-logs.rds"))) {
-#   cli::cli_alert_info("Reassembling tuning archives without logs")
-#   tictoc::tic()
+#   cli::cli_progress_step("Reassembling tuning archives without logs")
 #   archives_without_logs = reassemble_archives(conf, keep_logs = FALSE)
-#   tictoc::toc()
 # }
 
 # Create zipped collection of tuning archive CSVs
 if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {
-  tictoc::tic("Zipping archives")
+  cli::cli_progress_step("Zipping archives")
   convert_archives_csv(conf)
 
   zip_out = fs::path(conf$result_path, "archives.zip")
@@ -255,8 +239,6 @@ if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {
     files = fs::dir_ls(fs::path(conf$result_path, "tuning_archives")),
     flags = "-rD9j"
   )
-
-  tictoc::toc()
 }
 
 cli::cli_alert_success("Done!")
