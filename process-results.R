@@ -68,7 +68,7 @@ for (tune_measure in tune_measures) {
     # Untuned and self-tuned learners are evaluated with everything
     "harrell_c,isbs" = msr_tbl[, measure],
     # C-index tuned learners are evaluated with Harrel's and Uno's C and also ISBS
-    "harrell_c" = msr_tbl[type == "Discrimination" || id %in% c("isbs", "isbs_erv"), measure],
+    "harrell_c" = msr_tbl[type == "Discrimination" | id %in% c("isbs", "isbs_erv"), measure],
     # For ISBS-tuned we use everything but C-indices
     "isbs" = msr_tbl[type != "Discrimination", measure]
   )
@@ -87,10 +87,12 @@ for (tune_measure in tune_measures) {
     ids_all = tab[learner_id == learner & measure == tune_measure, ]
     ids = ijoin(findDone(), ids_all)
 
-    cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
     # skip if there's no completed jobs
     if (nrow(ids) == 0) {
       next
+    } else {
+      cli::cli_h3("Processing results for {.val {learner}}")
+      cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
     }
 
     cli::cli_progress_step("Reducing results")
@@ -98,8 +100,6 @@ for (tune_measure in tune_measures) {
     options(batchtools.progress = FALSE)
     bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE)
     options(batchtools.progress = TRUE)
-
-    cli::cli_h3("Scoring and aggregating")
 
     cli::cli_progress_step("Scoring results")
     scores <- bmr$score(measures, conditions = TRUE)
@@ -126,7 +126,8 @@ for (tune_measure in tune_measures) {
 
     rm(bmr, scores, aggr)
     gc(reset = TRUE)
-  }
+    cli::cli_progress_done()
+  })
 }
 
 
@@ -176,6 +177,7 @@ for (tune_measure in tune_measures) {
     data.table::rbindlist(fill = TRUE)
 
   save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
+  cli::cli_progress_done()
 }
 
 # Combining for all tuning measures
