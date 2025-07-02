@@ -717,8 +717,17 @@ plot_aggr_scores = function(
     direction_label = "higher is better"
   }
 
+  this_df = data.table::copy(xdf) |>
+    dplyr::filter(.data$tune_measure == .env$tuning_measure_id) |>
+    dplyr::filter(!is.na(.data[[eval_measure_id]]))
+
+  if (nrow(this_df) == 0) {
+    cli::cli_abort(
+      "Combination of eval measure {.val {eval_measure_id}} and tuning measure {.val {tuning_measure_id}} has no scores in data"
+    )
+  }
   p = ggplot(
-    xdf[xdf$tune_measure == tuning_measure_id],
+    this_df,
     aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)
   ) +
     geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
