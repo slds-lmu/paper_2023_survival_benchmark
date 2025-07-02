@@ -65,8 +65,11 @@ for (tune_measure in tune_measures) {
   # and scoring rules plus calibration measures otherwise
   measures = switch(
     tune_measure,
+    # Untuned and self-tuned learners are evaluated with everything
     "harrell_c,isbs" = msr_tbl[, measure],
-    "harrell_c" = msr_tbl[type == "Discrimination", measure],
+    # C-index tuned learners are evaluated with Harrel's and Uno's C and also ISBS
+    "harrell_c" = msr_tbl[type == "Discrimination" || id %in% c("isbs", "isbs_erv"), measure],
+    # For ISBS-tuned we use everything but C-indices
     "isbs" = msr_tbl[type != "Discrimination", measure]
   )
 
@@ -241,5 +244,6 @@ if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {
   )
 }
 
-cli::cli_alert_success("Done!")
+cli::cli_progress_done()
+
 tictoc::toc()
