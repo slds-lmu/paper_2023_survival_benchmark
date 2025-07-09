@@ -40,6 +40,9 @@ default:
 production:
   reg_name: "production"
 
+productionbertha:
+  reg_name: "productionbertha"
+
 # Lower budget, just checking everything works, close to "production"
 trial:
   reg_name: "trial"

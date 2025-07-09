@@ -22,6 +22,8 @@ msr_tbl = measures_tbl()
 
 tictoc::tic("Full result processing")
 reg <- loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
+reg$source = here::here("R/helpers.R")
+
 tab <- collect_job_table(
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "time.running", "mem.used"),
   resource_est_file = ""
@@ -127,7 +129,7 @@ for (tune_measure in tune_measures) {
     rm(bmr, scores, aggr)
     gc(reset = TRUE)
     cli::cli_progress_done()
-  })
+  }
 }
 
 
