@@ -56,6 +56,35 @@
       "Maintainer": "Dirk Eddelbuettel <edd@debian.org>",
       "Repository": "CRAN"
     },
+    "BWStest": {
+      "Package": "BWStest",
+      "Version": "0.2.3",
+      "Source": "Repository",
+      "Type": "Package",
+      "Maintainer": "Steven E. Pav <shabbychef@gmail.com>",
+      "Authors@R": "c(person(c(\"Steven\", \"E.\"), \"Pav\",  role=c(\"aut\",\"cre\"), email=\"shabbychef@gmail.com\", comment = c(ORCID = \"0000-0002-4197-6195\")))",
+      "Date": "2023-10-10",
+      "License": "LGPL-3",
+      "Title": "Baumgartner Weiss Schindler Test of Equal Distributions",
+      "BugReports": "https://github.com/shabbychef/BWStest/issues",
+      "Description": "Performs the 'Baumgartner-Weiss-Schindler' two-sample test of equal probability distributions, <doi:10.2307/2533862>. Also performs similar rank-based tests for equal probability distributions due to Neuhauser <doi:10.1080/10485250108832874> and Murakami <doi:10.1080/00949655.2010.551516>.",
+      "Imports": [
+        "memoise",
+        "Rcpp (>= 0.12.3)"
+      ],
+      "LinkingTo": [
+        "Rcpp"
+      ],
+      "Suggests": [
+        "testthat"
+      ],
+      "RoxygenNote": "7.2.1",
+      "URL": "https://github.com/shabbychef/BWStest",
+      "Collate": "'BWStest.r' 'RcppExports.R' 'bws_test.r' 'zzz_murakami_dist.r'",
+      "NeedsCompilation": "yes",
+      "Author": "Steven E. Pav [aut, cre] (<https://orcid.org/0000-0002-4197-6195>)",
+      "Repository": "CRAN"
+    },
     "CoxBoost": {
       "Package": "CoxBoost",
       "Version": "1.5",
@@ -82,14 +111,14 @@
       "License": "GPL-2",
       "RoxygenNote": "7.1.1",
       "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "CoxBoost",
       "RemoteUsername": "binderh",
       "RemotePkgRef": "binderh/CoxBoost@1dc47d7051f660b28520670b34d031143f9eadfd",
       "RemoteRef": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd",
-      "NeedsCompilation": "yes"
+      "RemoteSha": "1dc47d7051f660b28520670b34d031143f9eadfd"
     },
     "DiagrammeR": {
       "Package": "DiagrammeR",
@@ -324,11 +353,11 @@
     },
     "MASS": {
       "Package": "MASS",
-      "Version": "7.3-64",
+      "Version": "7.3-65",
       "Source": "Repository",
       "Priority": "recommended",
-      "Date": "2025-01-06",
-      "Revision": "$Rev: 3680 $",
+      "Date": "2025-02-19",
+      "Revision": "$Rev: 3681 $",
       "Depends": [
         "R (>= 4.4.0)",
         "grDevices",
@@ -428,6 +457,54 @@
       "URL": "https://Matrix.R-forge.R-project.org/, https://r-forge.r-project.org/R/?group_id=61",
       "BugReports": "https://R-forge.R-project.org/tracker/?func=add&atid=294&group_id=61",
       "NeedsCompilation": "no",
+      "Repository": "CRAN"
+    },
+    "PMCMRplus": {
+      "Package": "PMCMRplus",
+      "Version": "1.9.12",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Calculate Pairwise Multiple Comparisons of Mean Rank Sums Extended",
+      "Date": "2024-09-07",
+      "Authors@R": "person(given = \"Thorsten\", family = \"Pohlert\", email = \"thorsten.pohlert@gmx.de\", comment = c(ORCID = \"0000-0003-3855-3025\"), role = c(\"aut\", \"cre\"))",
+      "Description": "For one-way layout experiments the one-way ANOVA can be performed as an omnibus test. All-pairs multiple comparisons  tests (Tukey-Kramer test, Scheffe test, LSD-test)  and many-to-one tests (Dunnett test) for normally distributed  residuals and equal within variance are available. Furthermore, all-pairs tests (Games-Howell test, Tamhane's T2 test,  Dunnett T3 test, Ury-Wiggins-Hochberg test) and many-to-one (Tamhane-Dunnett Test) for normally distributed residuals  and heterogeneous variances are provided. Van der Waerden's normal scores test for omnibus, all-pairs and many-to-one tests is provided for non-normally distributed residuals and homogeneous variances. The Kruskal-Wallis, BWS and Anderson-Darling omnibus test and all-pairs tests (Nemenyi test, Dunn test, Conover test, Dwass-Steele-Critchlow- Fligner test) as well as many-to-one (Nemenyi test, Dunn test, U-test) are given for the analysis of variance by ranks.  Non-parametric trend tests (Jonckheere test, Cuzick test, Johnson-Mehrotra test, Spearman test) are included.  In addition, a Friedman-test for one-way ANOVA with repeated  measures on ranks (CRBD) and Skillings-Mack test for unbalanced  CRBD is provided with consequent all-pairs tests (Nemenyi test,  Siegel test, Miller test, Conover test, Exact test) and many-to-one tests (Nemenyi test, Demsar test, Exact test).  A trend can be tested with Pages's test. Durbin's test  for a two-way balanced incomplete block design (BIBD) is given  in this package as well as Gore's test for CRBD with multiple observations per cell is given.  Outlier tests, Mandel's k- and h statistic as well as functions for Type I error and Power  analysis as well as generic summary, print and plot methods  are provided.",
+      "Depends": [
+        "R (>= 3.5.0)"
+      ],
+      "Imports": [
+        "mvtnorm (>= 1.0)",
+        "multcompView",
+        "gmp",
+        "Rmpfr",
+        "SuppDists",
+        "kSamples (>= 1.2.7)",
+        "BWStest (>= 0.2.1)",
+        "MASS",
+        "stats"
+      ],
+      "Suggests": [
+        "xtable",
+        "graphics",
+        "knitr",
+        "rmarkdown",
+        "car",
+        "e1071",
+        "multcomp",
+        "pwr",
+        "NSM3"
+      ],
+      "SystemRequirements": "gmp (>= 4.2.3), mpfr (>= 3.0.0) | file README.md",
+      "SystemRequirementsNote": "see >> README.md",
+      "SysDataCompression": "gzip",
+      "VignetteBuilder": "knitr, rmarkdown",
+      "Classification/MSC-2010": "62J15, 62J10, 62G10, 62F03, 62G30",
+      "NeedsCompilation": "yes",
+      "Encoding": "UTF-8",
+      "LazyData": "true",
+      "RoxygenNote": "7.3.1",
+      "License": "GPL (>= 3)",
+      "Author": "Thorsten Pohlert [aut, cre] (<https://orcid.org/0000-0003-3855-3025>)",
+      "Maintainer": "Thorsten Pohlert <thorsten.pohlert@gmx.de>",
       "Repository": "CRAN"
     },
     "PRROC": {
@@ -530,10 +607,10 @@
     },
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.0.14",
+      "Version": "1.1.0",
       "Source": "Repository",
       "Title": "Seamless R and C++ Integration",
-      "Date": "2025-01-11",
+      "Date": "2025-07-01",
       "Authors@R": "c(person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\", \"cre\"), email = \"edd@debian.org\", comment = c(ORCID = \"0000-0001-6419-907X\")), person(\"Romain\", \"Francois\", role = \"aut\", comment = c(ORCID = \"0000-0002-2444-4226\")), person(\"JJ\", \"Allaire\", role = \"aut\", comment = c(ORCID = \"0000-0003-0174-9868\")), person(\"Kevin\", \"Ushey\", role = \"aut\", comment = c(ORCID = \"0000-0003-2880-7407\")), person(\"Qiang\", \"Kou\", role = \"aut\", comment = c(ORCID = \"0000-0001-6786-5453\")), person(\"Nathan\", \"Russell\", role = \"aut\"), person(\"Iñaki\", \"Ucar\", role = \"aut\", comment = c(ORCID = \"0000-0001-6403-5550\")), person(\"Doug\", \"Bates\", role = \"aut\", comment = c(ORCID = \"0000-0001-8316-9503\")), person(\"John\", \"Chambers\", role = \"aut\"))",
       "Description": "The 'Rcpp' package provides R functions as well as C++ classes which offer a seamless integration of R and C++. Many R data types and objects can be mapped back and forth to C++ equivalents which facilitates both writing of new code as well as easier integration of third-party libraries. Documentation about 'Rcpp' is provided by several vignettes included in this package, via the 'Rcpp Gallery' site at <https://gallery.rcpp.org>, the paper by Eddelbuettel and Francois (2011, <doi:10.18637/jss.v040.i08>), the book by Eddelbuettel (2013, <doi:10.1007/978-1-4614-6868-4>) and the paper by Eddelbuettel and Balamuta (2018, <doi:10.1080/00031305.2017.1375990>); see 'citation(\"Rcpp\")' for details.",
       "Imports": [
@@ -553,7 +630,7 @@
       "RoxygenNote": "6.1.1",
       "Encoding": "UTF-8",
       "NeedsCompilation": "yes",
-      "Author": "Dirk Eddelbuettel [aut, cre] (<https://orcid.org/0000-0001-6419-907X>), Romain Francois [aut] (<https://orcid.org/0000-0002-2444-4226>), JJ Allaire [aut] (<https://orcid.org/0000-0003-0174-9868>), Kevin Ushey [aut] (<https://orcid.org/0000-0003-2880-7407>), Qiang Kou [aut] (<https://orcid.org/0000-0001-6786-5453>), Nathan Russell [aut], Iñaki Ucar [aut] (<https://orcid.org/0000-0001-6403-5550>), Doug Bates [aut] (<https://orcid.org/0000-0001-8316-9503>), John Chambers [aut]",
+      "Author": "Dirk Eddelbuettel [aut, cre] (ORCID: <https://orcid.org/0000-0001-6419-907X>), Romain Francois [aut] (ORCID: <https://orcid.org/0000-0002-2444-4226>), JJ Allaire [aut] (ORCID: <https://orcid.org/0000-0003-0174-9868>), Kevin Ushey [aut] (ORCID: <https://orcid.org/0000-0003-2880-7407>), Qiang Kou [aut] (ORCID: <https://orcid.org/0000-0001-6786-5453>), Nathan Russell [aut], Iñaki Ucar [aut] (ORCID: <https://orcid.org/0000-0001-6403-5550>), Doug Bates [aut] (ORCID: <https://orcid.org/0000-0001-8316-9503>), John Chambers [aut]",
       "Maintainer": "Dirk Eddelbuettel <edd@debian.org>",
       "Repository": "CRAN"
     },
@@ -661,6 +738,50 @@
       "NeedsCompilation": "yes",
       "Repository": "CRAN"
     },
+    "Rmpfr": {
+      "Package": "Rmpfr",
+      "Version": "1.1-0",
+      "Source": "Repository",
+      "Title": "Interface R to MPFR - Multiple Precision Floating-Point Reliable",
+      "VersionNote": "Last CRAN: 1.0-0 on 2024-11-15; 0.9-5 on 2024-01-20",
+      "Date": "2025-05-08",
+      "Type": "Package",
+      "Authors@R": "c(person(\"Martin\",\"Maechler\", role = c(\"aut\",\"cre\"), email = \"maechler@stat.math.ethz.ch\", comment = c(ORCID=\"0000-0002-8685-9910\")) , person(c(\"Richard\", \"M.\"), \"Heiberger\", role = \"ctb\", email=\"rmh@temple.edu\", comment = \"formatHex(), *Bin, *Dec\") , person(c(\"John\", \"C.\"), \"Nash\", role = \"ctb\", email=\"nashjc@uottawa.ca\", comment = \"hjkMpfr(), origin of unirootR()\") , person(c(\"Hans\", \"W.\"), \"Borchers\", role = \"ctb\", email=\"hwborchers@googlemail.com\", comment = \"optimizeR(*, \\\"GoldenRatio\\\"); origin of hjkMpfr()\") , person(\"Mikael\", \"Jagan\", role = \"ctb\", comment = c(\"safer convert.c\", ORCID = \"0000-0002-3542-2938\")) )",
+      "Description": "Arithmetic (via S4 classes and methods) for arbitrary precision floating point numbers, including transcendental (\"special\") functions.  To this end, the package interfaces to the 'LGPL' licensed 'MPFR' (Multiple Precision Floating-Point Reliable) Library which itself is based on the 'GMP' (GNU Multiple Precision) Library.",
+      "SystemRequirements": "gmp (>= 4.2.3), mpfr (>= 3.2.0), pdfcrop (part of TexLive) is required to rebuild the vignettes.",
+      "SystemRequirementsNote": "'MPFR' (MP Floating-Point Reliable Library, https://www.mpfr.org/) and 'GMP' (GNU Multiple Precision library, https://gmplib.org/), see >> README.md",
+      "Depends": [
+        "gmp (>= 0.6-1)",
+        "R (>= 3.6.0)"
+      ],
+      "Imports": [
+        "stats",
+        "utils",
+        "methods"
+      ],
+      "Suggests": [
+        "DPQmpfr",
+        "MASS",
+        "Bessel",
+        "polynom",
+        "sfsmisc (>= 1.1-14)"
+      ],
+      "SuggestsNote": "MASS, polynom, sfsmisc: only for vignette;",
+      "Enhances": [
+        "dfoptim",
+        "pracma",
+        "DPQ"
+      ],
+      "EnhancesNote": "mentioned in Rd xrefs | used in example",
+      "URL": "https://rmpfr.r-forge.r-project.org/",
+      "BugReports": "https://r-forge.r-project.org/tracker/?group_id=386",
+      "License": "GPL (>= 2)",
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
+      "Author": "Martin Maechler [aut, cre] (ORCID: <https://orcid.org/0000-0002-8685-9910>), Richard M. Heiberger [ctb] (formatHex(), *Bin, *Dec), John C. Nash [ctb] (hjkMpfr(), origin of unirootR()), Hans W. Borchers [ctb] (optimizeR(*, \"GoldenRatio\"); origin of hjkMpfr()), Mikael Jagan [ctb] (safer convert.c, ORCID: <https://orcid.org/0000-0002-3542-2938>)",
+      "Maintainer": "Martin Maechler <maechler@stat.math.ethz.ch>",
+      "Repository": "CRAN"
+    },
     "SQUAREM": {
       "Package": "SQUAREM",
       "Version": "2021.1",
@@ -707,6 +828,27 @@
       "URL": "http://www.econ.uiuc.edu/~roger/research/sparse/sparse.html",
       "NeedsCompilation": "yes",
       "Author": "Roger Koenker [cre, aut], Pin Tian Ng [ctb] (Contributions to Sparse QR code), Yousef Saad [ctb] (author of sparskit2), Ben Shaby [ctb] (author of chol2csr), Martin Maechler [ctb] (chol() tweaks; S4, <https://orcid.org/0000-0002-8685-9910>)",
+      "Repository": "CRAN"
+    },
+    "SuppDists": {
+      "Package": "SuppDists",
+      "Version": "1.1-9.9",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Supplementary Distributions",
+      "Date": "2025-03-23",
+      "Authors@R": "c(person(given = \"Bob\", family = \"Wheeler\",  role = \"aut\"), person(given = \"Thorsten\", family = \"Pohlert\", email = \"thorsten.pohlert@gmx.de\", comment = c(ORCID = \"0000-0003-3855-3025\"), role = c(\"ctb\", \"cre\")) )",
+      "Description": "Ten distributions supplementing those built into R. Inverse Gauss, Kruskal-Wallis, Kendall's Tau, Friedman's chi squared, Spearman's rho, maximum F ratio, the Pearson product moment correlation coefficient, Johnson distributions, normal scores and generalized hypergeometric distributions.",
+      "License": "GPL (>= 2)",
+      "NeedsCompilation": "yes",
+      "Depends": [
+        "R (>= 3.3.0)"
+      ],
+      "Suggests": [
+        "RcppZiggurat"
+      ],
+      "Author": "Bob Wheeler [aut], Thorsten Pohlert [ctb, cre] (<https://orcid.org/0000-0003-3855-3025>)",
+      "Maintainer": "Thorsten Pohlert <thorsten.pohlert@gmx.de>",
       "Repository": "CRAN"
     },
     "TH.data": {
@@ -3082,6 +3224,35 @@
       "Maintainer": "Jennifer Bryan <jenny@posit.co>",
       "Repository": "CRAN"
     },
+    "gmp": {
+      "Package": "gmp",
+      "Version": "0.7-5",
+      "Source": "Repository",
+      "Date": "2024-08-23",
+      "Title": "Multiple Precision Arithmetic",
+      "Authors@R": "c(person(\"Antoine\",\"Lucas\",role = c(\"aut\",\"cre\"), email = \"antoinelucas@gmail.com\", comment = c(ORCID=\"0000-0002-8059-9767\")), person(\"Immanuel\",\"Scholz\", role= \"aut\"), person(\"Rainer\",\"Boehme\", role = \"ctb\", email= \"rb-gmp@reflex-studio.de\"), person(\"Sylvain\",\"Jasson\", role = \"ctb\", email= \"Sylvain.Jasson@inrae.fr\"), person(\"Martin\", \"Maechler\", role = \"ctb\", email=\"maechler@stat.math.ethz.ch\"))",
+      "Maintainer": "Antoine Lucas <antoinelucas@gmail.com>",
+      "Description": "Multiple Precision Arithmetic (big integers and rationals, prime number tests, matrix computation), \"arithmetic without limitations\" using the C library GMP (GNU Multiple Precision Arithmetic).",
+      "Depends": [
+        "R (>= 3.5.0)"
+      ],
+      "Imports": [
+        "methods"
+      ],
+      "Suggests": [
+        "Rmpfr",
+        "MASS",
+        "round"
+      ],
+      "SystemRequirements": "gmp (>= 4.2.3)",
+      "License": "GPL (>= 2)",
+      "BuildResaveData": "no",
+      "LazyDataNote": "not available, as we use data/*.R *and* our classes",
+      "NeedsCompilation": "yes",
+      "URL": "https://forgemia.inra.fr/sylvain.jasson/gmp",
+      "Author": "Antoine Lucas [aut, cre] (<https://orcid.org/0000-0002-8059-9767>), Immanuel Scholz [aut], Rainer Boehme [ctb], Sylvain Jasson [ctb], Martin Maechler [ctb]",
+      "Repository": "CRAN"
+    },
     "gridExtra": {
       "Package": "gridExtra",
       "Version": "2.3",
@@ -3613,6 +3784,30 @@
       "Encoding": "UTF-8",
       "NeedsCompilation": "yes",
       "Author": "Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>), Duncan Temple Lang [ctb], Lloyd Hilaiel [cph] (author of bundled libyajl)",
+      "Repository": "CRAN"
+    },
+    "kSamples": {
+      "Package": "kSamples",
+      "Version": "1.2-10",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "K-Sample Rank Tests and their Combinations",
+      "Date": "2023-10-07",
+      "Authors@R": "c(person(\"Fritz\", \"Scholz\",role=c(\"aut\",\"cre\"),email = \"fscholz@u.washington.edu\"), person(\"Angie\", \"Zhu\", role=c(\"aut\"), email= \"a.zhu.stat@gmail.com\"))",
+      "Author": "Fritz Scholz [aut, cre], Angie Zhu [aut]",
+      "Maintainer": "Fritz Scholz <fscholz@u.washington.edu>",
+      "Depends": [
+        "SuppDists"
+      ],
+      "Imports": [
+        "methods",
+        "graphics",
+        "stats"
+      ],
+      "Description": "Compares k samples using the Anderson-Darling test, Kruskal-Wallis type tests  with different rank score criteria, Steel's multiple comparison test, and the  Jonckheere-Terpstra (JT) test. It computes asymptotic, simulated or (limited) exact  P-values, all valid under randomization, with or without ties, or conditionally  under random sampling from populations, given the observed tie pattern.  Except for  Steel's test and the JT test it also combines these tests across several blocks of  samples.  Also analyzed are 2 x t contingency tables and their blocked combinations  using the Kruskal-Wallis criterion.  Steel's test is inverted to provide simultaneous  confidence bounds for shift parameters.  A plotting function compares tail probabilities obtained under asymptotic approximation with those obtained via simulation or exact  calculations.",
+      "License": "GPL (>= 2)",
+      "LazyLoad": "yes",
+      "NeedsCompilation": "yes",
       "Repository": "CRAN"
     },
     "kableExtra": {
@@ -5165,6 +5360,29 @@
       "Maintainer": "Torsten Hothorn <Torsten.Hothorn@R-project.org>",
       "Repository": "CRAN"
     },
+    "multcompView": {
+      "Package": "multcompView",
+      "Version": "0.1-10",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Visualizations of Paired Comparisons",
+      "Date": "2024-04-04",
+      "Author": "Spencer Graves, Hans-Peter Piepho and Luciano Selzer with help from Sundar Dorai-Raj",
+      "Maintainer": "Luciano Selzer <luciano.selzer@gmail.com>",
+      "Description": "Convert a logical vector or a vector of p-values or a correlation, difference, or distance matrix into a display identifying the pairs for which the differences were not significantly different.  Designed for use in conjunction with the output of functions like TukeyHSD, dist{stats}, simint, simtest, csimint, csimtest{multcomp}, friedmanmc, kruskalmc{pgirmess}.",
+      "License": "GPL",
+      "Imports": [
+        "grid"
+      ],
+      "Suggests": [
+        "multcomp",
+        "pgirmess",
+        "MASS"
+      ],
+      "RoxygenNote": "7.2.3",
+      "NeedsCompilation": "no",
+      "Repository": "CRAN"
+    },
     "munsell": {
       "Package": "munsell",
       "Version": "0.5.1",
@@ -5519,15 +5737,15 @@
         "testthat"
       ],
       "Remotes": "xoopR/set6",
+      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
+      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "param6",
       "RemoteUsername": "xoopR",
       "RemotePkgRef": "xoopR/param6",
       "RemoteRef": "HEAD",
-      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb",
-      "Author": "Raphael Sonabend [aut, cre] (<https://orcid.org/0000-0001-9225-4654>)",
-      "Maintainer": "Raphael Sonabend <raphaelsonabend@gmail.com>"
+      "RemoteSha": "0fa35771276fc05efe007a71bda466ced1e4c5eb"
     },
     "partykit": {
       "Package": "partykit",
@@ -6753,11 +6971,11 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "1.1.5",
+      "Version": "1.1.6",
       "Source": "Repository",
       "Title": "Functions for Base Types and Core R and 'Tidyverse' Features",
       "Description": "A toolbox for working with base types, core R features like the condition system, and core 'Tidyverse' features like tidy evaluation.",
-      "Authors@R": "c( person(\"Lionel\", \"Henry\", ,\"lionel@posit.co\", c(\"aut\", \"cre\")), person(\"Hadley\", \"Wickham\", ,\"hadley@posit.co\", \"aut\"), person(given = \"mikefc\", email = \"mikefc@coolbutuseless.com\",  role = \"cph\",  comment = \"Hash implementation based on Mike's xxhashlite\"), person(given = \"Yann\", family = \"Collet\", role = \"cph\",  comment = \"Author of the embedded xxHash library\"), person(given = \"Posit, PBC\", role = c(\"cph\", \"fnd\")) )",
+      "Authors@R": "c( person(\"Lionel\", \"Henry\", ,\"lionel@posit.co\", c(\"aut\", \"cre\")), person(\"Hadley\", \"Wickham\", ,\"hadley@posit.co\", \"aut\"), person(given = \"mikefc\", email = \"mikefc@coolbutuseless.com\", role = \"cph\", comment = \"Hash implementation based on Mike's xxhashlite\"), person(given = \"Yann\", family = \"Collet\", role = \"cph\", comment = \"Author of the embedded xxHash library\"), person(given = \"Posit, PBC\", role = c(\"cph\", \"fnd\")) )",
       "License": "MIT + file LICENSE",
       "ByteCompile": "true",
       "Biarch": "true",
@@ -6771,15 +6989,17 @@
         "cli (>= 3.1.0)",
         "covr",
         "crayon",
+        "desc",
         "fs",
         "glue",
         "knitr",
         "magrittr",
         "methods",
         "pillar",
+        "pkgload",
         "rmarkdown",
         "stats",
-        "testthat (>= 3.0.0)",
+        "testthat (>= 3.2.0)",
         "tibble",
         "usethis",
         "vctrs (>= 0.2.3)",
@@ -6792,6 +7012,7 @@
       "RoxygenNote": "7.3.2",
       "URL": "https://rlang.r-lib.org, https://github.com/r-lib/rlang",
       "BugReports": "https://github.com/r-lib/rlang/issues",
+      "Config/build/compilation-database": "true",
       "Config/testthat/edition": "3",
       "Config/Needs/website": "dplyr, tidyverse/tidytemplate",
       "NeedsCompilation": "yes",
