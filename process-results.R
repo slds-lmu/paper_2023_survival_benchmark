@@ -137,7 +137,7 @@ cli::cli_h2("Combining results")
 
 # Combine by tuning measure first
 for (tune_measure in tune_measures) {
-  cli_progress_step("Combining results for {.val {tune_measure}}")
+  cli::cli_progress_step("Combining results for {.val {tune_measure}}")
 
   # Try to find score files expected given the current learner/measure combination
   current_learners = learner_measure_tab[measure == tune_measure, learner_id]
@@ -178,6 +178,34 @@ for (tune_measure in tune_measures) {
   }) |>
     data.table::rbindlist(fill = TRUE)
 
+  # Need to manually aggregate again because due to repeated recreation of jobs the "normal" aggregation created multiple entries
+  # likely due to changing learner hashes or so. Doesn't affect results, just annoying housekeeping.
+  if (nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) > 0) {
+    # Sum up errors, warnings, iters to get the correct totals
+    aggr_errwrns_tmp = aggr[,
+      .(
+        iters = sum(iters),
+        warnings = sum(warnings),
+        errors = sum(errors)
+      ),
+      by = .(learner_id, task_id, tune_measure)
+    ]
+
+    # Columns with scores vary based on tuning measure, so we detect them manually
+    measure_columns = mlr3misc::keep(colnames(aggr), colnames(aggr) %in% msr_tbl$id)
+
+    # Average the scores... again. At this point we might as well not $aggregate() at all and just do this directly.
+    aggr_scores_tmp = aggr[,
+      lapply(.SD, mean),
+      by = .(learner_id, task_id, tune_measure),
+      .SDcols = measure_columns
+    ]
+
+    aggr = aggr_scores_tmp[aggr_errwrns_tmp, on = .(learner_id, task_id, tune_measure)]
+
+    stopifnot(nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) == 0)
+  }
+
   save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
   cli::cli_progress_done()
 }
@@ -203,15 +231,22 @@ save_obj(scores, "scores")
 # We need to get the aggrs for the untuned learners with tune_measure == "harrell_c,isbs"
 # and add them to the variants for each tuning measures, hence the grep'ing
 
-cols_harrell_c = c("task_id", "learner_id", msr_tbl[type == "Discrimination", id])
-cols_isbs = c("task_id", "learner_id", msr_tbl[type != "Discrimination", id])
+cols_bma = c("learner_id", "task_id", msr_tbl$id)
 
-bma_harrell_c = aggr[grepl(pattern = "harrell_c", x = tune_measure), cols_harrell_c, with = FALSE]
+bma_harrell_c = aggr[
+  grepl(pattern = "harrell_c", x = tune_measure),
+  .SD,
+  .SDcols = cols_bma
+]
 bma_harrell_c[, task_id := factor(task_id)]
 bma_harrell_c[, learner_id := factor(learner_id)]
 bma_harrell_c = mlr3benchmark::as_benchmark_aggr(bma_harrell_c)
 
-bma_isbs = aggr[grepl(pattern = "isbs", x = tune_measure), cols_isbs, with = FALSE]
+bma_isbs = aggr[
+  grepl(pattern = "isbs", x = tune_measure),
+  .SD,
+  .SDcols = cols_bma
+]
 bma_isbs[, task_id := factor(task_id)]
 bma_isbs[, learner_id := factor(learner_id)]
 bma_isbs = mlr3benchmark::as_benchmark_aggr(bma_isbs)
@@ -222,17 +257,21 @@ save_obj(bma_isbs, "bma", suffix = "isbs")
 # Reassembling tuning archives ----------------------------------------------------------------
 cli::cli_h2("Processing tuning archives")
 
+clean_duplicate_archives(conf = conf)
+
 # Archives with logs are very large objects of questionable utility, version without logs should suffice
 if (!fs::file_exists(fs::path(conf$result_path, "archives.rds"))) {
   cli::cli_progress_step("Reassembling tuning archives including logs")
   archives = reassemble_archives(conf, keep_logs = TRUE)
   # Note ressamble_archives() writes archives.rds to result dir already
 }
+# access log example
+# archives[learner_id == "SSVM" & iter_hash == "faf1d90edd562b565254b83b80eae530", archive][[1]][errors > 0, log]
 
-# if (!fs::file_exists(fs::path(conf$result_path, "archives_without-logs.rds"))) {
-#   cli::cli_progress_step("Reassembling tuning archives without logs")
-#   archives_without_logs = reassemble_archives(conf, keep_logs = FALSE)
-# }
+if (!fs::file_exists(fs::path(conf$result_path, "archives_without-logs.rds"))) {
+  cli::cli_progress_step("Reassembling tuning archives without logs")
+  archives_without_logs = reassemble_archives(conf, keep_logs = FALSE)
+}
 
 # Create zipped collection of tuning archive CSVs
 if (!fs::file_exists(fs::path(conf$result_path, "archives.zip"))) {

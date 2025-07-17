@@ -351,10 +351,24 @@ reassemble_archives = function(
   learners = learners[, c("id", "base_id")]
   names(learners) = c("learner_id", "base_id")
 
-  pb = cli::cli_progress_bar("Reading tuning archives", total = length(tuning_files))
+  cli::cli_h3("Reading tuning archives")
+  .pb = new.env()
+  cli::cli_progress_bar("Reading archives from disk", .envir = .pb)
   archives = data.table::rbindlist(lapply(tuning_files, \(file) {
-    cli::cli_progress_update(id = pb)
-    archive = readRDS(file)
+    # cli::cli_progress_step(msg = "{.file {file}}")
+    cli::cli_progress_update(.envir = .pb)
+    archive <- tryCatch(
+      {
+        readRDS(file)
+      },
+      error = function(e) {
+        cli::cli_warn("Error reading {.file {file}}: {.val {e$message}}")
+        NULL
+      }
+    )
+    if (is.null(archive)) {
+      return()
+    }
 
     # Since we keep track of the tuning measure as a separate variable,
     # it's easier to rename the score variale to later rbind the tuning archives (I think)
@@ -384,7 +398,7 @@ reassemble_archives = function(
       errors_sum = sum(archive$errors)
     )
   }))
-  cli::cli_progress_done(id = pb)
+  cli::cli_progress_done(.envir = .pb)
 
   archives = archives[learners, on = "base_id"]
   archives[, base_id := NULL]
@@ -465,7 +479,7 @@ convert_archives_csv = function(conf = config::get(), verbose = FALSE) {
 #' Removing duplicate tuning archives
 #'
 #' When jobs are resubmitted, the previous tuning archive is not removed automatically,
-#' so the associated timestamp is used to identify the older archive and move it to
+#' so the associated time_epoch is used to identify the older archive and move it to
 #' a backup location.
 #' @param conf `config::get()`
 #' @param tmp_path `here::here("tmp", "archive-backup")`.
@@ -478,25 +492,53 @@ clean_duplicate_archives = function(
 ) {
   ensure_directory(tmp_path)
 
-  archives = reassemble_archives(conf, keep_logs = FALSE)
+  archive_dir = fs::path(conf$reg_dir, "tuning_archives")
+  tuning_files = fs::dir_ls(archive_dir)
 
-  counts = archives[, .(n = .N), by = .(tuning_measure, task_id, learner_id, iter_hash)]
-
-  archives = archives[counts, on = .(tuning_measure, task_id, learner_id, iter_hash)]
-  archives = archives[n > 1, ]
-
-  if (nrow(archives) > 0) {
-    dupes = archives |>
-      dplyr::group_by(tuning_measure, task_id, learner_id, iter_hash) |>
-      dplyr::filter(time_epoch == min(time_epoch))
-
-    cli::cli_alert_info("There are {nrow(dupes)} duplicates")
-    cli::cli_alert_danger("Moving files to {.path fs::path_rel(tmp_path)}")
-
-    fs::file_move(dupes$file, tmp_path)
-  } else {
-    cli::cli_alert_info("Found no duplicate archives")
+  if (length(tuning_files) == 0) {
+    cli::cli_abort("No tuning archives found in {.file {fs::path_rel(archive_dir)}}!")
   }
+
+  archive_meta = data.table(file = tuning_files)
+  archive_meta[,
+    c("tuning_measure", "learner_base_id", "task_id", "iter_hash", "time_epoch") := {
+      fs::path_file(file) |>
+        fs::path_ext_remove() |>
+        stringr::str_split_fixed("__", n = 5) |>
+        as.data.table()
+    }
+  ]
+
+  # Sort such that earlier time_epoch appears later, e.g. first entry is always the most recent one per group
+  # archive_meta = archive_meta[order(tuning_measure, learner_base_id, task_id, iter_hash, -time_epoch)]
+  setorder(archive_meta, tuning_measure, learner_base_id, task_id, iter_hash, -time_epoch)
+
+  # archive_meta[tuning_measure == "harrell_c" & learner_base_id == "xgb_cox" & task_id == "whas"]
+  # archive_meta[
+  #   tuning_measure == "isbs" &
+  #     learner_base_id == "xgb_cox" &
+  #     task_id == "colrec" &
+  #     iter_hash == "05b206f8c40e076e41a63aec61e6e974"
+  # ]
+
+  archive_meta[, counter := rowid(tuning_measure, learner_base_id, task_id, iter_hash)]
+  n_duplicates = nrow(archive_meta[counter > 1])
+
+  if (n_duplicates == 0) {
+    cli::cli_alert_success(
+      "Found no duplicate archives across {.val tuning_measure}{.val learner_base_id}{.val task_id}{.val iter_hash}"
+    )
+    return(TRUE)
+  }
+  cli::cli_inform(c(
+    i = "Found {.val {n_duplicates}} duplicate archives total across {.val tuning_measure}, {.val learner_base_id}, {.val task_id}, {.val iter_hash}",
+    "!" = "Keeping most recent archives only, moving duplicates to {.file {tmp_path}}"
+  ))
+
+  archive_meta[tuning_measure == "isbs" & learner_base_id == "xgb_cox" & task_id == "colrec"]
+
+  files_to_move = archive_meta[counter > 1, file]
+  fs::file_move(files_to_move, tmp_path)
 
   cli::cli_alert_success("Done!")
 }
