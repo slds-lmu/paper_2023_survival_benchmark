@@ -133,6 +133,7 @@ for (tune_measure in tune_measures) {
 }
 
 
+# Combining results ------------------------------------------------------
 cli::cli_h2("Combining results")
 
 # Combine by tuning measure first
@@ -148,7 +149,6 @@ for (tune_measure in tune_measures) {
     cli::cli_alert_danger("No score files for {.val {tune_measure}}, skipping")
     next
   }
-
   # fill = TRUE should not be necessary but is added for safety
   scores = lapply(score_files, \(x) {
     # We keep the Prediction and Resampling object in the individual files just in case,
@@ -205,6 +205,14 @@ for (tune_measure in tune_measures) {
 
     stopifnot(nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) == 0)
   }
+  # NaNs appeared for isbs, isbs_erv when tuned on harrell_c for learners that can't be evaluated with ISBS
+  # we replace them with NA to ignore them.
+  # since statistical testing only happens for cases where tuning measure == eval measure, this
+  # only affects boxplots and tables.
+  if (anyNA(aggr)) {
+    aggr[, isbs := fifelse(is.finite(isbs), yes = isbs, no = NA_real_)]
+    aggr[, isbs_erv := fifelse(is.finite(isbs_erv), yes = isbs_erv, no = NA_real_)]
+  }
 
   save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
   cli::cli_progress_done()
@@ -216,6 +224,7 @@ aggr = fs::path(conf$result_path, glue::glue("aggr_combined_{tune_measures}.rds"
   lapply(readRDS) |>
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
+
 
 scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
   purrr::keep(fs::file_exists) |>

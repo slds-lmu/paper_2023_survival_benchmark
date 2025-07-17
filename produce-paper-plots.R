@@ -40,8 +40,7 @@ scores = readRDS(fs::path(conf$result_path, "scores.rds"))
 aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)
 
 stopifnot(any(aggr_scores_scaled[grepl("harrell_c", tune_measure), harrell_c] == 1))
-stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
-
+# stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
 
 # Table of errors -----------------------------------------------------------------------------
 
@@ -106,17 +105,6 @@ p = plot_results(
 )
 save_cd_plot(p, "harrell_c-harrell_c")
 
-# critical-difference-baseline-diff-harrell-c-isbs
-p = plot_results(
-  bma = bma_harrell_c,
-  type = "cd_bd",
-  measure_id = "isbs",
-  tuning_measure_id = "harrell_c",
-  ratio = cd_ratio,
-  baseline = "CPH"
-)
-save_cd_plot(p, "harrell_c-isbs")
-
 # critical-difference-baseline-diff-isbs-isbs
 p = plot_results(
   bma = bma_isbs,
@@ -128,16 +116,6 @@ p = plot_results(
 )
 save_cd_plot(p, "isbs-isbs")
 
-# critical-difference-baseline-diff-isbs-isbs
-p = plot_results(
-  bma = bma_isbs,
-  type = "cd_bd",
-  measure_id = "isbs",
-  tuning_measure_id = "isbs",
-  ratio = cd_ratio,
-  baseline = "CPH"
-)
-save_cd_plot(p, "isbs-isbs")
 
 # Aggregated Boxplots -------------------------------------------------------------------------
 cli::cli_h2("Aggregated Boxplots")

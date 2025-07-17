@@ -55,7 +55,7 @@ if (FALSE) {
   library("pseudo")
   library("DiceKriging")
   library("rgenoud")
-  library("actuar") # For surv.parametric
+  library("actuar")
 
   library("mlr3batchmark") # on CRAN now with v0.1.0
   library("distr6")
@@ -63,6 +63,7 @@ if (FALSE) {
   library("mlr3extralearners")
   library("CoxBoost")
   library("survivalmodels")
+  library("PMCMRplus") # mlr3benchmark post hoc friedman
 
   library("callr")
   require("config")
@@ -72,5 +73,4 @@ if (FALSE) {
   library("simPH")
   library("smcure")
   library("dynpred")
-
 }

@@ -761,7 +761,8 @@ plot_aggr_scores = function(
 
   this_df = data.table::copy(xdf) |>
     dplyr::filter(.data$tune_measure == .env$tuning_measure_id) |>
-    dplyr::filter(!is.na(.data[[eval_measure_id]]))
+    dplyr::filter(!is.na(.data[[eval_measure_id]])) |>
+    dplyr::filter(is.finite(.data[[eval_measure_id]]))
 
   if (nrow(this_df) == 0) {
     cli::cli_abort(
