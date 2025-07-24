@@ -50,7 +50,10 @@ print(getStatus())
 
 tune_measures = unique(tab$measure)
 learners = unique(tab$learner_id)
+# Learners available for each tuning measure
 learner_measure_tab = unique(tab[, .(measure, learner_id)])
+# Learner table that also lists which learner can to survival prediction
+lrntab = load_lrntab()
 
 # For runtime estimate runs we only score using the tuning measures
 if (config::is_active("runtime")) {
@@ -118,6 +121,7 @@ for (tune_measure in tune_measures) {
     scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
 
     cli::cli_progress_step("Aggregating results")
+
     aggr <- bmr$aggregate(measures, conditions = TRUE)
     aggr[, tune_measure := ..tune_measure]
     aggr[, resampling_id := NULL]
@@ -164,6 +168,13 @@ for (tune_measure in tune_measures) {
   }) |>
     data.table::rbindlist(fill = TRUE)
 
+  # Ugly workaround for learners like RRT which we can't evaluated on ISBS, avoids NaN values
+
+  # cli::cli_inform("Resetting ISBS scores for {.val {learner}}")
+  scores[learner %in% lrntab$id[!lrntab$surv_pred], isbs := NA_real_]
+  scores[learner %in% lrntab$id[!lrntab$surv_pred], isbs_erv := NA_real_]
+  # scores[learner_id == "RRT"]
+
   save_obj(scores, name = "scores_combined", suffix = tune_measure)
 
   aggr_files = fs::path(conf$result_path, glue::glue("aggr_{tune_measure}_{current_learners}.rds"))
@@ -177,6 +188,11 @@ for (tune_measure in tune_measures) {
     this_aggr
   }) |>
     data.table::rbindlist(fill = TRUE)
+
+  # Same workaround as for scores
+  aggr[learner %in% lrntab$id[!lrntab$surv_pred], isbs := NA_real_]
+  aggr[learner %in% lrntab$id[!lrntab$surv_pred], isbs_erv := NA_real_]
+  # aggr[learner_id == "RRT"]
 
   # Need to manually aggregate again because due to repeated recreation of jobs the "normal" aggregation created multiple entries
   # likely due to changing learner hashes or so. Doesn't affect results, just annoying housekeeping.
@@ -224,7 +240,6 @@ aggr = fs::path(conf$result_path, glue::glue("aggr_combined_{tune_measures}.rds"
   lapply(readRDS) |>
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
-
 
 scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
   purrr::keep(fs::file_exists) |>
