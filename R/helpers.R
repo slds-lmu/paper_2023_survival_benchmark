@@ -206,26 +206,26 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
   ensure_directory(path)
 
   lrntab <- mlr3misc::rowwise_table(
-    ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale,
-    "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "NEL"     , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,
-    "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
-    "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,
-    "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "RAN"     , "ranger"     , "surv.ranger"       , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "CIF"     , "cforest"    , "surv.cforest"      , 5 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "ORSF"    , "aorsf"      , "surv.aorsf"        , 2 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "RRT"     , "rpart"      , "surv.rpart"        , 1 ,    FALSE , FALSE ,        TRUE,  FALSE,
-    "MBSTCox" , "mboost_cox" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "MBSTAFT" , "mboost_aft" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,
-    "CoxB"    , "coxboost"   , "surv.cv_coxboost"  , 0 ,    TRUE  , TRUE  ,        FALSE, FALSE,
-    "XGBCox"  , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,
-    "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,
-    "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE
+    ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale, ~surv_pred,
+    "KM"      , "kaplan"     , "surv.kaplan"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "NEL"     , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
+    "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
+    "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
+    "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "RAN"     , "ranger"     , "surv.ranger"       , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "CIF"     , "cforest"    , "surv.cforest"      , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "ORSF"    , "aorsf"      , "surv.aorsf"        , 2 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "RRT"     , "rpart"      , "surv.rpart"        , 1 ,    FALSE , FALSE ,        TRUE,  FALSE,   FALSE,
+    "MBSTCox" , "mboost_cox" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "MBSTAFT" , "mboost_aft" , "surv.mboost"       , 4 ,    FALSE , FALSE ,        FALSE, FALSE,   FALSE,
+    "CoxB"    , "coxboost"   , "surv.cv_coxboost"  , 0 ,    TRUE  , TRUE  ,        FALSE, FALSE,   TRUE,
+    "XGBCox"  , "xgb_cox"    , "surv.xgboost.cox"  , 5 ,    TRUE  , FALSE ,        FALSE, FALSE,   TRUE,
+    "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,   FALSE,
+    "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE,    FALSE
   )
 
   lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
