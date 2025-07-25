@@ -121,15 +121,6 @@ for (tune_measure in tune_measures) {
     scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
     save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
 
-    # cli::cli_progress_step("Aggregating results")
-
-    # aggr <- bmr$aggregate(measures, conditions = TRUE)
-    # aggr[, tune_measure := ..tune_measure]
-    # aggr[, resampling_id := NULL]
-
-    # cli::cli_progress_step("Saving to disk: scores, aggr")
-    # save_obj(aggr, name = "aggr", suffix = c(tune_measure, learner))
-
     rm(bmr, scores)
     gc(reset = TRUE)
     cli::cli_progress_done()
