@@ -72,8 +72,8 @@ for (tune_measure in tune_measures) {
     tune_measure,
     # Untuned and self-tuned learners are evaluated with everything
     "harrell_c,isbs" = msr_tbl[, measure],
-    # C-index tuned learners are evaluated with Harrel's and Uno's C and also ISBS
-    "harrell_c" = msr_tbl[type == "Discrimination" | id %in% c("isbs", "isbs_erv"), measure],
+    # C-index tuned learners are evaluated with Harrel's and Uno's C
+    "harrell_c" = msr_tbl[type == "Discrimination", measure],
     # For ISBS-tuned we use everything but C-indices
     "isbs" = msr_tbl[type != "Discrimination", measure]
   )
@@ -119,18 +119,18 @@ for (tune_measure in tune_measures) {
     # Count errors and warnings (either empty list = 0 or list of error messages), but preserve originals just in case
     scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
     scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
-
-    cli::cli_progress_step("Aggregating results")
-
-    aggr <- bmr$aggregate(measures, conditions = TRUE)
-    aggr[, tune_measure := ..tune_measure]
-    aggr[, resampling_id := NULL]
-
-    cli::cli_progress_step("Saving to disk: scores, aggr")
     save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
-    save_obj(aggr, name = "aggr", suffix = c(tune_measure, learner))
 
-    rm(bmr, scores, aggr)
+    # cli::cli_progress_step("Aggregating results")
+
+    # aggr <- bmr$aggregate(measures, conditions = TRUE)
+    # aggr[, tune_measure := ..tune_measure]
+    # aggr[, resampling_id := NULL]
+
+    # cli::cli_progress_step("Saving to disk: scores, aggr")
+    # save_obj(aggr, name = "aggr", suffix = c(tune_measure, learner))
+
+    rm(bmr, scores)
     gc(reset = TRUE)
     cli::cli_progress_done()
   }
@@ -168,78 +168,26 @@ for (tune_measure in tune_measures) {
   }) |>
     data.table::rbindlist(fill = TRUE)
 
-  # Ugly workaround for learners like RRT which we can't evaluated on ISBS, avoids NaN values
-
-  # cli::cli_inform("Resetting ISBS scores for {.val {learner}}")
-  scores[learner %in% lrntab$id[!lrntab$surv_pred], isbs := NA_real_]
-  scores[learner %in% lrntab$id[!lrntab$surv_pred], isbs_erv := NA_real_]
-  # scores[learner_id == "RRT"]
-
   save_obj(scores, name = "scores_combined", suffix = tune_measure)
 
-  aggr_files = fs::path(conf$result_path, glue::glue("aggr_{tune_measure}_{current_learners}.rds"))
-  aggr_files = mlr3misc::keep(aggr_files, fs::file_exists)
+  cli::cli_progress_step("Creating aggregates results from scores for {.val {tune_measure}}")
 
-  aggr = lapply(aggr_files, \(x) {
-    # Same idea as above - resample_result contains Prediction objects, roughly 1GB
-    # in one case checked via pryr::object_size.
-    this_aggr = readRDS(x)
-    this_aggr[, resample_result := NULL]
-    this_aggr
-  }) |>
-    data.table::rbindlist(fill = TRUE)
+  aggr = scores_to_aggr(scores, msr_tbl)
 
-  # Same workaround as for scores
-  aggr[learner %in% lrntab$id[!lrntab$surv_pred], isbs := NA_real_]
-  aggr[learner %in% lrntab$id[!lrntab$surv_pred], isbs_erv := NA_real_]
-  # aggr[learner_id == "RRT"]
+  stopifnot(nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) == 0)
 
-  # Need to manually aggregate again because due to repeated recreation of jobs the "normal" aggregation created multiple entries
-  # likely due to changing learner hashes or so. Doesn't affect results, just annoying housekeeping.
-  if (nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) > 0) {
-    # Sum up errors, warnings, iters to get the correct totals
-    aggr_errwrns_tmp = aggr[,
-      .(
-        iters = sum(iters),
-        warnings = sum(warnings),
-        errors = sum(errors)
-      ),
-      by = .(learner_id, task_id, tune_measure)
-    ]
-
-    # Columns with scores vary based on tuning measure, so we detect them manually
-    measure_columns = mlr3misc::keep(colnames(aggr), colnames(aggr) %in% msr_tbl$id)
-
-    # Average the scores... again. At this point we might as well not $aggregate() at all and just do this directly.
-    aggr_scores_tmp = aggr[,
-      lapply(.SD, mean),
-      by = .(learner_id, task_id, tune_measure),
-      .SDcols = measure_columns
-    ]
-
-    aggr = aggr_scores_tmp[aggr_errwrns_tmp, on = .(learner_id, task_id, tune_measure)]
-
-    stopifnot(nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) == 0)
-  }
-  # NaNs appeared for isbs, isbs_erv when tuned on harrell_c for learners that can't be evaluated with ISBS
-  # we replace them with NA to ignore them.
-  # since statistical testing only happens for cases where tuning measure == eval measure, this
-  # only affects boxplots and tables.
-  if (anyNA(aggr)) {
-    aggr[, isbs := fifelse(is.finite(isbs), yes = isbs, no = NA_real_)]
-    aggr[, isbs_erv := fifelse(is.finite(isbs_erv), yes = isbs_erv, no = NA_real_)]
-  }
-
-  save_obj(aggr, name = "aggr_combined", suffix = tune_measure)
+  save_obj(aggr, name = "aggr_", suffix = tune_measure)
   cli::cli_progress_done()
 }
 
 # Combining for all tuning measures
-aggr = fs::path(conf$result_path, glue::glue("aggr_combined_{tune_measures}.rds")) |>
+aggr = fs::path(conf$result_path, glue::glue("aggr_{tune_measures}.rds")) |>
   purrr::keep(fs::file_exists) |>
   lapply(readRDS) |>
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
+
+save_obj(aggr, "aggr")
 
 scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
   purrr::keep(fs::file_exists) |>
@@ -247,7 +195,6 @@ scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.
   data.table::rbindlist(fill = TRUE) |>
   add_learner_groups()
 
-save_obj(aggr, "aggr")
 save_obj(scores, "scores")
 
 # Creating bma objects --------------------------------------------------------------
@@ -269,7 +216,7 @@ bma_harrell_c = mlr3benchmark::as_benchmark_aggr(bma_harrell_c)
 bma_isbs = aggr[
   grepl(pattern = "isbs", x = tune_measure),
   .SD,
-  .SDcols = cols_bma
+  .SDcols = cols_bma[cols_bma %in% colnames(aggr)]
 ]
 bma_isbs[, task_id := factor(task_id)]
 bma_isbs[, learner_id := factor(learner_id)]
