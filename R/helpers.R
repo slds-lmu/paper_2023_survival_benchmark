@@ -263,8 +263,8 @@ get_measures_eval = function() {
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
 
     # Removed RISLL -> added ISLL
-    msr("surv.intlogloss",  id = "isll",     ERV = FALSE, proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL)"),
-    msr("surv.intlogloss",  id = "isll_erv", ERV = TRUE,  proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL) [ERV]"),
+    msr("surv.intlogloss",  id = "isll",     p_max = 0.8, ERV = FALSE, proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL)"),
+    msr("surv.intlogloss",  id = "isll_erv", p_max = 0.8, ERV = TRUE,  proper = FALSE, label = "Integrated Survival Log-Likelihood (ISLL) [ERV]"),
 
     msr("surv.brier",       id = "isbs",     p_max = 0.8, proper = FALSE,  ERV = FALSE, label = "Integrated Survival Brier Score (ISBS)"),
     msr("surv.brier",       id = "isbs_erv", p_max = 0.8, proper = FALSE,  ERV = TRUE,  label = "Integrated Survival Brier Score (ISBS) [ERV]"),
@@ -945,6 +945,11 @@ scale_score = function(score_learner, score_baseline, score_best, lower_is_bette
     )
   }
 
+  # Manual fixing for scores with NaN, Inf
+  res[denom == 0] <- 0
+  res[!is.finite(res)] <- NA_real_
+  res[res < 0] <- 0
+  res[res > 1] <- 1
   res
 }
 
@@ -1008,6 +1013,39 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
   }
 
   aggr_scores_scaled
+}
+
+
+#' Convert scores to aggregated result
+#' From one score per learner/task/outer resampling/tuning measure
+#' to
+#' learner/task/tuning measure
+#' The result also serves the basis for the bma object used with mlr3benchmark
+#' @param scores A data.table as produced by `bmr$score()`, including a `tune_measure` column (see `process-results.R`)
+#' @param msr_tbl Table of measures used to identify relevant columns, see `measures_tbl()`
+#'
+scores_to_aggr = function(scores, msr_tbl) {
+  # Sum up errors, warnings, iters to get the correct totals
+  aggr_errwrns_tmp = scores[,
+    .(
+      iters = max(iteration),
+      warnings_cnt = sum(warnings_cnt),
+      errors_cnt = sum(errors_cnt)
+    ),
+    by = .(learner_id, task_id, tune_measure)
+  ]
+
+  # Columns with scores vary based on tuning measure, so we detect them manually
+  measure_columns = mlr3misc::keep(colnames(scores), colnames(scores) %in% msr_tbl$id)
+
+  # Average the scores... again. At this point we might as well not $aggregate() at all and just do this directly.
+  aggr_scores_tmp = scores[,
+    lapply(.SD, mean, na.rm = TRUE),
+    by = .(learner_id, task_id, tune_measure),
+    .SDcols = measure_columns
+  ]
+
+  aggr_scores_tmp[aggr_errwrns_tmp, on = .(learner_id, task_id, tune_measure)][]
 }
 
 # Utilities for job management ----------------------------------------------------------------
