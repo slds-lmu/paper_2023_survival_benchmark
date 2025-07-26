@@ -729,7 +729,9 @@ plot_results = function(
         axis.text.y = element_text(angle = 0)
       )
   }
-
+  if (interactive()) {
+    print(p)
+  }
   p
 }
 
