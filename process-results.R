@@ -85,46 +85,52 @@ for (tune_measure in tune_measures) {
 
   cli::cli_alert_info("Using eval measures {.val {mlr3misc::ids(measures)}}")
 
-  for (learner in learners) {
-    cli::cli_h3("Processing results for {.val {learner}}")
+  future::plan("multisession", workers = 4)
 
-    # Assemble relevant job.ids
-    ids_all = tab[learner_id == learner & measure == tune_measure, ]
-    ids = ijoin(findDone(), ids_all)
+  future.apply::future_lapply(
+    learners,
+    \(learner) {
+      # for (learner in learners) {
+      # Assemble relevant job.ids
+      ids_all = tab[learner_id == learner & measure == tune_measure, ]
+      ids = ijoin(findDone(), ids_all)
 
-    # skip if there's no completed jobs
-    if (nrow(ids) == 0) {
-      next
-    } else {
-      cli::cli_h3("Processing results for {.val {learner}}")
-      cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
-    }
+      # skip if there's no completed jobs
+      if (nrow(ids) == 0) {
+        next
+      } else {
+        cli::cli_h3("Processing results for {.val {learner}}")
+        cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
+      }
 
-    cli::cli_progress_step("Reducing results")
-    # Disabling the progress bar for speedup with many jobs
-    options(batchtools.progress = FALSE)
-    bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE)
-    options(batchtools.progress = TRUE)
+      cli::cli_progress_step("Reducing results")
+      # Disabling the progress bar for speedup with many jobs
+      options(batchtools.progress = FALSE)
+      bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE)
+      options(batchtools.progress = TRUE)
 
-    cli::cli_progress_step("Scoring results")
-    scores <- bmr$score(measures, conditions = TRUE)
-    # scores <- as.data.table(scores)
-    scores[, task := NULL]
-    scores[, learner := NULL]
-    # scores[, resampling := NULL]
-    # scores[, resampling_id := NULL]
-    # scores[, uhash := NULL]
+      cli::cli_progress_step("Scoring results")
+      scores <- bmr$score(measures, conditions = TRUE)
+      # scores <- as.data.table(scores)
+      scores[, task := NULL]
+      scores[, learner := NULL]
+      # scores[, resampling := NULL]
+      # scores[, resampling_id := NULL]
+      # scores[, uhash := NULL]
 
-    scores[, tune_measure := ..tune_measure]
-    # Count errors and warnings (either empty list = 0 or list of error messages), but preserve originals just in case
-    scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
-    scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
-    save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
+      scores[, tune_measure := ..tune_measure]
+      # Count errors and warnings (either empty list = 0 or list of error messages), but preserve originals just in case
+      scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
+      scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
+      save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
 
-    rm(bmr, scores)
-    gc(reset = TRUE)
-    cli::cli_progress_done()
-  }
+      # rm(bmr, scores)
+      # gc(reset = TRUE)
+      cli::cli_progress_done()
+      invisible(TRUE)
+    },
+    future.seed = TRUE
+  )
 }
 
 
@@ -167,7 +173,7 @@ for (tune_measure in tune_measures) {
 
   stopifnot(nrow(aggr[, .N, by = .(learner_id, task_id, tune_measure)][N > 1]) == 0)
 
-  save_obj(aggr, name = "aggr_", suffix = tune_measure)
+  save_obj(aggr, name = "aggr", suffix = tune_measure)
   cli::cli_progress_done()
 }
 
@@ -193,12 +199,13 @@ save_obj(scores, "scores")
 # We need to get the aggrs for the untuned learners with tune_measure == "harrell_c,isbs"
 # and add them to the variants for each tuning measures, hence the grep'ing
 
-cols_bma = c("learner_id", "task_id", msr_tbl$id)
+cols_bma_harrell_c = c("learner_id", "task_id", msr_tbl[type == "Discrimination", id])
+cols_bma_isbs = c("learner_id", "task_id", msr_tbl[type != "Discrimination", id])
 
 bma_harrell_c = aggr[
   grepl(pattern = "harrell_c", x = tune_measure),
   .SD,
-  .SDcols = cols_bma
+  .SDcols = cols_bma_harrell_c
 ]
 bma_harrell_c[, task_id := factor(task_id)]
 bma_harrell_c[, learner_id := factor(learner_id)]
@@ -207,7 +214,7 @@ bma_harrell_c = mlr3benchmark::as_benchmark_aggr(bma_harrell_c)
 bma_isbs = aggr[
   grepl(pattern = "isbs", x = tune_measure),
   .SD,
-  .SDcols = cols_bma[cols_bma %in% colnames(aggr)]
+  .SDcols = cols_bma_isbs
 ]
 bma_isbs[, task_id := factor(task_id)]
 bma_isbs[, learner_id := factor(learner_id)]
