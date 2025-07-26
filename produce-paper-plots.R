@@ -20,14 +20,9 @@ library(data.table)
 # Load results --------------------------------------------------------------------------------
 plot_path = here::here("results_paper")
 stopifnot(ensure_directory(plot_path))
-
+lrntab = load_lrntab()
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
-
-# Sanity check print
-# msr_tbl[!(erv)]
-# msr_tbl[(erv)]
-
 # bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(conf$result_path, "bma_harrell_c.rds"))
 bma_isbs = readRDS(fs::path(conf$result_path, "bma_isbs.rds"))
@@ -36,11 +31,14 @@ bma_isbs = readRDS(fs::path(conf$result_path, "bma_isbs.rds"))
 aggr_scores = readRDS(fs::path(conf$result_path, "aggr.rds"))
 scores = readRDS(fs::path(conf$result_path, "scores.rds"))
 
+aggr_scores[, learner_id := factor(learner_id, lrntab$id)]
+scores[, learner_id := factor(learner_id, lrntab$id)]
+
 # Create the scaled version of aggregated scores where KM is 0 and best model is 1
 aggr_scores_scaled = rescale_aggr_scores(aggr_scores, msr_tbl)
 
 stopifnot(any(aggr_scores_scaled[grepl("harrell_c", tune_measure), harrell_c] == 1))
-# stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
+stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
 
 # Table of errors -----------------------------------------------------------------------------
 
@@ -103,7 +101,7 @@ p = plot_results(
   ratio = cd_ratio,
   baseline = "CPH"
 )
-save_cd_plot(p, "harrell_c-harrell_c")
+save_cd_plot(p, "harrell_c")
 
 # critical-difference-baseline-diff-isbs-isbs
 p = plot_results(
@@ -114,10 +112,9 @@ p = plot_results(
   ratio = cd_ratio,
   baseline = "CPH"
 )
-save_cd_plot(p, "isbs-isbs")
+save_cd_plot(p, "isbs")
 
 
-# Aggregated Boxplots -------------------------------------------------------------------------
 cli::cli_h2("Aggregated Boxplots")
 
 save_boxplot_plot = function(p, eval_measure_id, tuning_measure_id, tag = "score", width = 8.25, height = 6) {
@@ -139,8 +136,11 @@ save_boxplot_plot = function(p, eval_measure_id, tuning_measure_id, tag = "score
   )
 }
 
+
+# Harrell's C Boxplots ---------------------------------------------------
 # Harrell's C, raw scores
-for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
+
+for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
   p = plot_aggr_scores(
     aggr_scores,
     type = "box",
@@ -156,7 +156,7 @@ for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]
 
 # aggr-boxplot-harrell-c-scaled
 
-for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
+for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
   p = plot_aggr_scores(
     aggr_scores_scaled,
     type = "box",
@@ -174,7 +174,8 @@ for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]
 }
 
 
-#### ISBS (Raw scores)
+# ISBS Boxplots ----------------------------------------------------------
+# ISBS (Raw scores)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   p = plot_aggr_scores(
@@ -202,7 +203,21 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
 }
 
+# ISBS (ERV) without AK
+for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
+  p = plot_aggr_scores(
+    aggr_scores[learner_id != "AK"],
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
+  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
+}
 
+
+# Scaled ISBS Boxplots ---------------------------------------------------
 # Scaled ISBS
 
 #aggr-boxplot-isbs-scaled}
@@ -229,13 +244,20 @@ measure_normal = "isbs"
 measure_erv = paste0(measure_normal, "_erv")
 measure_scaled = paste0(measure_normal, "_scaled")
 
-aggr_temp = data.table::copy(aggr_scores)
-aggr_scaled_temp = data.table::copy(aggr_scores_scaled)
+aggr_temp = data.table::copy(aggr_scores[,
+  .SD,
+  .SDcols = c("task_id", "learner_id", "tune_measure", "learner_group", measure_normal, measure_erv)
+])
+aggr_scaled_temp = data.table::copy(aggr_scores_scaled[,
+  .SD,
+  .SDcols = c("task_id", "learner_id", "tune_measure", "learner_group", measure_normal)
+])
 data.table::setnames(aggr_scaled_temp, old = measure_normal, new = measure_scaled)
 aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tune_measure, learner_group)]
 
 p = aggr_temp |>
-  dplyr::filter(.data[["tune_measure"]] == "isbs") |>
+  dplyr::filter(grepl("isbs", .data[["tune_measure"]])) |>
+  dplyr::filter(isbs_scaled <= 1 & isbs_scaled >= 0) |>
   tidyr::pivot_longer(
     cols = tidyselect::all_of(c(measure_normal, measure_erv, measure_scaled)),
     names_to = "measure",
@@ -247,7 +269,8 @@ p = aggr_temp |>
       measure == measure_erv ~ "b) ERV",
       measure == measure_scaled ~ "c) Scaled"
     ),
-    measure = forcats::fct_inorder(measure)
+    measure = forcats::fct_inorder(measure),
+    learner_id = factor(learner_id, levels = lrntab$id)
   ) |>
   ggplot(aes(x = score, y = learner_id, color = learner_group, fill = learner_group)) +
   facet_wrap(vars(measure), scales = "free", ncol = 3) +
@@ -285,9 +308,9 @@ cli::cli_h2("Aggregated Calibration plots")
 # aggr_temp[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
 # aggr_temp[, dcalib_label := fifelse(dcalib_p < 0.05, "X", "")]
 
-for (tuned_on in c("harrell_c", "isbs")) {
+for (tuned_on in c("isbs")) {
   p = aggr_scores |>
-    dplyr::filter(tuned == tuned_on) |>
+    dplyr::filter(grepl(tuned_on, .data[["tune_measure"]])) |>
     dplyr::mutate(
       dcalib_p = pchisq(dcalib, 10 - 1, lower.tail = FALSE),
       dcalib_label = fifelse(dcalib_p < 0.05, "X", "")
@@ -338,8 +361,10 @@ for (tuned_on in c("harrell_c", "isbs")) {
 
 # Alpha Calibration
 
-for (tuned_on in c("harrell_c", "isbs")) {
-  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
+for (tuned_on in c("isbs")) {
+  p = aggr_scores |>
+    dplyr::filter(grepl(tuned_on, .data[["tune_measure"]]), learner_id != "AK") |>
+    ggplot(aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
     geom_point() +
     geom_vline(xintercept = 1) +
     scale_x_log10() +
@@ -350,7 +375,8 @@ for (tuned_on in c("harrell_c", "isbs")) {
         "Values close to 1 indicate reasonable calibration"
       ),
       y = "Learner",
-      x = "Alpha (log10)"
+      x = "Alpha (log10)",
+      caption = "Omitted AK due to off-scale values"
     ) +
     theme_minimal() +
     theme(
