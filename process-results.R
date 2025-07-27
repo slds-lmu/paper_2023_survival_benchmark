@@ -22,7 +22,7 @@ msr_tbl = measures_tbl()
 
 tictoc::tic("Full result processing")
 reg <- loadRegistry(conf$reg_dir, writeable = FALSE, work.dir = here::here())
-reg$source = here::here("R/helpers.R")
+# reg$source = here::here("R/helpers.R")
 
 tab <- collect_job_table(
   keep_columns = c("job.id", "repl", "tags", "task_id", "learner_id", "time.running", "mem.used"),
@@ -93,11 +93,11 @@ for (tune_measure in tune_measures) {
       # for (learner in learners) {
       # Assemble relevant job.ids
       ids_all = tab[learner_id == learner & measure == tune_measure, ]
-      ids = ijoin(findDone(), ids_all)
+      ids = ijoin(findDone(reg = reg), ids_all)
 
       # skip if there's no completed jobs
       if (nrow(ids) == 0) {
-        next
+        return(NULL)
       } else {
         cli::cli_h3("Processing results for {.val {learner}}")
         cli::cli_inform("Found {.val {nrow(ids)}} / {.val {nrow(ids_all)}} completed jobs")
@@ -106,7 +106,7 @@ for (tune_measure in tune_measures) {
       cli::cli_progress_step("Reducing results")
       # Disabling the progress bar for speedup with many jobs
       options(batchtools.progress = FALSE)
-      bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE)
+      bmr <- mlr3batchmark::reduceResultsBatchmark(ids, store_backends = TRUE, reg = reg)
       options(batchtools.progress = TRUE)
 
       cli::cli_progress_step("Scoring results")
