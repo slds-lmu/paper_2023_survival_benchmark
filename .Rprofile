@@ -32,8 +32,11 @@ options(
   batchtools.progress = TRUE
 )
 
-# Load script with helpers here to ensure its contents are available always
+# Load script with benchmark helpers here to ensure its contents are available always
 source("R/helpers.R")
+# Additional utilities
+source("R/plotting.R")
+
 
 # Make renv pick up learner dependencies
 if (FALSE) {

@@ -1,50 +1,86 @@
 \begin{table}
-
+\centering
 \caption{Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.}
 \centering
-\begin{tabular}[t]{llrrr}
+\begin{tabular}[t]{llllr}
 \toprule
-Model & Dataset & Harrell's C & RCLL & Total Errors\\
+Model & Dataset & Harrell's C & ISBS & Total Errors\\
 \midrule
-AK & child & 4 & 4 & 8\\
-AK & hdfail & 5 & 5 & 10\\
-GLMN & hdfail & 0 & 1 & 1\\
-Pen & child & 0 & 2 & 2\\
-Pen & hdfail & 4 & 0 & 4\\
-\addlinespace
-RFSRC & child & 0 & 1 & 1\\
-RFSRC & hdfail & 1 & 1 & 2\\
-RFSRC & nafld1 & 4 & 5 & 9\\
-RAN & child & 4 & 5 & 9\\
-RAN & colrec & 3 & 5 & 8\\
-\addlinespace
-RAN & flchain & 0 & 1 & 1\\
-RAN & hdfail & 4 & 5 & 9\\
-RAN & metabric & 2 & 2 & 4\\
-RAN & nafld1 & 4 & 5 & 9\\
-RAN & support & 4 & 5 & 9\\
-\addlinespace
-CIF & colrec & 1 & 0 & 1\\
-CIF & hdfail & 2 & 2 & 4\\
-CIF & nafld1 & 5 & 5 & 10\\
-CIF & support & 2 & 2 & 4\\
-ORSF & nafld1 & 1 & 5 & 6\\
-\addlinespace
-RRT & hdfail & 0 & 2 & 2\\
-MBST & aids2 & 0 & 3 & 3\\
-MBST & child & 5 & 5 & 10\\
-MBST & dataFTR & 1 & 1 & 2\\
-MBST & flchain & 3 & 2 & 5\\
-\addlinespace
-MBST & gbsg & 1 & 0 & 1\\
-MBST & hdfail & 5 & 5 & 10\\
-MBST & metabric & 1 & 0 & 1\\
-MBST & nafld1 & 5 & 5 & 10\\
-MBST & nwtco & 4 & 5 & 9\\
-\addlinespace
-MBST & support & 4 & 1 & 5\\
-CoxB & hdfail & 5 & 5 & 10\\
-XGBAFT & hdfail & 0 & 1 & 1\\
+AK & CarpenterFdaData & 0 (0\%) & 1 (3.3\%) & 1\\
+AK & channing & 1 (3.3\%) & 1 (3.3\%) & 2\\
+AK & child & 3 (100\%) & 3 (100\%) & 6\\
+AK & e1684 & 3 (10\%) & 0 (0\%) & 3\\
+AK & hdfail & 3 (100\%) & 3 (100\%) & 6\\
+AK & lung & 8 (26.7\%) & 0 (0\%) & 8\\
+AK & uis & 2 (6.7\%) & 0 (0\%) & 2\\
+AK & veteran & 3 (10\%) & 0 (0\%) & 3\\
+GLMN & bladder0 & 1 (3.3\%) & 0 (0\%) & 1\\
+GLMN & channing & 0 (0\%) & 1 (3.3\%) & 1\\
+GLMN & check\_times & 2 (66.7\%) & 0 (0\%) & 2\\
+GLMN & cost & 12 (40\%) & 0 (0\%) & 12\\
+GLMN & dataSTR & 2 (6.7\%) & 0 (0\%) & 2\\
+GLMN & hdfail & 0 (0\%) & 3 (100\%) & 3\\
+GLMN & std & 6 (20\%) & 0 (0\%) & 6\\
+GLMN & uis & 4 (13.3\%) & 0 (0\%) & 4\\
+GLMN & veteran & 0 (0\%) & 14 (46.7\%) & 14\\
+GLMN & wbc1 & 0 (0\%) & 4 (13.3\%) & 4\\
+Pen & aids.id & 1 (3.3\%) & 9 (30\%) & 10\\
+Pen & bladder0 & 8 (26.7\%) & 0 (0\%) & 8\\
+Pen & channing & 1 (3.3\%) & 0 (0\%) & 1\\
+Pen & check\_times & 3 (100\%) & 3 (100\%) & 6\\
+Pen & cost & 3 (10\%) & 0 (0\%) & 3\\
+Pen & dataSTR & 11 (36.7\%) & 3 (10\%) & 14\\
+Pen & hdfail & 0 (0\%) & 2 (66.7\%) & 2\\
+Flex & aids.id & 0 (0\%) & 10 (33.3\%) & 10\\
+Flex & check\_times & 3 (100\%) & 3 (100\%) & 6\\
+Flex & child & 3 (100\%) & 3 (100\%) & 6\\
+Flex & dataFTR & 2 (6.7\%) & 0 (0\%) & 2\\
+Flex & hdfail & 3 (100\%) & 3 (100\%) & 6\\
+Flex & lung & 9 (30\%) & 0 (0\%) & 9\\
+Flex & nafld1 & 14 (93.3\%) & 14 (93.3\%) & 28\\
+Flex & nwtco & 15 (100\%) & 15 (100\%) & 30\\
+Flex & support & 3 (100\%) & 3 (100\%) & 6\\
+Flex & wa\_churn & 15 (100\%) & 15 (100\%) & 30\\
+RFSRC & check\_times & 3 (100\%) & 3 (100\%) & 6\\
+RFSRC & child & 3 (100\%) & 3 (100\%) & 6\\
+RFSRC & colrec & 1 (33.3\%) & 2 (66.7\%) & 3\\
+RFSRC & nafld1 & 2 (13.3\%) & 1 (6.7\%) & 3\\
+RFSRC & support & 2 (66.7\%) & 3 (100\%) & 5\\
+RAN & check\_times & 3 (100\%) & 2 (66.7\%) & 5\\
+RAN & child & 3 (100\%) & 3 (100\%) & 6\\
+RAN & cost & 1 (3.3\%) & 0 (0\%) & 1\\
+RAN & hdfail & 1 (33.3\%) & 1 (33.3\%) & 2\\
+RAN & mgus & 0 (0\%) & 2 (6.7\%) & 2\\
+RAN & nafld1 & 4 (26.7\%) & 9 (60\%) & 13\\
+CIF & child & 3 (100\%) & 3 (100\%) & 6\\
+CIF & hdfail & 3 (100\%) & 3 (100\%) & 6\\
+ORSF & child & 3 (100\%) & 3 (100\%) & 6\\
+ORSF & cost & 1 (3.3\%) & 0 (0\%) & 1\\
+ORSF & gbsg & 1 (6.7\%) & 0 (0\%) & 1\\
+ORSF & hdfail & 3 (100\%) & 3 (100\%) & 6\\
+ORSF & nafld1 & 1 (6.7\%) & 9 (60\%) & 10\\
+ORSF & uis & 0 (0\%) & 1 (3.3\%) & 1\\
+ORSF & veteran & 1 (3.3\%) & 0 (0\%) & 1\\
+RRT & dataFTR & 5 (16.7\%) & 0 (0\%) & 5\\
+RRT & lung & 8 (26.7\%) & 0 (0\%) & 8\\
+RRT & metabric & 7 (46.7\%) & 0 (0\%) & 7\\
+RRT & nwtco & 7 (46.7\%) & 0 (0\%) & 7\\
+RRT & ova & 3 (10\%) & 0 (0\%) & 3\\
+RRT & tumor & 3 (10\%) & 0 (0\%) & 3\\
+MBSTCox & child & 3 (100\%) & 3 (100\%) & 6\\
+MBSTCox & dataSTR & 0 (0\%) & 1 (3.3\%) & 1\\
+MBSTCox & hdfail & 3 (100\%) & 3 (100\%) & 6\\
+MBSTAFT & hdfail & 2 (66.7\%) & 0 (0\%) & 2\\
+SSVM & check\_times & 3 (100\%) & 0 (0\%) & 3\\
+SSVM & child & 3 (100\%) & 0 (0\%) & 3\\
+SSVM & colrec & 3 (100\%) & 0 (0\%) & 3\\
+SSVM & flchain & 11 (73.3\%) & 0 (0\%) & 11\\
+SSVM & hdfail & 3 (100\%) & 0 (0\%) & 3\\
+SSVM & nafld1 & 15 (100\%) & 0 (0\%) & 15\\
+SSVM & nwtco & 8 (53.3\%) & 0 (0\%) & 8\\
+SSVM & ova & 3 (10\%) & 0 (0\%) & 3\\
+SSVM & support & 3 (100\%) & 0 (0\%) & 3\\
+SSVM & wa\_churn & 15 (100\%) & 0 (0\%) & 15\\
 \bottomrule
 \end{tabular}
 \end{table}
