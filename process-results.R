@@ -7,12 +7,12 @@ if (!fs::dir_exists(conf$result_path)) {
   fs::dir_create(conf$result_path, recurse = TRUE)
 }
 
-save_obj <- function(obj, name, suffix = NULL, sep = "_") {
+save_obj <- function(obj, name, subdir = "", suffix = NULL, sep = "_") {
   if (!is.null(suffix)) {
     suffix <- paste(suffix, collapse = sep)
     name <- paste0(name, sep, suffix)
   }
-  path <- fs::path(conf$result_path, name, ext = "rds")
+  path <- fs::path(conf$result_path, subdir, name, ext = "rds")
   cli::cli_alert_info("Saving {.val {deparse(substitute(obj))}} to {.file {fs::path_rel(path)}}")
   saveRDS(obj, path)
 }
@@ -122,7 +122,7 @@ for (tune_measure in tune_measures) {
       # Count errors and warnings (either empty list = 0 or list of error messages), but preserve originals just in case
       scores[, errors_cnt := vapply(errors, length, FUN.VALUE = integer(1))]
       scores[, warnings_cnt := vapply(warnings, length, FUN.VALUE = integer(1))]
-      save_obj(scores, name = "scores", suffix = c(tune_measure, learner))
+      save_obj(scores, subdir = "scores", name = "scores", suffix = c(tune_measure, learner))
 
       # rm(bmr, scores)
       # gc(reset = TRUE)
