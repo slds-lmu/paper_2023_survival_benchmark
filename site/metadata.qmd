@@ -17,20 +17,16 @@ Unfortunately, the identifiers used under the hood do not directly correspond to
 - `mlr3 ID` refers to the measure as it is implemented in [mlr3proba](https://mlr3proba.mlr-org.com/reference/index.html#survival-measures)
 - `Label` refers to the measure as it is named consistently throughout the paper and resulting plots.
 
-| ID                   | mlr3 ID            | Label                                                        |
-|:---------------------|:-------------------|:-------------------------------------------------------------|
-| `harrell_c`          | `surv.cindex`      | Harrell's C                                                  |
-| `uno_c`              | `surv.cindex`      | Uno's C                                                      |
-| `rcll`               | `surv.rcll`        | Right-Censored Log Loss (RCLL)                               |
-| `rcll_erv`           | `surv.rcll`        | Right-Censored Log Loss (RCLL) [ERV]                         |
-| `risll`         | `surv.risll`  | Re-weighted Integrated Survival Log-Likelihood (RISLL)       |
-| `risll_erv`     | `surv.risll`  | Re-weighted Integrated Survival Log-Likelihood (RISLL) [ERV] |
-| `rnll`            | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL)                   |
-| `rnll_erv`        | `surv.logloss`     | Re-weighted Negative Log-Likelihood (RNLL) [ERV]             |
-| `isbs`     | `surv.brier`       | Integrated Survival Brier Score (ISBS)                       |
-| `isbs_erv` | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]                 |
-| `dcalib`             | `surv.dcalib`      | D-Calibration                                                |
-| `alpha_calib`       | `surv.calib_alpha` | Van Houwelingen's Alpha                                      |
+| ID                   | mlr3 ID            | Label                                           |
+|:---------------------|:-------------------|:------------------------------------------------|
+| `harrell_c`          | `surv.cindex`      | Harrell's C                                     |
+| `uno_c`              | `surv.cindex`      | Uno's C                                         |
+| `isll`               | `surv.isll`        | Integrated Survival Log-Likelihood (ISLL)       |
+| `isll_erv`           | `surv.isll`        | Integrated Survival Log-Likelihood (ISLL) [ERV] |
+| `isbs`               | `surv.brier`       | Integrated Survival Brier Score (ISBS)          |
+| `isbs_erv`           | `surv.brier`       | Integrated Survival Brier Score (ISBS) [ERV]    |
+| `dcalib`             | `surv.dcalib`      | D-Calibration                                   |
+| `alpha_calib`        | `surv.calib_alpha` | Van Houwelingen's Alpha                         |
 
 
 ## Tasks {#sec-tasks}
@@ -49,9 +45,10 @@ tasktab |>
     p = p,
     events = events,
     censprop = round(100 * censprop, 1),
-    n_uniq_t = n_uniq_t
+    n_uniq_t = n_uniq_t,
+    repeats = assign_repeats(events)
   ) |>
-  setNames(c("Dataset", "N", "p", "Events", "Censoring %", "# Unique Time Points")) |>
+  setNames(c("Dataset", "N", "p", "Events", "Censoring %", "# Unique Time Points", "# CV Repeats")) |>
   reactable::reactable(sortable = TRUE, filterable = TRUE, pagination = FALSE)
 ```
 
@@ -60,23 +57,35 @@ tasktab |>
 This table shows the models (learners) used in the benchmark with their `mlr3` IDs and additional metadata.
 
 - "Parameters" is 0 for learners such as KM, NA, CPH, which do not have any hyperparameters. It is also 0 for CoxBoost, which uses its own tuning method.
-- "Internal CV" indicates learners internally perform CV, e.g., glmnet, CoxBoost.
-- "Encode" indicates whether treatment encoding is performed as part of the pre-processing pipeline **before** the learner sees the data.
+- "Survival Prediction" indicates whether the learner provides a survival probability prediction (a `distr` object), which allows evaluation with measures like the ISBS.
+- "Internal CV" indicates learners internally perform CV, i.e., GLMN (via `cv.glmnet`) and CoxB (via `optimCoxBoostPenalty()`).
+- "Exhaustive Search" indicates whether the tuning space was small enough to perform exhaustive grid search with fewer than 50 evaluations
 - "Scale" analogously indicates whether scaling to unit variance and 0 mean is performed.
-- "Grid Search" indicates whether the tuning space was small enough to perform exhaustive grid search with fewer than 50 evaluations
+- "Encode" indicates whether treatment encoding is performed as part of the pre-processing pipeline **before** the learner sees the data.
 
 ```{r learner-tab}
 lrntbab = load_lrntab()
 
 lrntab |>
+  dplyr::select(id, base_lrn, surv_pred, params, internal_cv, grid, scale, encode) |>
   dplyr::mutate(dplyr::across(dplyr::where(is.logical), \(x) ifelse(x, "\u2705", ""))) |>
   kableExtra::kbl(
     align = "llccccc",
-    col.names = c("Learner", "mlr3 ID", "Parameters", "Internal CV", "Encode", "Scale", "Grid Search")
+    caption = "Learner IDs in benchmark with associated mlr3 identifiers",
+    col.names = c(
+      "Learner",
+      "mlr3 ID",
+      "Survival Prediction",
+      "Parameters",
+      "Internal CV",
+      "Exhaustive Search",
+      "Scale",
+      "Encode"
+    )
   ) |>
-  kableExtra::kable_styling() |>
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover")) |>
   kableExtra::column_spec(2, width = "5%") |>
   kableExtra::column_spec(3, width = "5%") |>
   kableExtra::column_spec(4, width = "20%") |>
-  kableExtra::column_spec(7, width = "25%") 
+  kableExtra::column_spec(7, width = "25%")
 ``` 

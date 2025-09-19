@@ -26,10 +26,18 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
 
 - `renv` and `renv.lock` contain [renv](https://github.com/r-lib/renv) project information.
   - `renv::restore()` needs to be used to restore the project environment.
-  - Due to limitations on the HPC environment used for the benchmark, R version 4.2.2 is expected.
+  - Start by restoring `mlr3extralearners`, then `mlr3` and then continue with the remaining packages:
+
+  ```r
+  renv::restore(exclude= c("mlr3", "mlr3extralearners", "mlr3proba"))
+  renv::restore(packages = "mlr3extralearners")
+  renv::restore(packages = "mlr3")
+  renv::restore()
+  ```
+      
+  - Due to limitations on the HPC environment used for the benchmark, R version 4.4.3 is expected.
   (you may want to use [rig](https://github.com/r-lib/rig) for R version management)
-  - Additionally, the `PMCMRplus` is required by `mlr3benchmark`, but was not installable in the HPC environment, so it is not included by `renv` and you may need to install it manually from CRAN: `install.packages("PMCMRplus")`.
-- `produce-paper-plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible, but loads helper functions from `helpers.R` for de-duplication and readability.
+- `produce-paper-plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible
   - The output path is `./results_paper` by default.
   
 Please note that due to the large file sizes of the `BenchmarkResult` (`bmr`) objects produced by the aggregation of the `batchtools` registry, this repository only contains the processed result files (`./results/registry_beartooth/`) required to produce the main results of the paper.

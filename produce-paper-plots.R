@@ -278,7 +278,7 @@ p = aggr_temp |>
   scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
   labs(
     title = "Integrated Survival Brier Score (ISBS)",
-    subtitle = "Boxplot of aggregated scores across all tasks transformations",
+    subtitle = "Boxplot of aggregated scores",
     x = NULL,
     y = NULL,
     color = NULL,

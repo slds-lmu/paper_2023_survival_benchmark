@@ -1,39 +1,33 @@
 ---
 title: "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data"
 author: "Lukas Burk, John Zobolas, Bernd Bischl, Andreas Bender, Marvin N. Wright, Raphael Sonabend"
-date: "2024-06-05"
 ---
 
 This site aggregates additional results and metadata accompanying the benchmark project.
 
 All code is available on [GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark).
 
+Note that this page belongs to the most recent version of the project. A previous version from 2024 is [available here](https://projects.lukasburk.de/survival_benchmark_2024).
+
 ## Downloading Results
 
 Results can be downloaded from [the web](https://projects.lukasburk.de/survival_benchmark/results/).
-The files required to produce primary results are given in @tbl-files-results.
 
-Folders `harrell_c` and `isbs` contain the individual files from which `aggr_scores` and `scores` are created and are therefore only an intermediate product.  
-Similarly, files starting with `bmr_` (`BenchmarkResult`) or `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
+Files are suffixed with the associated tuning measure unless already combined, where `harrell_c,isbs` indicates results for learners which are not at all or not explicitly tuned during the experiment but rather use an internal mechanism, i.e. Kaplan-Meier or CoxBoost (see learner table on [Metadata](metadata.qmd))
+
+- `scores` are individual scores per outer resampling iteration
+- `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
 See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.
 
 
 | File | Description |
 |------|-------------|
-| [`aggr_scores.rds`][aggr_scores_rds]  | Scores for all learners, tasks and measures aggregated across outer resampling iterations |
-| [`aggr_scores.csv`][aggr_scores_csv]  | The same data in portable CSV format |
 | [`scores.rds`][scores_rds]            | Scores for all learners, tasks and measures for individual outer resampling iterations |
-| [`scores.csv`][scores_csv]            | The same data in CSV format |
-| [`archives.zip`][archive_zip]         | ZIP file of all tuning archives produced during the benchmark (over 4000) in CSV files for each combination of learner, task, tuning measure, and resampling iteration |
+| [`archives.zip`][archive_zip]         | ZIP file of all tuning archives produced during the benchmark (over 19000) in CSV files for each combination of learner, task, tuning measure, and resampling iteration |
 
 : Index of most relevant result files for download {#tbl-files-results tbl-colwidths="[30,70]"}
 
-
 [scores_csv]: https://projects.lukasburk.de/survival_benchmark/results/scores.csv
 [scores_rds]: https://projects.lukasburk.de/survival_benchmark/results/scores.rds
-[aggr_scores_csv]: https://projects.lukasburk.de/survival_benchmark/results/aggr_scores.csv
-[aggr_scores_rds]: https://projects.lukasburk.de/survival_benchmark/results/aggr_scores.rds
 [archive_zip]: https://projects.lukasburk.de/survival_benchmark/results/archives.zip
-
-

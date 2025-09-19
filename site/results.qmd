@@ -10,6 +10,9 @@ editor_options:
 
 ```{r setup, include=FALSE}
 source(here::here("site", "common.R"))
+
+library(reactable)
+library(htmltools)
 ```
 
 This page gives an overview of the benchmark results, including scores aggregated across outer resampling iterations used for later statistical analysis and individual scores per dataset and model.
@@ -19,70 +22,54 @@ In general, results are divided by underlying tuning measure, i.e. `harrel_c` an
 
 ## Errros and elapsed time limits
 
-The following table lists the number of errors in the outer resampling iterations per tuning measure (`tuned`).
+The following table lists the number of errors in the outer resampling iterations per tuning measure (`tune_measure`).
 These errors were caused by the learner exceeding the time limit or exceeding memory limitations.
-We attempted to resubmit failing computational jobs with increased memory limits, yet in some cases the jobs still failed with more than 100GB of available memory, at which point we considered the learner/task combination to just be infeasible.
+We attempted to resubmit failing computational jobs with increased memory limits, yet in some cases the jobs still failed, at which point we considered the learner/task combination to be computationally infeasible.
 
 We note:
 
 - the affected learners were particularly slow or memory intensive for large tasks with many observations or a large number of unique time points, where the latter in particular appeared even more relevant than the number of observations.
-- the tasks below are mostly those with many observations and unique time points.
-<!-- - `SSVM` is excluded due to persistent technical issues that we could not resolve, giving us no results to evaluate. -->
+- the tasks below are most often those with many observations and unique time points (hdfail, child, check_times).
 
-We therefore consider the errors to be a result of the learners' complexity and the tasks' size.
-
-```{r error-tables-aggr}
-
-scores |>
-  dplyr::filter(errors != "") |>
-  dplyr::count(learner_id, tuned, errors, name = "affected_folds") |>
-  tidyr::pivot_wider(
-    id_cols = c("learner_id", "errors"),
-    names_from = "tuned",
-    values_from = "affected_folds", 
-    values_fill = 0
-  ) |>
-  dplyr::mutate(total = harrell_c + isbs) |>
-  kableExtra::kbl(
-    col.names = c("Model", "Error", "Harrell's C", "RCLL", "Total Errors"),
-    caption = "Number of errors per outer resampling iteration (up to five), separated by model, and tuning measure.",
-    booktabs = TRUE,
-    format = "latex"
-  ) |>
-  kableExtra::kable_styling()
-
-scores |>
-  dplyr::filter(errors != "") |>
-  dplyr::count(task_id, tuned, errors, name = "affected_folds") |>
-  tidyr::pivot_wider(
-    id_cols = c("task_id", "errors"),
-    names_from = "tuned",
-    values_from = "affected_folds", 
-    values_fill = 0
-  ) |>
-  dplyr::mutate(total = harrell_c + isbs) |>
-  kableExtra::kbl(
-    col.names = c("Dataset", "Error", "Harrell's C", "RCLL", "Total Errors"),
-    caption = "Number of errors per outer resampling iteration (up to five), separated by dataset, and tuning measure.",
-    booktabs = TRUE,
-    format = "latex"
-  ) |>
-  kableExtra::kable_styling()
-```
-
+We therefore consider the errors to be a result of the learners' complexity and the tasks' size, given reasonable computational constraints.
 
 <details>
-<summary>Click to view detailed table</summary>
+<summary>Click to view table</summary>
 
 
-```{r aggr-errors-tbl}
-scores |>
-  dplyr::filter(errors != "") |>
-  count(learner_id, task_id, tuned, errors, name = "affected_folds") |>
-  reactable::reactable(pagination = FALSE, filterable = TRUE, sortable = TRUE)
+```{r error-tables-aggr}
+err_tbl <- scores |>
+  dplyr::group_by(learner_id, task_id, tune_measure) |>
+  dplyr::summarise(
+    affected_iterations = sum(errors_cnt > 0),
+    total_iterations = dplyr::n(),
+    .groups = "drop"
+  ) |>
+  dplyr::filter(affected_iterations > 0) |>
+  dplyr::mutate(
+    error_rate = round(100 * affected_iterations / total_iterations, 1),
+    errors_fmt = glue::glue("{affected_iterations} / {total_iterations} ({error_rate}%)")
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = c("learner_id", "task_id"),
+    names_from = "tune_measure",
+    values_from = "errors_fmt",
+    values_fill = "—"
+  )
+
+err_tbl |>
+  dplyr::select(-learner_id) |>
+  kableExtra::kbl(
+    col.names = c("Dataset", "Harrell's C", "ISBS"),
+    caption = "Number of evaluations with errors of the total outer resampling iterations by tuning measure. (—) indicates there were no errors during evaluation, but possible during tuning."
+  ) |>
+  kableExtra::kable_styling() |>
+  kableExtra::pack_rows(index = table(err_tbl$learner_id))
+
 ```
 
 </details>
+
 
 ## Aggregated Results
 
@@ -98,8 +85,15 @@ Averaged scores across outer resampling folds for each task and learner.
 #| fig-width: 11
 #| fig-height: 8
 
-for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
-  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
+  plot_aggr_scores(
+    aggr_scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE
+  )
 }
 ```
 
@@ -109,46 +103,74 @@ Harrell's C (Scaled)
 #| fig-width: 11
 #| fig-height: 8
 
-for (measure_id in msr_tbl[(id == "isbs" | type == "Discrimination") & !erv, id]) {
-  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE) %+%
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
+  plot_aggr_scores(
+    aggr_scores_scaled,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE
+  ) %+%
     labs(
-      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM-Best]"),
+      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM – Best]"),
       subtitle = "Boxplot of aggregated scores across all tasks scaled such that 0 = KM, 1 = Best model"
     )
 }
 ```
 
-#### RCLL
+#### ISBS
 
 ```{r aggr-boxplot-isbs}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(
+    aggr_scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
 }
 ```
 
-RCLL (ERV)
+ISBS (ERV)
 
 ```{r aggr-boxplot-isbs-erv}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  plot_aggr_scores(aggr_scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
+  plot_aggr_scores(
+    aggr_scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
 }
 
 ```
 
-Scaled RCLL
+Scaled ISBS
 
 ```{r aggr-boxplot-isbs-scaled}
 #| fig-width: 11
 #| fig-height: 8
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_aggr_scores(aggr_scores_scaled, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE) %+%
+  plot_aggr_scores(
+    aggr_scores_scaled,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  ) %+%
     labs(
       title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled KM-Best]"),
       subtitle = "Boxplot of aggregated scores across all tasks scaled such that 0 = KM, 1 = Best model"
@@ -158,7 +180,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
 
 :::
 
-## Results per Dataset / `scores`
+## Results per Dataset
 
 Taking scores from the outer evaluation folds, see `scores.[csv|rds]`.
 
@@ -168,23 +190,23 @@ Taking scores from the outer evaluation folds, see `scores.[csv|rds]`.
 
 #### Harrell's C
 
+```{r scores-boxplot-harrell-c}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
+  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
+}
+```
+
+#### ISBS
+
 ```{r scores-boxplot-isbs}
 #| fig-width: 11
 #| fig-height: 11
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE)
-}
-```
-
-#### RCLL
-
-```{r scores-boxplot-harrell-c}
-#| fig-width: 11
-#| fig-height: 11
-
-for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  plot_scores(scores, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE)
 }
 ```
 
@@ -202,47 +224,49 @@ Furthermore, there is no multiplicity correction applied due to the generally ex
 
 ```{r calibration-dcalib-heatmap, fig.width=10, fig.height=8}
 
-for (tuned_on in c("harrell_c", "isbs")) {
-  p = aggr_scores |>
-    dplyr::filter(tuned == tuned_on) |>
-    dplyr::mutate(
-      dcalib_p = pchisq(dcalib, 10 - 1, lower.tail = FALSE),
-      dcalib_label = fifelse(dcalib_p < 0.05, "X", "")
-    ) |>
-    ggplot(aes(
-      x = forcats::fct_reorder(learner_id, dcalib_p), 
-      y = forcats::fct_rev(task_id), 
-      fill = dcalib_p)
-    ) +
-    geom_tile(color = "#EEEEEE") +
-    geom_text(aes(label = dcalib_label), color = "white", size = 3) +
-    # scale_fill_manual(values = c(`TRUE` = "red", `FALSE` = "blue"), labels = c(`TRUE` = "Signif.", `FALSE` = "Not Signif.")) +
-    scale_fill_viridis_c(breaks = seq(0, 1, .1)) +
-    guides(
-      x = guide_axis(n.dodge = 2), 
-      fill = guide_colorbar(
-        title.vjust = .8,
-        barwidth = unit(200, "pt")
-    )) +
-    labs(
-      title = "D-Calibration p-values by task and learner",
-      subtitle = glue::glue(
-        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
-        "Learners ordered by average p-value. X denotes p < 0.05"
-      ),
-      y = "Task", x = "Learner", color = NULL, fill = "p-value"
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "bottom",
-      plot.title.position = "plot",
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.y = element_blank(),
-      panel.spacing.x = unit(5, "mm"),
-      panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+aggr_scores |>
+  dplyr::filter(grepl("isbs", tune_measure)) |>
+  dplyr::mutate(
+    dcalib_p = pchisq(dcalib, 10 - 1, lower.tail = FALSE),
+    dcalib_label = fifelse(dcalib_p < 0.05, "X", "")
+  ) |>
+  ggplot(aes(
+    x = forcats::fct_reorder(learner_id, dcalib_p),
+    y = forcats::fct_rev(task_id),
+    fill = dcalib_p
+  )) +
+  geom_tile(color = "#EEEEEE") +
+  geom_text(aes(label = dcalib_label), color = "white", size = 3) +
+  # scale_fill_manual(values = c(`TRUE` = "red", `FALSE` = "blue"), labels = c(`TRUE` = "Signif.", `FALSE` = "Not Signif.")) +
+  scale_fill_viridis_c(breaks = seq(0, 1, .1)) +
+  guides(
+    x = guide_axis(n.dodge = 2),
+    fill = guide_colorbar(
+      title.vjust = .8,
+      barwidth = unit(200, "pt")
     )
-  print(p)
-}
+  ) +
+  labs(
+    title = "D-Calibration p-values by task and learner",
+    subtitle = glue::glue(
+      "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
+      "Learners ordered by average p-value. X denotes p < 0.05"
+    ),
+    y = "Task",
+    x = "Learner",
+    color = NULL,
+    fill = "p-value"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title.position = "plot",
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.spacing.x = unit(5, "mm"),
+    panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+  )
+
 
 ```
 
@@ -251,32 +275,29 @@ for (tuned_on in c("harrell_c", "isbs")) {
 For this measure, calibration is indicated by a score close to 1.
 
 ```{r calibration-alpha-ratio}
-for (tuned_on in c("harrell_c", "isbs")) {
-  p = ggplot(aggr_scores[tuned == tuned_on], aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
-    geom_point() +
-    geom_vline(xintercept = 1) +
-    scale_x_log10() +
-    labs(
-      title = "Alpha-Calibration by task and learner",
-      subtitle = glue::glue(
-        "Models tuned on {msr_tbl[id == tuned_on, label]}\n",
-        "Values close to 1 indicate reasonable calibration"
-      ),
-      y = "Learner", x = "Alpha (log10)"
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "bottom",
-      plot.title.position = "plot",
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.y = element_blank()
-      # panel.spacing.x = unit(5, "mm"),
-      # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
-    )
+ggplot(aggr_scores[grepl("isbs", tune_measure)], aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
+  geom_point() +
+  geom_vline(xintercept = 1) +
+  scale_x_log10() +
+  labs(
+    title = "Alpha-Calibration by task and learner",
+    subtitle = glue::glue(
+      "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
+      "Values close to 1 indicate reasonable calibration"
+    ),
+    y = "Learner",
+    x = "Alpha (log10)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title.position = "plot",
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank()
+    # panel.spacing.x = unit(5, "mm"),
+    # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+  )
 
-  print(p)
-
-}
 ```
 
 ### Raw scores
@@ -287,30 +308,27 @@ for (tuned_on in c("harrell_c", "isbs")) {
 | `learner_id`          | `fct` | Model / learner name, e.g. `RAN` for `ranger` |
 | `harrell_c`           | `dbl` | Evaluation measure score |
 | `uno_c`               | `dbl` | Evaluation measure score |
-<!-- | `rcll`                | `dbl` | Evaluation measure score | -->
-<!-- | `rcll_erv`            | `dbl` | Evaluation measure score | -->
-| `rnll`             | `dbl` | Evaluation measure score |
-| `rnll_erv`         | `dbl` | Evaluation measure score |
-| `risll`          | `dbl` | Evaluation measure score |
-| `risll_erv`      | `dbl` | Evaluation measure score |
-| `risbs`        | `dbl` | Evaluation measure score |
-| `risbs_erv`    | `dbl` | Evaluation measure score |
-| `isbs`      | `dbl` | Evaluation measure score |
-| `isbs_erv`  | `dbl` | Evaluation measure score |
+| `isll`                | `dbl` | Evaluation measure score |
+| `isll_erv`            | `dbl` | Evaluation measure score |
+| `isbs`                | `dbl` | Evaluation measure score |
+| `isbs_erv`            | `dbl` | Evaluation measure score |
 | `dcalib`              | `dbl` | Evaluation measure score |
-| `alpha_calib`        | `dbl` | Evaluation measure score |
-| `tuned`               | `chr` | Tuning measure, one of `harrell_c`, `isbs` |
+| `alpha_calib`         | `dbl` | Evaluation measure score |
+| `tune_measure`        | `chr` | Tuning measure, one of `harrell_c`, `isbs` |
 | `learner_group`       | `fct` | Model / learner group, one of "Baseline", "Classical"m "Trees", "Boosting" |
 
 
-```{r}
+```{r aggr-reactable}
 #| column: page
-#| 
+#|
 aggr_scores |>
   dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
   dplyr::arrange(task_id, learner_id) |>
   reactable::reactable(
-    sortable = TRUE, filterable = TRUE, searchable = TRUE, defaultPageSize = 30
+    sortable = TRUE,
+    filterable = TRUE,
+    searchable = TRUE,
+    defaultPageSize = 30
   )
 ```
 
@@ -319,21 +337,21 @@ aggr_scores |>
 #| column: body-outset
 #| results: asis
 
-library(reactable)
-library(htmltools)
-
 table_aggr = function(aggr_scores, eval_measure_id, tuning_measure_id) {
   checkmate::assert_data_table(aggr_scores)
-  
+
   tab = aggr_scores[tuned == tuning_measure_id, c("task_id", "learner_id", ..eval_measure_id)] |>
     group_by(task_id) |>
     mutate(score := round(.data[[eval_measure_id]], 2)) |>
     select(task_id, learner_id, score) |>
     tidyr::pivot_wider(names_from = "learner_id", values_from = "score") |>
     reactable::reactable(
-      sortable = TRUE, pagination = FALSE, filterable = TRUE, striped = TRUE
+      sortable = TRUE,
+      pagination = FALSE,
+      filterable = TRUE,
+      striped = TRUE
     )
-  
+
   div(class = "cran-packages", h2(class = "title", "Table title"), tab)
 }
 
@@ -356,7 +374,7 @@ bma_harrell_c$friedman_test(p.adjust.method = "holm") |>
   tablify()
 ```
 
-#### RCLL
+#### ISBS
 
 ```{r friedman-isbs}
 bma_isbs$friedman_test(p.adjust.method = "holm") |>
@@ -377,32 +395,30 @@ Using Cox (`CPH`) as baseline for comparison, these represent the primary result
 #| fig-width: 10
 #| fig-height: 6.25
 
-cd_ratio = 10/12
+cd_ratio = 10 / 11
 
-plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "harrell_c", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
+plot_bma(
+  bma = bma_harrell_c,
+  type = "cd_bd",
+  measure_id = "harrell_c",
+  tuning_measure_id = "harrell_c",
+  ratio = cd_ratio,
+  baseline = "CPH"
+)
 ```
 
-```{r critical-difference-baseline-diff-harrell-c-isbs}
-#| fig-width: 10
-#| fig-height: 6.25
-
-cd_ratio = 10/12
-
-plot_results(bma = bma_harrell_c, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "harrell_c", ratio = cd_ratio, baseline = "CPH")
-```
-
-#### RCLL
+#### ISBS
 
 ```{r critical-difference-baseline-diff-isbs-isbs}
 #| fig-width: 10
-plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
+plot_bma(
+  bma = bma_isbs,
+  type = "cd_bd",
+  measure_id = "isbs",
+  tuning_measure_id = "isbs",
+  ratio = cd_ratio,
+  baseline = "CPH"
+)
 ```
-
-
-```{r critical-difference-baseline-diff-isbs-isbs}
-#| fig-width: 10
-plot_results(bma = bma_isbs, type = "cd_bd", measure_id = "isbs", tuning_measure_id = "isbs", ratio = cd_ratio, baseline = "CPH")
-```
-
 
 :::
