@@ -66,7 +66,7 @@ debug:
   tuning:
     resampling: "holdout"
   budget:
-    evals_constant: 10
+    evals_constant: 5
     evals_multiplier: 0
   store:
     tuning_instance: false
