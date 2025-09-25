@@ -358,7 +358,7 @@ p = aggr_scores |>
   geom_vline(xintercept = 1) +
   scale_x_log10() +
   labs(
-    title = "Alpha-Calibration by task and learner",
+    title = "Alpha-Calibration scores across tasks by learner",
     subtitle = glue::glue(
       "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
       "Values close to 1 indicate reasonable calibration"
@@ -381,6 +381,44 @@ save_plot(
   p,
   name = paste("calib-alpha-ratio-plot", "isbs", sep = "-"),
   width = 7,
+  height = 7,
+  formats = c("png", "pdf")
+)
+
+p_dist = aggr_scores |>
+  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), learner_id != "AK") |>
+  ggplot(aes(x = alpha_calib)) +
+  facet_wrap(vars(learner_id), scales = "free_y", ncol = 2) +
+  # geom_density(aes(y = after_stat(count))) +
+  geom_histogram(alpha = 1 / 4, color = "darkgray") +
+  geom_vline(xintercept = 1, color = "darkred") +
+  scale_y_continuous(breaks = scales::pretty_breaks()) +
+  # scale_x_log10() +
+  labs(
+    title = "Alpha-Calibration scores across tasks by learner",
+    subtitle = glue::glue(
+      "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
+      "Values close to 1 (red line) indicate reasonable calibration"
+    ),
+    y = "Count",
+    x = "Alpha"
+    # caption = "AK omitted for largely out of scale values"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title.position = "plot",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = rel(0.8))
+    # panel.spacing.x = unit(5, "mm"),
+    # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
+  )
+
+save_plot(
+  p_dist,
+  name = paste("calib-alpha-ratio-plot-dist", "isbs", sep = "-"),
+  width = 6,
   height = 7,
   formats = c("png", "pdf")
 )
