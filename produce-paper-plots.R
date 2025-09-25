@@ -410,7 +410,7 @@ p_dist = aggr_scores |>
     plot.title.position = "plot",
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text.y = element_text(size = rel(0.8))
+    axis.text.y = element_text(size = rel(0.75))
     # panel.spacing.x = unit(5, "mm"),
     # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
   )
