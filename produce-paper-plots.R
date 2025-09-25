@@ -358,7 +358,7 @@ p = aggr_scores |>
   geom_vline(xintercept = 1) +
   scale_x_log10() +
   labs(
-    title = "Alpha-Calibration scores across tasks by learner",
+    title = "Alpha-Calibration scores across tasks",
     subtitle = glue::glue(
       "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
       "Values close to 1 indicate reasonable calibration"
@@ -392,10 +392,10 @@ p_dist = aggr_scores |>
   # geom_density(aes(y = after_stat(count))) +
   geom_histogram(alpha = 1 / 4, color = "darkgray") +
   geom_vline(xintercept = 1, color = "darkred") +
-  scale_y_continuous(breaks = scales::pretty_breaks()) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 4)) +
   # scale_x_log10() +
   labs(
-    title = "Alpha-Calibration scores across tasks by learner",
+    title = "Alpha-Calibration scores across task",
     subtitle = glue::glue(
       "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
       "Values close to 1 (red line) indicate reasonable calibration"
