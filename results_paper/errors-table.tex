@@ -1,8 +1,6 @@
-\begin{table}
-\centering
-\caption{Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.}
-\centering
-\begin{tabular}[t]{llllr}
+
+\begin{longtable}[t]{llllr}
+\caption{Number of errors per outer resampling iteration (up to 30), separated by model, dataset, and tuning measure.\label{tab:errors}}\\
 \toprule
 Model & Dataset & Harrell's C & ISBS & Total Errors\\
 \midrule
@@ -82,5 +80,4 @@ SSVM & ova & 3 (10\%) & 0 (0\%) & 3\\
 SSVM & support & 3 (100\%) & 0 (0\%) & 3\\
 SSVM & wa\_churn & 15 (100\%) & 0 (0\%) & 15\\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{longtable}

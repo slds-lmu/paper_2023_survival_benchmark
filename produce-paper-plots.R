@@ -69,8 +69,9 @@ errs_table |>
   select(learner_id, task_id, harrell_c, isbs, total) |>
   kableExtra::kbl(
     col.names = c("Model", "Dataset", "Harrell's C", "ISBS", "Total Errors"),
-    caption = "Number of errors per outer resampling iteration (up to five), separated by model, dataset, and tuning measure.",
+    caption = "Number of errors per outer resampling iteration (up to 30), separated by model, dataset, and tuning measure.\\label{tab:errors}",
     booktabs = TRUE,
+    longtable = TRUE,
     linesep = "",
     format = "latex"
   ) |>
