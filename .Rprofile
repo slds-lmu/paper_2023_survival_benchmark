@@ -1,6 +1,10 @@
 # Circumvent srcref issue https://github.com/rstudio/renv/issues/1713
 options("install.opts" = "--without-keep.source")
 
+# Prevents bug of expint package which would otherwise failt to install
+# (expint is an indirect dependency)
+Sys.setenv(PKG_CPPFLAGS = "-DLC_MESSAGES=0")
+
 if (file.exists("renv/activate.R")) {
   source("renv/activate.R")
 } else {
