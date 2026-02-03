@@ -233,8 +233,10 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
     "NEL"     , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "GAM"     , "gam"        , "surv.gam.cox"      , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
     "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "NCV"     , "cv_ncv"     , "surv.cv_ncvsurv"   , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
     "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
@@ -980,6 +982,15 @@ convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRU
   )
 
   invisible(all(res))
+}
+
+# backport from mlr3extralearners version newer than we can use here
+# needed for backported learners (surv.cv_ncvsurv)
+ordered_features = function(task, learner) {
+  require(checkmate) # for %??%
+  # the data_prototype is not present when calling the workhorse function, as it can blow up memory usage
+  cols = names(learner$state$data_prototype) %??% learner$state$feature_names
+  task$data(cols = intersect(cols, task$feature_names))
 }
 
 .canary = "Hello! This variable is here to indicate that the helper functions have been loaded."
