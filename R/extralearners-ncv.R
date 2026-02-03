@@ -109,6 +109,8 @@ LearnerSurvNCVsurv = R6::R6Class(
 
   private = list(
     .train = function(task) {
+      require(mlr3misc)
+
       data = as.matrix(task$data(cols = task$feature_names))
       y = task$truth()
       pv = self$param_set$get_values(tags = "train")

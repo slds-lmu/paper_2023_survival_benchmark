@@ -103,6 +103,7 @@ LearnerSurvGamCox = R6::R6Class(
 
   private = list(
     .train = function(task) {
+      require(mlr3misc)
       pars = self$param_set$get_values(tags = "train")
       control_pars = pars[names(pars) %in% formalArgs(mgcv::gam.control)]
       pars = pars[names(pars) %nin% formalArgs(mgcv::gam.control)]
