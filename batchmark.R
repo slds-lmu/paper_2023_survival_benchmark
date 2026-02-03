@@ -89,7 +89,7 @@ for (measure in measures) {
         alpha = 1
       ),
       # Tune on logscale in (1, 20]) https://github.com/pbreheny/ncvreg/discussions/57
-      gamma = p_dbl(1.0001, 10, logscale = TRUE)
+      cv_ncv.gamma = p_dbl(1.0001, 10, logscale = TRUE)
     ),
 
     Pen = wrap_auto_tune(
