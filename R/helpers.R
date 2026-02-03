@@ -77,24 +77,46 @@ save_tasktab = function(tasks, path = here::here("tables", "tasktab.csv")) {
   task_names = names(tasks)
 
   # Save overview of tasks with some metadata which comes in handy later
-  tasktab = data.table::rbindlist(lapply(seq_along(tasks), \(x) {
-    task_data = tasks[[x]]
-
-    if (!(inherits(task_data, "TaskSurv"))) {
-      task = as_task_surv(task_data, target = "time", event = "status", id = task_names[x])
+  tasktab = data.table::rbindlist(mlr3misc::imap(tasks, \(task, task_id) {
+    if (!(inherits(task, "TaskSurv"))) {
+      task = as_task_surv(task, target = "time", event = "status", id = task_id)
       task$set_col_roles("status", add_to = "stratum")
-    } else {
-      task = task_data
     }
+
+    preproc = po("collapsefactors", no_collapse_above_prevalence = 0.05, target_level_count = 5) %>>%
+      po("encode", method = "treatment") %>>%
+      po("removeconstants")
+    preproc$train(input = task)
+    task_data_processed = preproc$predict(task)[[1]]
 
     data.table::data.table(
       task_id = task$id,
       n = task$nrow,
-      p = length(task$feature_names),
-      dim = task$nrow * length(task$feature_names),
+      p = task$n_features,
+      p_processed = task_data_processed$n_features,
+      dim = task$nrow * task$n_features,
+      dim_processed = task$nrow * task_data_processed$n_features,
       n_uniq_t = length(unique(task$data(cols = "time")[[1]])),
       events = sum(task$data(cols = "status")[[1]] == 1),
-      censprop = round(mean(task$data(cols = "status")[[1]] == 0), 4)
+      censprop = round(mean(task$data(cols = "status")[[1]] == 0), 4),
+      zph_pval = tryCatch(
+        {
+          # Fails for many
+          round(tasks$prop_haz(), 5)
+        },
+        error = function(msg) {
+          return(0)
+        }
+      ),
+      zph_pval_processed = tryCatch(
+        {
+          # Fails for CarpenterFdaData
+          round(task_data_processed$prop_haz(), 5)
+        },
+        error = function(msg) {
+          return(0)
+        }
+      )
     )
   }))
   tasktab[, dimrank := data.table::frank(dim)]
@@ -182,12 +204,12 @@ callback_archive_logs_impl = function(callback, context) {
 #' @return Integer number of repeats
 assign_repeats = function(num_events) {
   data.table::fcase(
-    num_events < 500,
-    10,
-    num_events >= 500 & num_events < 2500,
-    5,
-    num_events > 2500,
-    1
+    num_events < 500                      ,
+                                       10 ,
+    num_events >= 500 & num_events < 2500 ,
+                                        5 ,
+    num_events > 2500                     ,
+                                        1
   )
 }
 
@@ -841,11 +863,11 @@ check_job_state = function(tab = NULL, by = "measure") {
   ) |>
     dplyr::mutate(dplyr::across(submitted:done, \(x) {
       data.table::fcase(
-        x == 0,
-        "\u2014",
-        x / defined == 1,
-        "\u2705",
-        x < defined,
+        x == 0                                        ,
+        "\u2014"                                      ,
+        x / defined == 1                              ,
+        "\u2705"                                      ,
+        x < defined                                   ,
         sprintf("%3.1f%% (%i)", 100 * x / defined, x)
       )
     }))
