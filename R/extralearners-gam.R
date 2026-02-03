@@ -129,12 +129,12 @@ LearnerSurvGamCox = R6::R6Class(
       }
 
       control_obj = if (length(control_pars)) {
-        invoke(mgcv::gam.control, .args = control_pars)
+        mlr3misc::invoke(mgcv::gam.control, .args = control_pars)
       } else {
         mgcv::gam.control()
       }
 
-      invoke(mgcv::gam, data = data, control = control_obj, .args = pars)
+      mlr3misc::invoke(mgcv::gam, data = data, control = control_obj, .args = pars)
     },
 
     .predict = function(task) {
@@ -142,7 +142,7 @@ LearnerSurvGamCox = R6::R6Class(
       newdata = ordered_features(task, self)
       model = self$model
 
-      lp_test = as.numeric(invoke(
+      lp_test = as.numeric(mlr3misc::invoke(
         predict,
         model,
         newdata = newdata,

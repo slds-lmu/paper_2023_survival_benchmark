@@ -101,7 +101,7 @@ LearnerSurvNCVsurv = R6::R6Class(
 
       lambda = lambda %??% self$model$lambda.min
 
-      coefs = invoke(stats::coef, self$model, lambda = lambda)
+      coefs = mlr3misc::invoke(stats::coef, self$model, lambda = lambda)
       coefs = coefs[coefs != 0]
       names(coefs)
     }
@@ -113,7 +113,7 @@ LearnerSurvNCVsurv = R6::R6Class(
       y = task$truth()
       pv = self$param_set$get_values(tags = "train")
 
-      invoke(ncvreg::cv.ncvsurv, X = data, y = y, .args = pv)
+      mlr3misc::invoke(ncvreg::cv.ncvsurv, X = data, y = y, .args = pv)
     },
 
     .predict = function(task) {
@@ -127,10 +127,10 @@ LearnerSurvNCVsurv = R6::R6Class(
       }
 
       # best lambda by default is used
-      lp = invoke(predict, self$model, X = newdata, type = "link", .args = pv)
+      lp = mlr3misc::invoke(predict, self$model, X = newdata, type = "link", .args = pv)
 
       # get survival distribution prediction
-      surv = invoke(predict, self$model, X = newdata, type = "survival", .args = pv)
+      surv = mlr3misc::invoke(predict, self$model, X = newdata, type = "survival", .args = pv)
 
       # unique time points from the train set
       utimes = unique(attr(surv, "time"))
