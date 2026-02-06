@@ -126,21 +126,29 @@ LearnerSurvGamCox = R6::R6Class(
         pars$formula = formula
       } else if (pars$formula == "auto") {
         # custom formula construction to use splines for continuous features
-        # If fewer than 10 unique values or not numeric -> use as-is
-        # If numeric with >0 10 unique values, use s(x) with defaults
+        # If not numeric -> use as-is (factors)
+        # If less than 10 unique values, no spline
+        # if 10 or more unique values, use s(x) with default / automatic k
         pars$formula = stats::reformulate(
           termlabels = mlr3misc::map_chr(task$feature_names, \(x) {
             feat_val = task$data(cols = x)[[1]]
+            n_uniq_val = length(unique(feat_val))
 
-            if (is.numeric(feat_val) & length(unique(feat_val)) >= 10) {
-              sprintf("s(%s)", x)
-            } else {
+            if (!is.numeric(feat_val) | n_uniq_val < 10) {
               x
+            } else {
+              term = sprintf("s(%s)", x)
+              # cli::cli_alert_info(
+              #   "Task {.val {task$id}}, feature {.val {x}}, unique values: {.val {n_uniq_val}}, term = {.val {term}}"
+              # )
+              term
             }
           }),
           response = task$target_names[1L]
         )
       }
+
+      # cli::cli_alert_info("Formula: {.val {pars$formula}}")
 
       control_obj = if (length(control_pars)) {
         mlr3misc::invoke(mgcv::gam.control, .args = control_pars)
