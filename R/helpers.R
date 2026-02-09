@@ -639,7 +639,7 @@ add_learner_groups = function(x) {
       learner_group = dplyr::case_match(
         learner_id,
         c("KM", "NEL", "AK") ~ "Baseline",
-        c("CPH", "GLMN", "Pen", "AFT", "Flex", "SSVM") ~ "Classical",
+        c("CPH", "GLMN", "GAM", "Pen", "NCV", "AFT", "Flex", "SSVM") ~ "Classical",
         c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
         c("MBSTCox", "MBSTAFT", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
         .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
