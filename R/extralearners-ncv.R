@@ -154,7 +154,7 @@ LearnerSurvNCVsurv = R6::R6Class(
 )
 
 # Normal way doesn't work
-mlr3extralearners:::.extralrns_dict$add("surv.cv_ncvsurv", LearnerSurvNCVsurv)
+# mlr3extralearners:::.extralrns_dict$add("surv.cv_ncvsurv", LearnerSurvNCVsurv)
 # Slightly hacky but works
 x = utils::getFromNamespace("mlr_learners", ns = "mlr3")
 x$add("surv.cv_ncvsurv", LearnerSurvNCVsurv)

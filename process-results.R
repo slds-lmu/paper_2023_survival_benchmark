@@ -7,12 +7,16 @@ if (!fs::dir_exists(conf$result_path)) {
   fs::dir_create(conf$result_path, recurse = TRUE)
 }
 
-save_obj <- function(obj, name, subdir = "", suffix = NULL, sep = "_") {
+result_path <- function(name, subdir = "", suffix = NULL, sep = "_") {
   if (!is.null(suffix)) {
     suffix <- paste(suffix, collapse = sep)
     name <- paste0(name, sep, suffix)
   }
-  path <- fs::path(conf$result_path, subdir, name, ext = "rds")
+  fs::path(conf$result_path, subdir, name, ext = "rds")
+}
+
+save_obj <- function(obj, name, subdir = "", suffix = NULL, sep = "_") {
+  path <- result_path(name, subdir, suffix, sep)
   cli::cli_alert_info("Saving {.val {deparse(substitute(obj))}} to {.file {fs::path_rel(path)}}")
   saveRDS(obj, path)
 }
@@ -31,19 +35,27 @@ tab <- collect_job_table(
 tab[, time.hours := as.numeric(time.running, unit = "hours")]
 data.table::setkey(tab, job.id)
 
-runtimes <- tab[
-  !is.na(time.running),
-  .(
-    mean_time_hours = mean(time.hours),
-    min_time_hours = min(time.hours),
-    max_time_hours = max(time.hours),
-    mean_mem_used = mean(mem.used, na.rm = TRUE)
-  ),
-  by = .(learner_id, task_id)
-]
+if (!fs::file_exists(result_path("runtimes"))) {
+  runtimes <- tab[
+    !is.na(time.running),
+    .(
+      mean_time_hours = mean(time.hours),
+      min_time_hours = min(time.hours),
+      max_time_hours = max(time.hours),
+      mean_mem_used = mean(mem.used, na.rm = TRUE)
+    ),
+    by = .(learner_id, task_id)
+  ]
+  save_obj(runtimes, name = "runtimes")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('runtimes'))}} already exists")
+}
 
-save_obj(runtimes, name = "runtimes")
-save_obj(tab, name = "jobs")
+if (!fs::file_exists(result_path("jobs"))) {
+  save_obj(tab, name = "jobs")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('jobs'))}} already exists")
+}
 
 cli::cli_h1("Processing registry")
 print(getStatus())
@@ -90,7 +102,12 @@ for (tune_measure in tune_measures) {
   future.apply::future_lapply(
     learners,
     \(learner) {
-      # for (learner in learners) {
+      # Skip if score file already exists
+      if (fs::file_exists(result_path("scores", subdir = "scores", suffix = c(tune_measure, learner)))) {
+        cli::cli_alert_info("Skipping {.val {learner}}: score file already exists")
+        return(NULL)
+      }
+
       # Assemble relevant job.ids
       ids_all = tab[learner_id == learner & measure == tune_measure, ]
       ids = ijoin(findDone(reg = reg), ids_all)
@@ -139,11 +156,17 @@ cli::cli_h2("Combining results")
 
 # Combine by tuning measure first
 for (tune_measure in tune_measures) {
+  if (fs::file_exists(result_path("scores_combined", suffix = tune_measure)) &&
+      fs::file_exists(result_path("aggr", suffix = tune_measure))) {
+    cli::cli_alert_info("Skipping combining for {.val {tune_measure}}: results already exist")
+    next
+  }
+
   cli::cli_progress_step("Combining results for {.val {tune_measure}}")
 
   # Try to find score files expected given the current learner/measure combination
   current_learners = learner_measure_tab[measure == tune_measure, learner_id]
-  score_files = fs::path(conf$result_path, glue::glue("scores_{tune_measure}_{current_learners}.rds"))
+  score_files = fs::path(conf$result_path, "scores", glue::glue("scores_{tune_measure}_{current_learners}.rds"))
   score_files = mlr3misc::keep(score_files, fs::file_exists)
 
   if (length(score_files) == 0) {
@@ -178,50 +201,63 @@ for (tune_measure in tune_measures) {
 }
 
 # Combining for all tuning measures
-aggr = fs::path(conf$result_path, glue::glue("aggr_{tune_measures}.rds")) |>
-  purrr::keep(fs::file_exists) |>
-  lapply(readRDS) |>
-  data.table::rbindlist(fill = TRUE) |>
-  add_learner_groups()
+if (!fs::file_exists(result_path("aggr"))) {
+  aggr = fs::path(conf$result_path, glue::glue("aggr_{tune_measures}.rds")) |>
+    purrr::keep(fs::file_exists) |>
+    lapply(readRDS) |>
+    data.table::rbindlist(fill = TRUE) |>
+    add_learner_groups()
+  save_obj(aggr, "aggr")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('aggr'))}} already exists")
+  aggr = readRDS(result_path("aggr"))
+}
 
-save_obj(aggr, "aggr")
-
-scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
-  purrr::keep(fs::file_exists) |>
-  lapply(readRDS) |>
-  data.table::rbindlist(fill = TRUE) |>
-  add_learner_groups()
-
-save_obj(scores, "scores")
+if (!fs::file_exists(result_path("scores"))) {
+  scores = fs::path(conf$result_path, glue::glue("scores_combined_{tune_measures}.rds")) |>
+    purrr::keep(fs::file_exists) |>
+    lapply(readRDS) |>
+    data.table::rbindlist(fill = TRUE) |>
+    add_learner_groups()
+  save_obj(scores, "scores")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('scores'))}} already exists")
+}
 
 # Creating bma objects --------------------------------------------------------------
 # bmas can be created from aggr tables and are lightweight, but useful for mlr3benchmark functionality
 # We need to get the aggrs for the untuned learners with tune_measure == "harrell_c,isbs"
 # and add them to the variants for each tuning measures, hence the grep'ing
 
-cols_bma_harrell_c = c("learner_id", "task_id", msr_tbl[type == "Discrimination", id])
-cols_bma_isbs = c("learner_id", "task_id", msr_tbl[type != "Discrimination", id])
+if (!fs::file_exists(result_path("bma", suffix = "harrell_c"))) {
+  cols_bma_harrell_c = c("learner_id", "task_id", msr_tbl[type == "Discrimination", id])
+  bma_harrell_c = aggr[
+    grepl(pattern = "harrell_c", x = tune_measure),
+    .SD,
+    .SDcols = cols_bma_harrell_c
+  ]
+  bma_harrell_c[, task_id := factor(task_id)]
+  bma_harrell_c[, learner_id := factor(learner_id)]
+  bma_harrell_c = mlr3benchmark::as_benchmark_aggr(bma_harrell_c)
+  save_obj(bma_harrell_c, "bma", suffix = "harrell_c")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('bma', suffix = 'harrell_c'))}} already exists")
+}
 
-bma_harrell_c = aggr[
-  grepl(pattern = "harrell_c", x = tune_measure),
-  .SD,
-  .SDcols = cols_bma_harrell_c
-]
-bma_harrell_c[, task_id := factor(task_id)]
-bma_harrell_c[, learner_id := factor(learner_id)]
-bma_harrell_c = mlr3benchmark::as_benchmark_aggr(bma_harrell_c)
-
-bma_isbs = aggr[
-  grepl(pattern = "isbs", x = tune_measure),
-  .SD,
-  .SDcols = cols_bma_isbs
-]
-bma_isbs[, task_id := factor(task_id)]
-bma_isbs[, learner_id := factor(learner_id)]
-bma_isbs = mlr3benchmark::as_benchmark_aggr(bma_isbs)
-
-save_obj(bma_harrell_c, "bma", suffix = "harrell_c")
-save_obj(bma_isbs, "bma", suffix = "isbs")
+if (!fs::file_exists(result_path("bma", suffix = "isbs"))) {
+  cols_bma_isbs = c("learner_id", "task_id", msr_tbl[type != "Discrimination", id])
+  bma_isbs = aggr[
+    grepl(pattern = "isbs", x = tune_measure),
+    .SD,
+    .SDcols = cols_bma_isbs
+  ]
+  bma_isbs[, task_id := factor(task_id)]
+  bma_isbs[, learner_id := factor(learner_id)]
+  bma_isbs = mlr3benchmark::as_benchmark_aggr(bma_isbs)
+  save_obj(bma_isbs, "bma", suffix = "isbs")
+} else {
+  cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('bma', suffix = 'isbs'))}} already exists")
+}
 
 # Reassembling tuning archives ----------------------------------------------------------------
 cli::cli_h2("Processing tuning archives")
