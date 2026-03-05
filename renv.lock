@@ -212,7 +212,8 @@
       "NeedsCompilation": "no",
       "Author": "Achim Zeileis [aut, cre] (<https://orcid.org/0000-0003-0918-3766>), Yves Croissant [aut]",
       "Maintainer": "Achim Zeileis <Achim.Zeileis@R-project.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "Hmisc": {
       "Package": "Hmisc",
@@ -529,6 +530,11 @@
       "Author": "Jan Grau [aut, cre], Jens Keilwagen [aut]",
       "Maintainer": "Jan Grau <grau@informatik.uni-halle.de>",
       "Repository": "CRAN"
+    },
+    "PlackettLuce": {
+      "Package": "PlackettLuce",
+      "Version": "0.4.4",
+      "Source": "Repository"
     },
     "Publish": {
       "Package": "Publish",
@@ -3047,6 +3053,51 @@
       "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
       "Repository": "CRAN"
     },
+    "ggparty": {
+      "Package": "ggparty",
+      "Version": "1.0.0.1",
+      "Source": "Repository",
+      "Title": "'ggplot' Visualizations for the 'partykit' Package",
+      "Authors@R": "c( person(\"Martin\", \"Borkovec\", role = c(\"aut\", \"cre\"), email = \"martin.borkovec@skyforge.at\"),  person(\"Niyaz\", \"Madin\", role = c(\"aut\"), email = \"niyaz.madin@gmail.com\"), person(\"Hadley\", \"Wickham\", role = \"ctb\"), person(\"Winston\", \"Chang\", role = \"ctb\"), person(\"Lionel\", \"Henry\", role = \"ctb\"), person(\"Thomas Lin\", \"Pedersen\", role = \"ctb\"), person(\"Kohske\", \"Takahashi\", role = \"ctb\"), person(\"Claus\", \"Wilke\", role = \"ctb\"), person(\"Kara\", \"Woo\", role = \"ctb\"), person(\"Hiroaki\", \"Yutani\", role = \"ctb\") )",
+      "Copyright": "file inst/COPYRIGHTS",
+      "Description": "Extends 'ggplot2' functionality to the 'partykit' package. 'ggparty' provides the necessary tools to create clearly structured and highly customizable visualizations for tree-objects of the class 'party'.",
+      "Maintainer": "Martin Borkovec <martin.borkovec@skyforge.at>",
+      "Depends": [
+        "R (>= 3.4.0)",
+        "ggplot2",
+        "partykit"
+      ],
+      "Imports": [
+        "grid",
+        "gtable",
+        "utils",
+        "checkmate",
+        "methods",
+        "survival",
+        "rlang"
+      ],
+      "Suggests": [
+        "testthat",
+        "mlbench",
+        "AER",
+        "coin",
+        "vdiffr",
+        "knitr",
+        "rmarkdown",
+        "pander",
+        "MASS",
+        "TH.data"
+      ],
+      "License": "GPL-2 | GPL-3",
+      "URL": "https://github.com/martin-borkovec/ggparty",
+      "BugReports": "https://github.com/martin-borkovec/ggparty/issues",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.2",
+      "VignetteBuilder": "knitr",
+      "NeedsCompilation": "no",
+      "Author": "Martin Borkovec [aut, cre], Niyaz Madin [aut], Hadley Wickham [ctb], Winston Chang [ctb], Lionel Henry [ctb], Thomas Lin Pedersen [ctb], Kohske Takahashi [ctb], Claus Wilke [ctb], Kara Woo [ctb], Hiroaki Yutani [ctb]",
+      "Repository": "CRAN"
+    },
     "ggplot2": {
       "Package": "ggplot2",
       "Version": "3.5.1",
@@ -3633,7 +3684,8 @@
       "NeedsCompilation": "no",
       "Author": "Torsten Hothorn [aut, cre]",
       "Maintainer": "Torsten Hothorn <Torsten.Hothorn@R-project.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "isoband": {
       "Package": "isoband",
@@ -4163,7 +4215,8 @@
       "License": "GPL-2",
       "Author": "Torsten Hothorn [aut, cre] (<https://orcid.org/0000-0001-8301-0471>), Henric Winell [aut] (<https://orcid.org/0000-0001-7995-3047>)",
       "Maintainer": "Torsten Hothorn <Torsten.Hothorn@R-project.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "lifecycle": {
       "Package": "lifecycle",
@@ -5431,7 +5484,8 @@
       "NeedsCompilation": "yes",
       "Author": "Alan Genz [aut], Frank Bretz [aut], Tetsuhisa Miwa [aut], Xuefei Mi [aut], Friedrich Leisch [ctb], Fabian Scheipl [ctb], Bjoern Bornkamp [ctb] (<https://orcid.org/0000-0002-6294-8185>), Martin Maechler [ctb] (<https://orcid.org/0000-0002-8685-9910>), Torsten Hothorn [aut, cre] (<https://orcid.org/0000-0001-8301-0471>)",
       "Maintainer": "Torsten Hothorn <Torsten.Hothorn@R-project.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "ncvreg": {
       "Package": "ncvreg",
@@ -5827,7 +5881,8 @@
       "NeedsCompilation": "yes",
       "Author": "Torsten Hothorn [aut, cre] (<https://orcid.org/0000-0001-8301-0471>), Heidi Seibold [ctb] (<https://orcid.org/0000-0002-8960-9642>), Achim Zeileis [aut] (<https://orcid.org/0000-0003-0918-3766>)",
       "Maintainer": "Torsten Hothorn <Torsten.Hothorn@R-project.org>",
-      "Repository": "CRAN"
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "pec": {
       "Package": "pec",
