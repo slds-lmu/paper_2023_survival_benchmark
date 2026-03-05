@@ -204,9 +204,15 @@ plot_aggr_scores = function(
   p = ggplot(
     this_df,
     aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)
-  ) +
-    geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
-    scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
+  )
+
+  if (type == "box") {
+    p = p + geom_boxplot(alpha = 1 / 4, key_glyph = "rect")
+  } else if (type == "violin") {
+    p = p + geom_violin(alpha = 1 / 4, key_glyph = "rect", draw_quantiles = c(.25, .75))
+  }
+
+  p = p + scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
 
   p = p +
     labs(
