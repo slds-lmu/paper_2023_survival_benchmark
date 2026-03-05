@@ -119,8 +119,9 @@ save_cd_plot(p, "isbs")
 
 cli::cli_h2("Aggregated Boxplots")
 
-save_boxplot_plot = function(
+save_aggr_plot = function(
   p,
+  type = c("box", "violin"),
   eval_measure_id,
   tuning_measure_id,
   tag = "score",
@@ -128,27 +129,11 @@ save_boxplot_plot = function(
   height = 6,
   formats = c("png", "pdf")
 ) {
+  type = match.arg(type)
+  prefix = if (type == "box") "aggr-boxplot" else "aggr-violin"
   save_plot(
     p,
-    name = paste("aggr-boxplot", tuning_measure_id, eval_measure_id, tag, sep = "-"),
-    width = width,
-    height = height,
-    formats = formats
-  )
-}
-
-save_violin_plot = function(
-  p,
-  eval_measure_id,
-  tuning_measure_id,
-  tag = "score",
-  width = 8.25,
-  height = 6,
-  formats = c("png", "pdf")
-) {
-  save_plot(
-    p,
-    name = paste("aggr-violin", tuning_measure_id, eval_measure_id, tag, sep = "-"),
+    name = paste(prefix, tuning_measure_id, eval_measure_id, tag, sep = "-"),
     width = width,
     height = height,
     formats = formats
@@ -160,25 +145,17 @@ save_violin_plot = function(
 # Harrell's C, raw scores
 
 for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
-
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
+  for (ptype in c("box", "violin")) {
+    p = plot_aggr_scores(
+      aggr_scores,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "harrell_c",
+      dodge = FALSE,
+      flip = TRUE
+    )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
+  }
 }
 
 # Harrell's C (Scaled)
@@ -186,35 +163,22 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
 # aggr-boxplot-harrell-c-scaled
 
 for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores_scaled,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE
-  ) %+%
-    labs(
-      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-      subtitle = "Boxplot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
-    )
-
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
-
-  p = plot_aggr_scores(
-    aggr_scores_scaled,
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE
-  ) %+%
-    labs(
-      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-      subtitle = "Violin plot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
-    )
-
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
+  for (ptype in c("box", "violin")) {
+    ptype_label = if (ptype == "box") "Boxplot" else "Violin plot"
+    p = plot_aggr_scores(
+      aggr_scores_scaled,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "harrell_c",
+      dodge = FALSE,
+      flip = TRUE
+    ) %+%
+      labs(
+        title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
+        subtitle = glue::glue("{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model")
+      )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
+  }
 }
 
 
@@ -222,72 +186,48 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
 # ISBS (Raw scores)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
-
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
+  for (ptype in c("box", "violin")) {
+    p = plot_aggr_scores(
+      aggr_scores,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      dodge = FALSE,
+      flip = TRUE
+    )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
+  }
 }
 
 # ISBS (ERV)
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
-
-  p = plot_aggr_scores(
-    aggr_scores,
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
+  for (ptype in c("box", "violin")) {
+    p = plot_aggr_scores(
+      aggr_scores,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      dodge = FALSE,
+      flip = TRUE
+    )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
+  }
 }
 
 # ISBS (ERV) without AK
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores[learner_id != "AK"],
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
-
-  p = plot_aggr_scores(
-    aggr_scores[learner_id != "AK"],
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  )
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
+  for (ptype in c("box", "violin")) {
+    p = plot_aggr_scores(
+      aggr_scores[learner_id != "AK"],
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      dodge = FALSE,
+      flip = TRUE
+    )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
+  }
 }
 
 
@@ -297,33 +237,22 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
 #aggr-boxplot-isbs-scaled}
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  p = plot_aggr_scores(
-    aggr_scores_scaled,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  ) %+%
-    labs(
-      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-      subtitle = "Boxplot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
-    )
-  save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
-
-  p = plot_aggr_scores(
-    aggr_scores_scaled,
-    type = "violin",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE
-  ) %+%
-    labs(
-      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-      subtitle = "Violin plot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
-    )
-  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
+  for (ptype in c("box", "violin")) {
+    ptype_label = if (ptype == "box") "Boxplot" else "Violin plot"
+    p = plot_aggr_scores(
+      aggr_scores_scaled,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      dodge = FALSE,
+      flip = TRUE
+    ) %+%
+      labs(
+        title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
+        subtitle = glue::glue("{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model")
+      )
+    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
+  }
 }
 
 # Aggregated Boxplots with 3 types of scaling -------------------------------------------------
