@@ -92,7 +92,7 @@ save_cd_plot = function(p, tuning_measure, formats = c("png", "pdf")) {
   )
 }
 
-cd_ratio = 10 / 11
+cd_ratio = 0.8
 
 # critical-difference-baseline-diff-harrell-c-harrell-c
 p = plot_bma(
@@ -137,6 +137,24 @@ save_boxplot_plot = function(
   )
 }
 
+save_violin_plot = function(
+  p,
+  eval_measure_id,
+  tuning_measure_id,
+  tag = "score",
+  width = 8.25,
+  height = 6,
+  formats = c("png", "pdf")
+) {
+  save_plot(
+    p,
+    name = paste("aggr-violin", tuning_measure_id, eval_measure_id, tag, sep = "-"),
+    width = width,
+    height = height,
+    formats = formats
+  )
+}
+
 
 # Harrell's C Boxplots ---------------------------------------------------
 # Harrell's C, raw scores
@@ -151,6 +169,16 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
     flip = TRUE
   )
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
+
+  p = plot_aggr_scores(
+    aggr_scores,
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE
+  )
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c")
 }
 
 # Harrell's C (Scaled)
@@ -172,6 +200,21 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
     )
 
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
+
+  p = plot_aggr_scores(
+    aggr_scores_scaled,
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE
+  ) %+%
+    labs(
+      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
+      subtitle = "Violin plot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
+    )
+
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
 }
 
 
@@ -188,6 +231,16 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
     flip = TRUE
   )
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
+
+  p = plot_aggr_scores(
+    aggr_scores,
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "score")
 }
 
 # ISBS (ERV)
@@ -202,6 +255,16 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
     flip = TRUE
   )
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
+
+  p = plot_aggr_scores(
+    aggr_scores,
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv")
 }
 
 # ISBS (ERV) without AK
@@ -215,6 +278,16 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
     flip = TRUE
   )
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
+
+  p = plot_aggr_scores(
+    aggr_scores[learner_id != "AK"],
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  )
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
 }
 
 
@@ -237,6 +310,20 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
       subtitle = "Boxplot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
     )
   save_boxplot_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
+
+  p = plot_aggr_scores(
+    aggr_scores_scaled,
+    type = "violin",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE
+  ) %+%
+    labs(
+      title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
+      subtitle = "Violin plot of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
+    )
+  save_violin_plot(p, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
 }
 
 # Aggregated Boxplots with 3 types of scaling -------------------------------------------------
@@ -256,9 +343,10 @@ aggr_scaled_temp = data.table::copy(aggr_scores_scaled[,
 data.table::setnames(aggr_scaled_temp, old = measure_normal, new = measure_scaled)
 aggr_temp = aggr_temp[aggr_scaled_temp, on = .(task_id, learner_id, tune_measure, learner_group)]
 
-p = aggr_temp |>
+p_base = aggr_temp |>
   dplyr::filter(grepl("isbs", .data[["tune_measure"]])) |>
-  dplyr::filter(isbs_scaled <= 1, isbs_scaled >= 0, learner_id != "AK") |>
+  dplyr::filter(isbs_scaled <= 1, isbs_scaled >= 0) |>
+  dplyr::filter(!(learner_id %in% c("AK", "NCV", "KM", "NEL"))) |>
   tidyr::pivot_longer(
     cols = tidyselect::all_of(c(measure_normal, measure_erv, measure_scaled)),
     names_to = "measure",
@@ -275,8 +363,15 @@ p = aggr_temp |>
   ) |>
   ggplot(aes(x = score, y = learner_id, color = learner_group, fill = learner_group)) +
   facet_wrap(vars(measure), scales = "free", ncol = 3) +
-  geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
   scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
+  theme_minimal(base_size = 15) +
+  theme(
+    legend.position = "bottom",
+    plot.title.position = "plot"
+  )
+
+p_threes_box = p_base +
+  geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
   labs(
     title = "Integrated Survival Brier Score (ISBS)",
     subtitle = "Boxplot of aggregated scores",
@@ -285,15 +380,36 @@ p = aggr_temp |>
     color = NULL,
     fill = NULL
     # caption = "AK omitted for largely out of scale values"
-  ) +
-  theme_minimal(base_size = 15) +
-  theme(
-    legend.position = "bottom",
-    plot.title.position = "plot"
   )
 
+p_threes_violin = p_base +
+  geom_violin(alpha = 1 / 4, key_glyph = "rect", draw_quantiles = c(.25, .75)) +
+  labs(
+    title = "Integrated Survival Brier Score (ISBS)",
+    subtitle = "Violin of aggregated scores",
+    x = NULL,
+    y = NULL,
+    color = NULL,
+    fill = NULL
+    # caption = "AK omitted for largely out of scale values"
+  )
 
-save_plot(p = p, name = "aggr-boxplot-threes-isbs-isbs", width = 12, height = 5, formats = c("png", "pdf"))
+save_plot(
+  p = p_threes_box,
+  name = "aggr-boxplot-threes-isbs-isbs",
+  width = 12,
+  height = 5,
+  formats = c("png", "pdf")
+)
+
+save_plot(
+  p = p_threes_violin,
+  name = "aggr-violin-threes-isbs-isbs",
+  width = 12,
+  height = 5,
+  formats = c("png", "pdf")
+)
+
 
 # Aggregated Calibration plots ----------------------------------------------------------------
 cli::cli_h2("Aggregated Calibration plots")
@@ -353,7 +469,7 @@ save_plot(
 # Alpha Calibration
 
 p = aggr_scores |>
-  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), learner_id != "AK") |>
+  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV"))) |>
   ggplot(aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
   geom_point() +
   geom_vline(xintercept = 1) +
@@ -387,20 +503,21 @@ save_plot(
 )
 
 p_dist = aggr_scores |>
-  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), learner_id != "AK") |>
+  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV", "NEL", "KM"))) |>
   ggplot(aes(x = alpha_calib)) +
   facet_wrap(vars(learner_id), scales = "free_y", ncol = 2) +
   # geom_density(aes(y = after_stat(count))) +
-  geom_histogram(alpha = 1 / 4, color = "darkgray") +
+  geom_histogram(alpha = 1 / 4, color = "gray", fill = "darkgray") +
+  geom_density(aes(y = after_stat(density)), color = "black") +
   geom_vline(xintercept = 1, color = "darkred") +
-  scale_y_continuous(breaks = scales::pretty_breaks(n = 4)) +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) +
   # scale_x_log10() +
   labs(
-    title = "Alpha-Calibration scores across task",
-    subtitle = glue::glue(
-      "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
-      "Values close to 1 (red line) indicate reasonable calibration"
-    ),
+    title = glue::glue("Alpha-Calibration scores across tasks (tuned on ISBS)"),
+    # subtitle = glue::glue(
+    #   "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
+    #   "Values close to 1 (red line) indicate reasonable calibration"
+    # ),
     y = "Count",
     x = "Alpha"
     # caption = "AK omitted for largely out of scale values"
@@ -420,7 +537,7 @@ save_plot(
   p_dist,
   name = paste("calib-alpha-ratio-plot-dist", "isbs", sep = "-"),
   width = 6,
-  height = 7,
+  height = 6,
   formats = c("png", "pdf")
 )
 
