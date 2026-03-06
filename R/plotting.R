@@ -249,11 +249,13 @@ plot_scores = function(
   tuning_measure_id = "harrel_c",
   dodge = FALSE,
   flip = TRUE,
-  ncol = 8
+  ncol = 8,
+  type = c("box", "violin")
 ) {
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
   checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
+  type = match.arg(type)
 
   if (msr_tbl[id == eval_measure_id, minimize]) {
     direction_label = "lower is better"
@@ -265,7 +267,6 @@ plot_scores = function(
     dplyr::filter(grepl(pattern = .env$tuning_measure_id, x = .data$tune_measure)) |>
     ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
     facet_wrap(vars(task_id), scales = "free_x", ncol = ncol) +
-    geom_boxplot(alpha = 1 / 4) +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
     labs(
       title = msr_tbl[id == eval_measure_id, label],
@@ -290,6 +291,12 @@ plot_scores = function(
       axis.text.y = element_text(size = rel(.7)),
       strip.text = element_text(size = rel(1.1))
     )
+
+  if (type == "box") {
+    p = p + geom_boxplot(alpha = 1 / 4)
+  } else if (type == "violin") {
+    p = p + geom_violin(alpha = 1 / 4, draw_quantiles = c(.25, .75))
+  }
 
   # if (interactive()) {
   #   print(p)

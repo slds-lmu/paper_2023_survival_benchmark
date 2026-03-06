@@ -14,6 +14,7 @@ library(ggplot2)
 library(cli)
 
 result_path <- fs::path(here::here("results", "production"))
+plot_path <- here::here("results_paper")
 
 # -- Data -------------------------------------------------------------------
 tasktab <- load_tasktab()
@@ -115,12 +116,7 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
     labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)") +
     theme_minimal()
 
-  ggsave(
-    fs::path(result_path, paste0("pl_worth_ph_subgroups_", measure, ".png")),
-    p, width = 12, height = 6
-  )
-
-  cli_alert_success("Plots saved to {result_path}")
+  save_plot(p, name = paste0("pl_worth_ph_subgroups_", measure), width = 12, height = 6, formats = "pdf")
 
   invisible(list(
     pl_ph0 = pl_ph0, pl_ph1 = pl_ph1,

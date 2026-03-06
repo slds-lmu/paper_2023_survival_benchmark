@@ -11,6 +11,7 @@ library(ggplot2)
 library(cli)
 
 result_path <- fs::path(here::here("results", "production"))
+plot_path <- here::here("results_paper")
 
 # -- Data -------------------------------------------------------------------
 tasktab <- load_tasktab()
@@ -68,7 +69,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
     labs(x = NULL, y = "Log-worth (quasi-SE)") +
     theme_minimal()
 
-  ggsave(fs::path(result_path, paste0("pl_worth_", measure, ".png")), p1, width = 8, height = 6)
+  save_plot(p1, name = paste0("pl_worth_", measure), width = 8, height = 6, formats = "pdf")
 
   # Plot 2: re-referenced to CPH
   cph_estimate <- qvdt[learner == "CPH", estimate]
@@ -82,13 +83,11 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
     labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)") +
     theme_minimal()
 
-  ggsave(fs::path(result_path, paste0("pl_worth_", measure, "_cphref.png")), p2, width = 8, height = 6)
-
-  cli_alert_success("Plots saved to {result_path}")
+  save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), width = 8, height = 6, formats = "pdf")
 
   invisible(list(pl_fit = pl_fit, qv = qv, worth = worth))
 }
 
 # -- Run for both measures --------------------------------------------------
 res_harrell_c <- run_pl_ranking(scores_all, "harrell_c", minimize = FALSE, exclude, result_path)
-res_isbs      <- run_pl_ranking(scores_all, "isbs",      minimize = TRUE,  exclude, result_path)
+res_isbs <- run_pl_ranking(scores_all, "isbs", minimize = TRUE, exclude, result_path)

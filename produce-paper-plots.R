@@ -476,17 +476,20 @@ cli::cli_h2("Score Boxplots per Dataset")
 
 scores[, learner_id := factor(learner_id, levels = rev(lrntab$id))]
 
-save_boxplot_plot_scores = function(
+save_scores_plot = function(
   p,
+  type = c("box", "violin"),
   eval_measure_id,
   tuning_measure_id,
   width,
   height,
   formats = c("png", "pdf")
 ) {
+  type = match.arg(type)
+  prefix = if (type == "box") "scores-boxplot" else "scores-violin"
   save_plot(
     p,
-    name = paste("scores-boxplot", tuning_measure_id, eval_measure_id, sep = "-"),
+    name = paste(prefix, tuning_measure_id, eval_measure_id, sep = "-"),
     width = width,
     height = height,
     formats = formats
@@ -495,44 +498,52 @@ save_boxplot_plot_scores = function(
 
 cli::cli_h3("Discrimination measures")
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
-  cli::cli_progress_step("Plotting scores for {.val {measure_id}}")
+  for (ptype in c("box", "violin")) {
+    cli::cli_progress_step("Plotting {ptype} scores for {.val {measure_id}}")
 
-  p = plot_scores(
-    scores,
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE,
-    ncol = 5
-  )
-  save_boxplot_plot_scores(
-    p,
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    width = 10,
-    height = 15,
-    formats = c("png", "pdf")
-  )
+    p = plot_scores(
+      scores,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "harrell_c",
+      dodge = FALSE,
+      flip = TRUE,
+      ncol = 5
+    )
+    save_scores_plot(
+      p,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "harrell_c",
+      width = 10,
+      height = 15,
+      formats = c("png", "pdf")
+    )
+  }
 }
 
 cli::cli_h3("Scoring rules")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  cli::cli_progress_step("Plotting scores for {.val {measure_id}}")
+  for (ptype in c("box", "violin")) {
+    cli::cli_progress_step("Plotting {ptype} scores for {.val {measure_id}}")
 
-  p = plot_scores(
-    scores,
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE,
-    ncol = 5
-  )
-  save_boxplot_plot_scores(
-    p,
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    width = 10,
-    height = 14,
-    formats = c("png", "pdf")
-  )
+    p = plot_scores(
+      scores,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      dodge = FALSE,
+      flip = TRUE,
+      ncol = 5
+    )
+    save_scores_plot(
+      p,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      width = 10,
+      height = 14,
+      formats = c("png", "pdf")
+    )
+  }
 }
