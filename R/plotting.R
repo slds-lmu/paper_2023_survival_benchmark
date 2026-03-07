@@ -328,7 +328,7 @@ plot_pltree_gg <- function(tree, caption = NULL) {
   learner_order <- tapply(worth_df$worth, worth_df$learner, mean)
   worth_df$learner <- factor(worth_df$learner, levels = names(sort(learner_order)))
 
-  ggparty(tree, terminal_space = 0.6) +
+  p <- ggparty(tree, terminal_space = 0.6) +
     geom_edge(linewidth = 0.8) +
     geom_edge_label(size = 3.5) +
     geom_node_label(
@@ -363,8 +363,14 @@ plot_pltree_gg <- function(tree, caption = NULL) {
       shared_legend = FALSE,
       ids = "terminal"
     ) +
-    theme_void() +
-    labs(caption = caption)
+    theme_void()
+
+  # ggparty ignores standard ggplot2 labs(caption=), so add it via patchwork
+  if (!is.null(caption)) {
+    require(patchwork)
+    p <- p + patchwork::plot_annotation(caption = caption)
+  }
+  p
 }
 
 save_plot = function(p, name, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {

@@ -18,30 +18,14 @@ tasktab <- load_tasktab()
 scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 
 exclude <- c("KM", "NEL")
-msr_tbl <- measures_tbl()
 
 # -- Analysis function ------------------------------------------------------
 run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) {
   cli_h1("Plackett-Luce ranking: {measure}")
-  measure_label <- msr_tbl[id == measure, label]
+  measure_label <- measures_tbl()[id == measure, label]
 
-  # Filter to tune_measure and exclude baselines
-  scores <- scores_all[grepl(pattern = measure, tune_measure) & !learner_id %in% exclude]
-
-  # Average score per learner-task, then rank
-  scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
-  scores_avg[, rank_score := frank(if (minimize) score else -score, ties.method = "random"), by = task_id]
-
-  # Wide format: rows = tasks, columns = learners
-  ranks_wide <- dcast(scores_avg, task_id ~ learner_id, value.var = "rank_score")
-  task_ids <- ranks_wide$task_id
-  learner_ids <- setdiff(names(ranks_wide), "task_id")
-
-  rank_mat <- as.matrix(ranks_wide[, learner_ids, with = FALSE])
-  rownames(rank_mat) <- task_ids
-
-  rankings <- as.rankings(rank_mat)
-  stopifnot(!anyNA(rank_mat))
+  prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
+  rankings <- prep$rankings
 
   # Fit PL model
   pl_fit <- PlackettLuce(rankings, trace = TRUE)

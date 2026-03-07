@@ -205,7 +205,7 @@ res_all_isbs <- run_pl_tree(
   minimize = TRUE,
   learners = all_learners(scores_all, "isbs"),
   tasktab = tasktab,
-  plot_name = "all_learners-alpha-05",
+  plot_name = "all_learners-alpha05",
   alpha = .5,
   width = 12,
   height = 8
@@ -213,32 +213,40 @@ res_all_isbs <- run_pl_tree(
 
 # all learners, different covariates, high alpha, for experimenting
 if (FALSE) {
-  res_all_hc <- run_pl_tree(
+  res_testing_hc <- run_pl_tree(
     scores_all = scores_all,
     measure = "harrell_c",
     minimize = FALSE,
-    covariates = c("noverp", "censprop", "zph_pval_processed", "ph_violated", "n", "p"),
+    covariates = c(
+      "noverp",
+      "censprop"
+      # "zph_pval_processed",
+      # "ph_violated"
+      # "n",
+      # "p"
+    ),
     learners = all_learners(scores_all, "harrell_c"),
     tasktab = tasktab,
-    plot_name = "all_learners",
+    plot_name = "all_learners-allcov-alpha-5",
     alpha = .8,
     width = 12,
     height = 8
   )
 
-  res_all_isbs <- run_pl_tree(
+  res_testing_isbs <- run_pl_tree(
     scores_all = scores_all,
     measure = "isbs",
     minimize = TRUE,
     covariates = c(
       "noverp",
       "censprop",
-      "zph_pval_processed"
+      # "zph_pval_processed"
+      "ph_violated"
     ),
     learners = all_learners(scores_all, "isbs"),
     tasktab = tasktab,
-    plot_name = "all_learners",
-    alpha = .5,
+    plot_name = "all_learners-allcov-alpha-5",
+    alpha = .8,
     width = 12,
     height = 8
   )
