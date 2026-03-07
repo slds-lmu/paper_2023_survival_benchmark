@@ -30,7 +30,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
 
   # Average score per learner-task, then rank
   scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
-  scores_avg[, rank_score := frank(if (minimize) score else -score), by = task_id]
+  scores_avg[, rank_score := frank(if (minimize) score else -score, ties.method = "random"), by = task_id]
 
   # Wide format: rows = tasks, columns = learners
   ranks_wide <- dcast(scores_avg, task_id ~ learner_id, value.var = "rank_score")

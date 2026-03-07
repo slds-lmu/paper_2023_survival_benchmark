@@ -282,6 +282,9 @@ load_tasktab = function(path = here::here("tables", "tasktab.csv")) {
 #'
 #' Define once, use everywhere.
 get_measures_eval = function() {
+  require(mlr3)
+  require(mlr3proba)
+  
   measures_eval = list(
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),

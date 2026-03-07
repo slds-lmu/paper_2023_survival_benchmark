@@ -35,7 +35,7 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
 
   # Average score per learner-task, then rank
   scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
-  scores_avg[, rank_score := frank(if (minimize) score else -score), by = task_id]
+  scores_avg[, rank_score := frank(if (minimize) score else -score, ties.method = "random"), by = task_id]
 
   # Wide format
   ranks_wide <- dcast(scores_avg, task_id ~ learner_id, value.var = "rank_score")
@@ -83,7 +83,7 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
     rank_ph_ok = seq_along(worth_ph0),
     worth_ph_ok = sort(worth_ph0, decreasing = TRUE)
   )
-  rank_comparison[, `:=`(
+  rank_comparison[, let(
     rank_ph_violated = match(learner, names(sort(worth_ph1, decreasing = TRUE))),
     worth_ph_violated = worth_ph1[learner]
   )]

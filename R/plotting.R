@@ -311,6 +311,62 @@ plot_scores = function(
   p
 }
 
+plot_pltree_gg <- function(tree, caption = NULL) {
+  require(ggparty)
+
+  # Extract worth parameters per terminal node into a data.frame with 'id' column
+  term_ids <- partykit::nodeids(tree, terminal = TRUE)
+  worth_df <- do.call(
+    rbind,
+    lapply(term_ids, function(nid) {
+      w <- coef(tree, node = nid, log = FALSE)
+      data.frame(id = nid, learner = names(w), worth = as.numeric(w))
+    })
+  )
+
+  # Order learners by overall mean worth (ascending, so best is at top after coord_flip)
+  learner_order <- tapply(worth_df$worth, worth_df$learner, mean)
+  worth_df$learner <- factor(worth_df$learner, levels = names(sort(learner_order)))
+
+  ggparty(tree, terminal_space = 0.6) +
+    geom_edge(linewidth = 0.8) +
+    geom_edge_label(size = 3.5) +
+    geom_node_label(
+      aes(label = paste0(splitvar, "\np = ", formatC(p.value, format = "f", digits = 3))),
+      ids = "inner",
+      size = 4,
+      fontface = "bold"
+    ) +
+    geom_node_label(
+      aes(label = paste0("Node ", id, ", n = ", nodesize)),
+      ids = "terminal",
+      size = 3,
+      nudge_y = 0.01
+    ) +
+    geom_node_plot(
+      gglist = list(
+        geom_col(
+          data = worth_df,
+          aes(x = learner, y = worth),
+          width = 0.7,
+          fill = "steelblue"
+        ),
+        coord_flip(),
+        labs(x = NULL, y = "Worth"),
+        theme_minimal(base_size = 9),
+        theme(
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank()
+        )
+      ),
+      shared_axis_labels = TRUE,
+      shared_legend = FALSE,
+      ids = "terminal"
+    ) +
+    theme_void() +
+    labs(caption = caption)
+}
+
 save_plot = function(p, name, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {
   if (interactive()) {
     print(p)
