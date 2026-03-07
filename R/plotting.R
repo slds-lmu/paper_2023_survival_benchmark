@@ -113,7 +113,16 @@ plot_bma = function(
   )
 
   minimize = msr_tbl[id == measure_id, minimize]
-  # browser()
+
+  if (measure_id != tuning_measure_id) {
+    plot_caption = glue::glue(
+      "Evaluation measure: {measure_label}
+                             Tuning measure: {tuning_measure_label}"
+    )
+  } else {
+    plot_caption = glue::glue("Measure: {measure_label}")
+  }
+
   if (type %in% c("cd_n", "cd_bd")) {
     test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
 
@@ -121,10 +130,7 @@ plot_bma = function(
 
     p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
       labs(
-        caption = glue::glue(
-          "Evaluation measure: {measure_label}
-                             Tuning measure: {tuning_measure_label}"
-        )
+        caption = plot_caption
       )
   } else if (type %in% c("mean", "box", "fn")) {
     p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)

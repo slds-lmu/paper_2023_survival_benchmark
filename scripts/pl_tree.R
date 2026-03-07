@@ -13,6 +13,8 @@
 
 library(PlackettLuce)
 library(data.table)
+library(ggplot2)
+library(ggparty)
 library(cli)
 
 result_path <- fs::path(here::here("results", "production"))
@@ -28,7 +30,7 @@ scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 # -- Helper: average scores and build rankings + model_data -----------------
 build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tasktab) {
   dt <- scores_avg[learner_id %in% learner_subset]
-  dt[, rank_score := frank(if (minimize) score else -score), by = task_id]
+  dt[, rank_score := frank(if (minimize) score else -score, ties.method = "random"), by = task_id]
 
   ranks_wide <- dcast(dt, task_id ~ learner_id, value.var = "rank_score")
   task_ids <- ranks_wide$task_id
@@ -57,87 +59,144 @@ get_pvals <- function(tree) {
   setNames(st$p.value, rownames(st))
 }
 
+# -- ggparty plotting helper ------------------------------------------------
+plot_pltree_gg <- function(tree) {
+  # Extract worth parameters per terminal node into a data.frame with 'id' column
+  term_ids <- nodeids(tree, terminal = TRUE)
+  worth_df <- do.call(
+    rbind,
+    lapply(term_ids, function(nid) {
+      w <- coef(tree, node = nid, log = FALSE)
+      data.frame(id = nid, learner = names(w), worth = as.numeric(w))
+    })
+  )
+
+  # Order learners by overall mean worth (ascending, so best is at top after coord_flip)
+  learner_order <- tapply(worth_df$worth, worth_df$learner, mean)
+  worth_df$learner <- factor(worth_df$learner, levels = names(sort(learner_order)))
+
+  ggparty(tree, terminal_space = 0.6) +
+    geom_edge(linewidth = 0.8) +
+    geom_edge_label(size = 3.5) +
+    geom_node_label(
+      aes(label = splitvar),
+      ids = "inner",
+      size = 4,
+      fontface = "bold"
+    ) +
+    geom_node_label(
+      aes(label = paste0("Node ", id, ", n = ", nodesize)),
+      ids = "terminal",
+      size = 3,
+      nudge_y = 0.01
+    ) +
+    geom_node_plot(
+      gglist = list(
+        geom_col(
+          data = worth_df,
+          aes(x = learner, y = worth),
+          width = 0.7,
+          fill = "steelblue"
+        ),
+        coord_flip(),
+        labs(x = NULL, y = "Worth"),
+        theme_minimal(base_size = 9),
+        theme(
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank()
+        )
+      ),
+      shared_axis_labels = TRUE,
+      shared_legend = FALSE,
+      ids = "terminal"
+    ) +
+    theme_void()
+}
+
 # -- Analysis function ------------------------------------------------------
-run_pl_tree <- function(scores_all, measure, minimize, tasktab, result_path, alpha = 0.05) {
-  cli_h1("Plackett-Luce tree: {measure} (alpha = {alpha})")
+run_pl_tree <- function(
+  scores_all,
+  measure,
+  minimize,
+  learners,
+  tasktab,
+  plot_name,
+  alpha = 0.05,
+  width = 10,
+  height = 7
+) {
+  cli_h1("Plackett-Luce tree: {measure} / {plot_name} (alpha = {alpha})")
 
   scores <- scores_all[grepl(pattern = measure, tune_measure)]
   scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
 
-  exclude <- c("KM", "NEL")
+  dat <- build_pltree_data(scores_avg, measure, minimize, learners, tasktab)
 
-  # a) All learners
-  all_learners <- setdiff(unique(scores_avg$learner_id), exclude)
-  dat_all <- build_pltree_data(scores_avg, measure, minimize, all_learners, tasktab)
+  cli_alert_info("Learners ({length(dat$learner_ids)}): {paste(dat$learner_ids, collapse = ', ')}")
 
-  cli_h2("All learners ({length(dat_all$learner_ids)})")
-  cli_alert_info("Learners: {paste(dat_all$learner_ids, collapse = ', ')}")
-
-  tree_all <- pltree(
+  tree <- pltree(
     G ~ noverp + ph_violated + censprop,
-    data = dat_all$model_data,
+    data = dat$model_data,
     alpha = alpha,
     maxdepth = 3,
     minsize = 5,
     trace = TRUE
   )
-  tree_all
+  tree
 
-  cli_h3("Instability tests (root node)")
-  print(sctest(tree_all, node = 1))
+  cli_h2("Instability tests (root node)")
+  print(sctest(tree, node = 1))
 
-  cli_h3("Worth parameters")
-  print(sort(coef(tree_all, log = FALSE), decreasing = TRUE))
+  cli_h2("Worth parameters")
+  print(sort(coef(tree, log = FALSE), decreasing = TRUE))
 
-  if (length(tree_all) > 1) {
-    pdf(file = fs::path(plot_path, paste0("pltree_all_learners_", measure, ".pdf")),
-        width = 12, height = 8)
-    plot(tree_all, names = TRUE, abbreviate = 3, ylines = 2)
-    dev.off()
+  if (length(tree) > 1) {
+    p <- plot_pltree_gg(tree)
+    save_plot(p, name = paste0("pltree_", plot_name, "_", measure), width = width, height = height, formats = "pdf")
   }
 
-  # b) Representative subset
-  representative <- c("CPH", "RFSRC", "CoxB", "XGBAFT")
-  dat_rep <- build_pltree_data(scores_avg, measure, minimize, representative, tasktab)
-
-  cli_h2("Representative subset ({length(dat_rep$learner_ids)})")
-  cli_alert_info("Learners: {paste(dat_rep$learner_ids, collapse = ', ')}")
-
-  tree_rep <- pltree(
-    G ~ noverp + ph_violated + censprop,
-    data = dat_rep$model_data,
-    alpha = alpha,
-    maxdepth = 3,
-    minsize = 5,
-    trace = TRUE
-  )
-  tree_rep
-
-  cli_h3("Instability tests (root node)")
-  print(sctest(tree_rep, node = 1))
-
-  cli_h3("Worth parameters")
-  print(coef(tree_rep, log = FALSE))
-
-  if (length(tree_rep) > 1) {
-    pdf(file = fs::path(plot_path, paste0("pltree_representative_", measure, ".pdf")),
-        width = 10, height = 7)
-    plot(tree_rep, names = TRUE, abbreviate = 5, ylines = 3)
-    dev.off()
-  }
-
-  # Summary
-  cli_h2("Instability p-value comparison")
-  pvals <- data.table(
-    covariate = names(get_pvals(tree_all)),
-    p_all_learners = get_pvals(tree_all),
-    p_representative = get_pvals(tree_rep)
-  )
-  print(pvals, digits = 4)
-
-  invisible(list(tree_all = tree_all, tree_rep = tree_rep, pvals = pvals))
+  invisible(tree)
 }
 
-# -- Run for both measures --------------------------------------------------
-res_harrell_c <- run_pl_tree(scores_all, "harrell_c", minimize = FALSE, tasktab, result_path)
-res_isbs      <- run_pl_tree(scores_all, "isbs",      minimize = TRUE,  tasktab, result_path)
+# -- Learner sets -----------------------------------------------------------
+exclude <- c("KM", "NEL")
+all_learners <- function(scores_all, measure) {
+  setdiff(unique(scores_all[grepl(pattern = measure, tune_measure), learner_id]), exclude)
+}
+representative <- c("CPH", "RFSRC", "CoxB", "XGBAFT")
+
+# -- Run --------------------------------------------------------------------
+# Representative subset (fast, more power to detect splits)
+res_rep_hc <- run_pl_tree(
+  scores_all,
+  "harrell_c",
+  FALSE,
+  representative,
+  tasktab,
+  "representative",
+  width = 10,
+  height = 7
+)
+res_rep_isbs <- run_pl_tree(scores_all, "isbs", TRUE, representative, tasktab, "representative", width = 10, height = 7)
+
+# All learners (slow, lower power)
+res_all_hc <- run_pl_tree(
+  scores_all,
+  "harrell_c",
+  FALSE,
+  all_learners(scores_all, "harrell_c"),
+  tasktab,
+  "all_learners",
+  width = 12,
+  height = 8
+)
+res_all_isbs <- run_pl_tree(
+  scores_all,
+  "isbs",
+  TRUE,
+  all_learners(scores_all, "isbs"),
+  tasktab,
+  "all_learners",
+  width = 12,
+  height = 8
+)

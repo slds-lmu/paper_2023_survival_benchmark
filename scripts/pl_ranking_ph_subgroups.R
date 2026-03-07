@@ -23,10 +23,12 @@ tasktab[, ph_violated := ifelse(zph_pval_processed < 0.05 | is.na(zph_pval_proce
 scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 
 exclude <- c("KM", "NEL")
+msr_tbl <- measures_tbl()
 
 # -- Analysis function ------------------------------------------------------
 run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, result_path) {
   cli_h1("PH subgroup analysis: {measure}")
+  measure_label <- msr_tbl[id == measure, label]
 
   # Filter to tune_measure and exclude baselines
   scores <- scores_all[grepl(pattern = measure, tune_measure) & !learner_id %in% exclude]
@@ -113,17 +115,18 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
     )) +
     coord_flip() +
     facet_wrap(~subgroup) +
-    labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)") +
+    labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
     theme_minimal()
 
   save_plot(p, name = paste0("pl_worth_ph_subgroups_", measure), width = 12, height = 6, formats = "pdf")
 
   invisible(list(
-    pl_ph0 = pl_ph0, pl_ph1 = pl_ph1,
+    pl_ph0 = pl_ph0,
+    pl_ph1 = pl_ph1,
     rank_comparison = rank_comparison
   ))
 }
 
 # -- Run for both measures --------------------------------------------------
 res_harrell_c <- run_pl_ph_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, result_path)
-res_isbs      <- run_pl_ph_subgroups(scores_all, "isbs",      minimize = TRUE,  exclude, tasktab, result_path)
+res_isbs <- run_pl_ph_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab, result_path)

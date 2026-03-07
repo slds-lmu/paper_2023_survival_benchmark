@@ -18,10 +18,12 @@ tasktab <- load_tasktab()
 scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 
 exclude <- c("KM", "NEL")
+msr_tbl <- measures_tbl()
 
 # -- Analysis function ------------------------------------------------------
 run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) {
   cli_h1("Plackett-Luce ranking: {measure}")
+  measure_label <- msr_tbl[id == measure, label]
 
   # Filter to tune_measure and exclude baselines
   scores <- scores_all[grepl(pattern = measure, tune_measure) & !learner_id %in% exclude]
@@ -66,7 +68,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
     geom_pointrange(aes(ymin = estimate - quasiSE, ymax = estimate + quasiSE)) +
     coord_flip() +
-    labs(x = NULL, y = "Log-worth (quasi-SE)") +
+    labs(x = NULL, y = "Log-worth (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
     theme_minimal()
 
   save_plot(p1, name = paste0("pl_worth_", measure), width = 8, height = 6, formats = "pdf")
@@ -80,7 +82,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
     geom_pointrange(aes(ymin = estimate_vs_cph - quasiSE, ymax = estimate_vs_cph + quasiSE)) +
     coord_flip() +
-    labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)") +
+    labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
     theme_minimal()
 
   save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), width = 8, height = 6, formats = "pdf")
