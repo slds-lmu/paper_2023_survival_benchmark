@@ -121,6 +121,8 @@ save_tasktab = function(tasks, path = here::here("tables", "tasktab.csv")) {
   }))
   tasktab[, dimrank := data.table::frank(dim)]
   tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
+  tasktab[, ph_violated := ifelse(zph_pval_processed < 0.05 | is.na(zph_pval_processed), 1, 0)]
+  tasktab[, noverp := n / p]
 
   write.csv(tasktab, path, row.names = FALSE)
   tasktab
