@@ -363,14 +363,12 @@ plot_pltree_gg <- function(tree, caption = NULL) {
       shared_legend = FALSE,
       ids = "terminal"
     ) +
-    theme_void()
-
-  # ggparty ignores standard ggplot2 labs(caption=), so add it via patchwork
-  if (!is.null(caption)) {
-    require(patchwork)
-    p <- p + patchwork::plot_annotation(caption = caption)
-  }
-  p
+    theme_void() +
+    labs(caption = caption) +
+    theme(
+      plot.caption = element_text(size = 9, hjust = .95, vjust = 10),
+      plot.caption.position = "panel"
+    )
 }
 
 save_plot = function(p, name, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {

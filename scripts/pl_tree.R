@@ -12,10 +12,12 @@
 # Runs for both tuning measures: harrell_c (higher = better) and isbs (lower = better).
 
 library(PlackettLuce)
+library(mlr3proba)
 library(strucchange)
 library(data.table)
 library(ggplot2)
-library(cli)
+
+source("R/plackettluce.R")
 
 result_path <- fs::path(here::here("results", "production"))
 plot_path <- here::here("results_paper")
@@ -43,99 +45,10 @@ representative <- c(
   "ORSF",
   # Boosting
   "CoxB",
-  "XGBAFT",
+  "MBSTAFT",
   # Other (Harrell's C only)
   "SSVM"
 )
-
-
-# -- Helper: average scores and build rankings + model_data -----------------
-build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tasktab) {
-  dt <- scores_avg[learner_id %in% learner_subset]
-  dt[, rank_score := frank(if (minimize) score else -score, ties.method = "random"), by = task_id]
-
-  ranks_wide <- dcast(dt, task_id ~ learner_id, value.var = "rank_score")
-  task_ids <- ranks_wide$task_id
-  learner_ids <- setdiff(names(ranks_wide), "task_id")
-
-  rank_mat <- as.matrix(ranks_wide[, learner_ids, with = FALSE])
-  rownames(rank_mat) <- task_ids
-  rankings <- as.rankings(rank_mat)
-
-  tt <- copy(tasktab)[match(task_ids, task_id)]
-  stopifnot(all.equal(tt$task_id, task_ids))
-
-  G <- group(rankings, index = seq_len(nrow(rankings)))
-  model_data <- data.frame(
-    G = G,
-    noverp = tt$noverp,
-    n = tt$n,
-    p = tt$p,
-    ph_violated = factor(tt$ph_violated),
-    zph_pval_processed = tt$zph_pval_processed,
-    censprop = tt$censprop
-  )
-
-  list(rankings = rankings, model_data = model_data, learner_ids = learner_ids)
-}
-
-# -- Analysis function ------------------------------------------------------
-run_pl_tree <- function(
-  scores_all,
-  measure,
-  minimize,
-  learners,
-  tasktab,
-  plot_name,
-  covariates = c("noverp", "ph_violated", "censprop"),
-  alpha = 0.10,
-  width = 10,
-  height = 7
-) {
-  cli_h1("Plackett-Luce tree: {measure} / {plot_name} (alpha = {alpha})")
-  cli_alert_info("Covariates: {paste(covariates, collapse = ', ')}")
-
-  scores <- scores_all[grepl(pattern = measure, tune_measure)]
-  scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
-
-  dat <- build_pltree_data(scores_avg, measure, minimize, learners, tasktab)
-
-  cli_alert_info("Learners ({length(dat$learner_ids)}): {paste(dat$learner_ids, collapse = ', ')}")
-
-  fml <- reformulate(covariates, response = "G")
-
-  # do.call forces evaluation of all arguments before pltree captures them
-  # via match.call(). Without this, mob() re-evaluates e.g. `alpha` in an
-  # internal environment where the caller's variables don't exist.
-  tree <- do.call(
-    pltree,
-    list(
-      formula = fml,
-      data = dat$model_data,
-      alpha = alpha,
-      maxdepth = 4,
-      minsize = 5,
-      npseudo = 0.5,
-      gamma = FALSE,
-      trace = TRUE
-    )
-  )
-  tree
-
-  cli_h2("Instability tests (root node)")
-  print(sctest(tree, node = 1))
-
-  cli_h2("Worth parameters")
-  print(sort(coef(tree, log = FALSE), decreasing = TRUE))
-
-  if (length(tree) > 1) {
-    measure_label <- measures_tbl()[id == measure, label]
-    p <- plot_pltree_gg(tree, caption = glue::glue("Measure: {measure_label}"))
-    save_plot(p, name = paste0("pltree_", plot_name, "_", measure), width = width, height = height, formats = "pdf")
-  }
-
-  invisible(tree)
-}
 
 # -- Run --------------------------------------------------------------------
 # Representative subset (fast, more power to detect splits)

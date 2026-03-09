@@ -308,9 +308,6 @@ get_measures_eval = function() {
 #' Table of evaluation measures with metadata
 #'
 measures_tbl = function() {
-  require(mlr3)
-  require(mlr3proba)
-  
   msr_tbl = mlr3misc::rowwise_table(
     ~mlr_id,            ~id,           ~type,
     "surv.cindex",      "harrell_c",    "Discrimination",
@@ -1052,7 +1049,8 @@ pl_subgroup_analysis <- function(
   height = 6
 ) {
   if (is.null(measure_label)) {
-    measure_label <- measures_tbl()[id == measure, label]
+    m_ <- measure
+    measure_label <- measures_tbl()[id == m_, label]
   }
   subgroup_names <- names(subgroups)
 

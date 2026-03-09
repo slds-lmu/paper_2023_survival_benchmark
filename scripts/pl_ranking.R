@@ -6,9 +6,11 @@
 # Runs for both tuning measures: harrell_c (higher = better) and isbs (lower = better).
 
 library(PlackettLuce)
+library(mlr3proba)
 library(data.table)
 library(ggplot2)
-library(cli)
+
+source("R/plackettluce.R")
 
 result_path <- fs::path(here::here("results", "production"))
 plot_path <- here::here("results_paper")
@@ -18,61 +20,6 @@ tasktab <- load_tasktab()
 scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 
 exclude <- c("KM", "NEL")
-
-# -- Analysis function ------------------------------------------------------
-run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) {
-  cli_h1("Plackett-Luce ranking: {measure}")
-  measure_label <- measures_tbl()[id == measure, label]
-
-  prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
-  rankings <- prep$rankings
-
-  # Fit PL model
-  pl_fit <- PlackettLuce(rankings, trace = TRUE)
-
-  cli_alert_info("Log-likelihood: {round(logLik(pl_fit), 2)}")
-  cli_alert_info("AIC: {round(AIC(pl_fit), 2)}")
-  cli_alert_info("Iterations: {pl_fit$iter}")
-
-  cli_h2("Log-worth parameters")
-  print(coef(pl_fit))
-
-  worth <- coef(pl_fit, log = FALSE)
-  cli_h2("Worth parameters (sorted)")
-  print(sort(worth, decreasing = TRUE))
-
-  # Quasi-variances for SE estimation
-  qv <- qvcalc(pl_fit)
-  qvdt <- as.data.table(qv$qvframe, keep.rownames = "learner")
-
-  # Plot 1: log-worth with quasi-SEs, sorted by estimate
-  qvdt[, learner := reorder(learner, estimate)]
-
-  p1 <- ggplot(qvdt, aes(x = learner, y = estimate)) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-    geom_pointrange(aes(ymin = estimate - quasiSE, ymax = estimate + quasiSE)) +
-    coord_flip() +
-    labs(x = NULL, y = "Log-worth (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
-    theme_minimal()
-
-  save_plot(p1, name = paste0("pl_worth_", measure), width = 8, height = 6, formats = "pdf")
-
-  # Plot 2: re-referenced to CPH
-  cph_estimate <- qvdt[learner == "CPH", estimate]
-  qvdt[, estimate_vs_cph := estimate - cph_estimate]
-  qvdt[, learner_cph := reorder(learner, estimate_vs_cph)]
-
-  p2 <- ggplot(qvdt, aes(x = learner_cph, y = estimate_vs_cph)) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-    geom_pointrange(aes(ymin = estimate_vs_cph - quasiSE, ymax = estimate_vs_cph + quasiSE)) +
-    coord_flip() +
-    labs(x = NULL, y = "Log-worth relative to CPH (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
-    theme_minimal()
-
-  save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), width = 8, height = 6, formats = "pdf")
-
-  invisible(list(pl_fit = pl_fit, qv = qv, worth = worth))
-}
 
 # -- Run for both measures --------------------------------------------------
 res_harrell_c <- run_pl_ranking(scores_all, "harrell_c", minimize = FALSE, exclude, result_path)
