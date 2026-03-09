@@ -118,7 +118,7 @@ pl_subgroup_analysis <- function(
 
     qv <- PlackettLuce::qvcalc(pl_fit)
     qvdt <- as.data.table(qv$qvframe, keep.rownames = "learner")
-    qvdt[, subgroup := nm]
+    qvdt[, subgroup := paste0(nm, " (n = ", length(idx), ")")]
     qvdt_list[[nm]] <- qvdt
   }
 
@@ -159,11 +159,40 @@ pl_subgroup_analysis <- function(
       y = glue::glue("Log-worth relative to {reference} (quasi-SE)"),
       caption = glue::glue("Measure: {measure_label}")
     ) +
-    ggplot2::theme_minimal()
+    ggplot2::theme_minimal(base_size = 15)
 
   save_plot(p, name = plot_name, width = width, height = height, formats = "pdf")
 
   invisible(list(pl_fits = pl_fits, rank_comparison = rank_comparison))
+}
+
+#' Likelihood ratio test: full PL model vs. subgroup PL models
+#'
+#' Tests whether splitting rankings into subgroups significantly improves fit
+#' over the full (pooled) PL model.
+#'
+#' @param full_fit A PlackettLuce fit on all rankings (from `run_pl_ranking`).
+#' @param subgroup_result Result from a `run_pl_*_subgroups()` call
+#'   (must contain `$pl_fits`, a named list of per-subgroup PL fits).
+#' @return A list with components: statistic, df, p_value.
+pl_lr_test <- function(full_fit, subgroup_result) {
+  loglik_full <- as.numeric(logLik(full_fit))
+  loglik_subgroups <- sum(vapply(
+    subgroup_result$pl_fits,
+    function(fit) as.numeric(logLik(fit)),
+    numeric(1)
+  ))
+  # df = number of free parameters gained by splitting (one extra set of k-1 params per additional subgroup)
+  k <- length(coef(full_fit))
+  n_subgroups <- length(subgroup_result$pl_fits)
+  df <- k * (n_subgroups - 1)
+
+  stat <- 2 * (loglik_subgroups - loglik_full)
+  p_value <- pchisq(q = stat, df = df, lower.tail = FALSE)
+
+  cli::cli_alert_info("LR statistic: {round(stat, 3)}, df: {df}, p-value: {format.pval(p_value)}")
+
+  list(statistic = stat, df = df, p_value = p_value)
 }
 
 # -- Analysis functions -------------------------------------------------------
@@ -221,7 +250,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
       y = "Log-worth relative to CPH (quasi-SE)",
       caption = glue::glue("Measure: {measure_label}")
     ) +
-    ggplot2::theme_minimal()
+    ggplot2::theme_minimal(base_size = 15)
 
   save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), width = 8, height = 6, formats = "pdf")
 
@@ -229,6 +258,15 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
 }
 
 #' Plackett-Luce tree analysis
+#'
+#' @param alpha Significance level for parameter instability tests (mob).
+#' @param minsize Minimum number of rankings in a node for splitting.
+#' @param maxdepth Maximum tree depth.
+#' @param gamma Logical; if TRUE, apply Bonferroni correction for number of
+#'   possible splits per variable (adjusts for exhaustive search over cutpoints).
+#' @param npseudo Number of pseudo-rankings used in PL estimation within nodes.
+#' @param bonferroni Logical; if TRUE, apply Bonferroni correction for the
+#'   number of covariates tested (mob-level correction).
 run_pl_tree <- function(
   scores_all,
   measure,
@@ -238,11 +276,19 @@ run_pl_tree <- function(
   plot_name,
   covariates = c("noverp", "ph_violated", "censprop"),
   alpha = 0.10,
+  minsize = 5,
+  maxdepth = 4,
+  gamma = FALSE,
+  npseudo = 0.5,
+  bonferroni = TRUE,
   width = 10,
   height = 7
 ) {
   cli::cli_h1("Plackett-Luce tree: {measure} / {plot_name} (alpha = {alpha})")
   cli::cli_alert_info("Covariates: {paste(covariates, collapse = ', ')}")
+  cli::cli_alert_info(
+    "minsize: {minsize}, maxdepth: {maxdepth}, gamma: {gamma}, npseudo: {npseudo}, bonferroni: {bonferroni}"
+  )
 
   scores <- scores_all[grepl(pattern = measure, tune_measure)]
   scores_avg <- scores[, .(score = mean(get(measure), na.rm = TRUE)), by = .(learner_id, task_id)]
@@ -262,10 +308,11 @@ run_pl_tree <- function(
       formula = fml,
       data = dat$model_data,
       alpha = alpha,
-      maxdepth = 4,
-      minsize = 5,
-      npseudo = 0.5,
-      gamma = FALSE,
+      minsize = minsize,
+      maxdepth = maxdepth,
+      gamma = gamma,
+      npseudo = npseudo,
+      bonferroni = bonferroni,
       trace = TRUE
     )
   )
@@ -307,22 +354,24 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab)
 }
 
 #' Censoring proportion subgroup analysis
-run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab) {
+#' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
+run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, cutoff = NULL) {
   cli::cli_h1("Censoring proportion subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
 
-  # Split at median censoring proportion
   tt <- tasktab[match(prep$task_ids, task_id)]
-  cens_med <- median(tt$censprop)
-  lo_idx <- which(tt$censprop <= cens_med)
-  hi_idx <- which(tt$censprop > cens_med)
+  if (is.null(cutoff)) {
+    cutoff <- median(tt$censprop)
+  }
+  lo_idx <- which(tt$censprop <= cutoff)
+  hi_idx <- which(tt$censprop > cutoff)
 
-  cli::cli_alert_info("Median censoring proportion: {round(cens_med, 3)}")
+  cli::cli_alert_info("Cutoff: {round(cutoff, 3)} (low: {length(lo_idx)}, high: {length(hi_idx)})")
 
   subgroups <- setNames(
     list(lo_idx, hi_idx),
-    c(paste0("Low censoring (<= ", round(cens_med, 2), ")"), paste0("High censoring (> ", round(cens_med, 2), ")"))
+    c(paste0("Low censoring (<= ", round(cutoff, 2), ")"), paste0("High censoring (> ", round(cutoff, 2), ")"))
   )
 
   pl_subgroup_analysis(
@@ -330,5 +379,34 @@ run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, ta
     subgroups = subgroups,
     measure = measure,
     plot_name = paste0("pl_worth_censprop_subgroups_", measure)
+  )
+}
+
+#' n/p ratio subgroup analysis
+#' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
+run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, cutoff = NULL) {
+  cli::cli_h1("n/p ratio subgroup analysis: {measure}")
+
+  prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
+
+  tt <- tasktab[match(prep$task_ids, task_id)]
+  if (is.null(cutoff)) {
+    cutoff <- median(tt$noverp)
+  }
+  lo_idx <- which(tt$noverp <= cutoff)
+  hi_idx <- which(tt$noverp > cutoff)
+
+  cli::cli_alert_info("Cutoff: {round(cutoff, 1)} (low: {length(lo_idx)}, high: {length(hi_idx)})")
+
+  subgroups <- setNames(
+    list(lo_idx, hi_idx),
+    c(paste0("Low n/p (<= ", round(cutoff, 1), ")"), paste0("High n/p (> ", round(cutoff, 1), ")"))
+  )
+
+  pl_subgroup_analysis(
+    rankings = prep$rankings,
+    subgroups = subgroups,
+    measure = measure,
+    plot_name = paste0("pl_worth_noverp_subgroups_", measure)
   )
 }

@@ -15,9 +15,7 @@ results-paper:
 
 .PHONY: pl
 pl:
-	Rscript scripts/pl_ranking.R
-	Rscript scripts/pl_ranking_ph_subgroups.R
-	Rscript scripts/pl_ranking_censprop_subgroups.R
+	Rscript scripts/pl_ranking_subgroups.R
 	Rscript scripts/pl_tree.R
 
 .PHONY: results
