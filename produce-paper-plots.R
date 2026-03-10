@@ -86,6 +86,7 @@ save_cd_plot = function(p, tuning_measure, formats = c("png", "pdf")) {
   save_plot(
     p,
     name = paste0("critical-difference-baseline-diff-", tuning_measure),
+    plot_path = plot_path,
     height = 6.25 / 1.5,
     width = 10 / 1.5,
     formats = formats
@@ -134,6 +135,7 @@ save_aggr_plot = function(
   save_plot(
     p,
     name = paste(prefix, tuning_measure_id, eval_measure_id, tag, sep = "-"),
+    plot_path = plot_path,
     width = width,
     height = height,
     formats = formats
@@ -326,6 +328,7 @@ p_threes_violin = p_base +
 save_plot(
   p = p_threes_box,
   name = "aggr-boxplot-threes-isbs-isbs",
+  plot_path = plot_path,
   width = 12,
   height = 5,
   formats = c("png", "pdf")
@@ -334,6 +337,7 @@ save_plot(
 save_plot(
   p = p_threes_violin,
   name = "aggr-violin-threes-isbs-isbs",
+  plot_path = plot_path,
   width = 12,
   height = 5,
   formats = c("png", "pdf")
@@ -389,6 +393,7 @@ p = aggr_scores |>
 save_plot(
   p,
   name = paste("calib-d-heatmap", "isbs", sep = "-"),
+  plot_path = plot_path,
   width = 8,
   height = 8,
   formats = c("png", "pdf")
@@ -426,6 +431,7 @@ p = aggr_scores |>
 save_plot(
   p,
   name = paste("calib-alpha-ratio-plot", "isbs", sep = "-"),
+  plot_path = plot_path,
   width = 7,
   height = 7,
   formats = c("png", "pdf")
@@ -465,6 +471,7 @@ p_dist = aggr_scores |>
 save_plot(
   p_dist,
   name = paste("calib-alpha-ratio-plot-dist", "isbs", sep = "-"),
+  plot_path = plot_path,
   width = 6,
   height = 6,
   formats = c("png", "pdf")
@@ -490,6 +497,7 @@ save_scores_plot = function(
   save_plot(
     p,
     name = paste(prefix, tuning_measure_id, eval_measure_id, sep = "-"),
+    plot_path = plot_path,
     width = width,
     height = height,
     formats = formats

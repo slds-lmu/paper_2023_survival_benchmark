@@ -21,11 +21,11 @@ library(PlackettLuce)
 library(mlr3proba)
 library(data.table)
 library(ggplot2)
-
 source("R/plackettluce.R")
+set.seed(2026)
 
 result_path <- fs::path(here::here("results", "production"))
-plot_path <- here::here("results_paper")
+plot_path <- here::here("results_paper", "PL")
 
 # -- Data -------------------------------------------------------------------
 tasktab <- load_tasktab()
@@ -35,26 +35,26 @@ scores_all <- readRDS(fs::path(result_path, "scores.rds"))
 exclude <- c("KM", "NEL")
 
 # -- Run unified "full" model --------------------------------------------------
-pl_full_harrell_c <- run_pl_ranking(scores_all, "harrell_c", minimize = FALSE, exclude, result_path)
-pl_full_isbs <- run_pl_ranking(scores_all, "isbs", minimize = TRUE, exclude, result_path)
+pl_full_harrell_c <- run_pl_ranking(scores_all, "harrell_c", minimize = FALSE, exclude, plot_path)
+pl_full_isbs <- run_pl_ranking(scores_all, "isbs", minimize = TRUE, exclude, plot_path)
 
 # -- PH subgroups -----------------------------------------------------------
-pl_ph_hc <- run_pl_ph_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab)
-pl_ph_isbs <- run_pl_ph_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab)
+pl_ph_hc <- run_pl_ph_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, plot_path)
+pl_ph_isbs <- run_pl_ph_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab, plot_path)
 
 lr_ph_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, pl_ph_hc)
 lr_ph_isbs <- pl_lr_test(pl_full_isbs$pl_fit, pl_ph_isbs)
 
 # -- Censoring proportion subgroups -----------------------------------------
-res_cens_hc <- run_pl_censprop_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab)
-res_cens_isbs <- run_pl_censprop_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab)
+res_cens_hc <- run_pl_censprop_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, plot_path)
+res_cens_isbs <- run_pl_censprop_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab, plot_path)
 
 lr_cens_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, res_cens_hc)
 lr_cens_isbs <- pl_lr_test(pl_full_isbs$pl_fit, res_cens_isbs)
 
 # -- n/p ratio subgroups ---------------------------------------------------
-pl_noverp_hc <- run_pl_noverp_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab)
-pl_noverp_isbs <- run_pl_noverp_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab)
+pl_noverp_hc <- run_pl_noverp_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, plot_path)
+pl_noverp_isbs <- run_pl_noverp_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab, plot_path)
 
 lr_noverp_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, pl_noverp_hc)
 lr_noverp_isbs <- pl_lr_test(pl_full_isbs$pl_fit, pl_noverp_isbs)
@@ -69,13 +69,13 @@ cli::cli_inform(c(
   "LR test p-value {.val isbs}: {format.pval(lr_ph_isbs$p_value)}"
 ))
 
-cli::cli_h2("Based on censoring proportion")
+cli::cli_h2("Based on censoring proportion ({.code censprop > median(censprop)})")
 cli::cli_inform(c(
   "LR test p-value using {.val harrell_c}: {format.pval(lr_cens_hc$p_value)}",
   "LR test p-value {.val isbs}: {format.pval(lr_cens_isbs$p_value)}"
 ))
 
-cli::cli_h2("Based on n/p ratio")
+cli::cli_h2("Based on n/p ratio {.code n/p > median(n/p)}")
 cli::cli_inform(c(
   "LR test p-value using {.val harrell_c}: {format.pval(lr_noverp_hc$p_value)}",
   "LR test p-value {.val isbs}: {format.pval(lr_noverp_isbs$p_value)}"

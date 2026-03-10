@@ -371,10 +371,12 @@ plot_pltree_gg <- function(tree, caption = NULL) {
     )
 }
 
-save_plot = function(p, name, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {
+save_plot = function(p, name, plot_path, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {
   if (interactive()) {
     print(p)
   }
+
+  stopifnot(ensure_directory(plot_path))
 
   for (format in formats) {
     filename = fs::path(plot_path, name, ext = format)

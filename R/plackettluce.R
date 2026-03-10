@@ -86,6 +86,7 @@ pl_subgroup_analysis <- function(
   subgroups,
   measure,
   plot_name,
+  plot_path,
   measure_label = NULL,
   reference = "CPH",
   width = 12,
@@ -160,7 +161,7 @@ pl_subgroup_analysis <- function(
     ) +
     ggplot2::theme_minimal(base_size = 15)
 
-  save_plot(p, name = plot_name, width = width, height = height, formats = "pdf")
+  save_plot(p, name = plot_name, plot_path = plot_path, width = width, height = height, formats = "pdf")
 
   invisible(list(pl_fits = pl_fits, rank_comparison = rank_comparison))
 }
@@ -197,7 +198,7 @@ pl_lr_test <- function(full_fit, subgroup_result) {
 # -- Analysis functions -------------------------------------------------------
 
 #' Full Plackett-Luce ranking (all learners)
-run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) {
+run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path) {
   cli::cli_h1("Plackett-Luce ranking: {measure}")
   m_ <- measure
   measure_label <- measures_tbl()[id == m_, label]
@@ -223,17 +224,17 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
   qv <- PlackettLuce::qvcalc(pl_fit)
   qvdt <- as.data.table(qv$qvframe, keep.rownames = "learner")
 
-  # Plot 1: log-worth with quasi-SEs, sorted by estimate
+  # Plot 1 (unused): log-worth with quasi-SEs, sorted by estimate
   qvdt[, learner := reorder(learner, estimate)]
 
-  p1 <- ggplot2::ggplot(qvdt, ggplot2::aes(x = learner, y = estimate)) +
-    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-    ggplot2::geom_pointrange(ggplot2::aes(ymin = estimate - quasiSE, ymax = estimate + quasiSE)) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(x = NULL, y = "Log-worth (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
-    ggplot2::theme_minimal()
+  # p1 <- ggplot2::ggplot(qvdt, ggplot2::aes(x = learner, y = estimate)) +
+  #   ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  #   ggplot2::geom_pointrange(ggplot2::aes(ymin = estimate - quasiSE, ymax = estimate + quasiSE)) +
+  #   ggplot2::coord_flip() +
+  #   ggplot2::labs(x = NULL, y = "Log-worth (quasi-SE)", caption = glue::glue("Measure: {measure_label}")) +
+  #   ggplot2::theme_minimal()
 
-  save_plot(p1, name = paste0("pl_worth_", measure), width = 8, height = 6, formats = "pdf")
+  # save_plot(p1, name = paste0("pl_worth_", measure), width = 8, height = 6, formats = "pdf")
 
   # Plot 2: re-referenced to CPH
   cph_estimate <- qvdt[learner == "CPH", estimate]
@@ -251,7 +252,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, result_path) 
     ) +
     ggplot2::theme_minimal(base_size = 15)
 
-  save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), width = 8, height = 6, formats = "pdf")
+  save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), plot_path = plot_path, width = 8, height = 6, formats = "pdf")
 
   invisible(list(pl_fit = pl_fit, qv = qv, worth = worth))
 }
@@ -273,6 +274,7 @@ run_pl_tree <- function(
   learners,
   tasktab,
   plot_name,
+  plot_path,
   covariates = c("log_noverp", "ph_violated", "censprop"),
   alpha = 0.10,
   minsize = 5,
@@ -327,14 +329,14 @@ run_pl_tree <- function(
     m_ <- measure
     measure_label <- measures_tbl()[id == m_, label]
     p <- plot_pltree_gg(tree, caption = glue::glue("Measure: {measure_label}"))
-    save_plot(p, name = paste0("pltree_", plot_name, "_", measure), width = width, height = height, formats = "pdf")
+    save_plot(p, name = paste0("pltree_", plot_name, "_", measure), plot_path = plot_path, width = width, height = height, formats = "pdf")
   }
 
   invisible(tree)
 }
 
 #' PH subgroup analysis
-run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab) {
+run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path) {
   cli::cli_h1("PH subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -348,13 +350,14 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab)
     rankings = prep$rankings,
     subgroups = list("PH not violated" = ph0_idx, "PH violated" = ph1_idx),
     measure = measure,
-    plot_name = paste0("pl_worth_ph_subgroups_", measure)
+    plot_name = paste0("pl_worth_ph_subgroups_", measure),
+    plot_path = plot_path
   )
 }
 
 #' Censoring proportion subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, cutoff = NULL) {
+run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL) {
   cli::cli_h1("Censoring proportion subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -377,13 +380,14 @@ run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, ta
     rankings = prep$rankings,
     subgroups = subgroups,
     measure = measure,
-    plot_name = paste0("pl_worth_censprop_subgroups_", measure)
+    plot_name = paste0("pl_worth_censprop_subgroups_", measure),
+    plot_path = plot_path
   )
 }
 
 #' n/p ratio subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, cutoff = NULL) {
+run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL) {
   cli::cli_h1("n/p ratio subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -406,6 +410,7 @@ run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, task
     rankings = prep$rankings,
     subgroups = subgroups,
     measure = measure,
-    plot_name = paste0("pl_worth_noverp_subgroups_", measure)
+    plot_name = paste0("pl_worth_noverp_subgroups_", measure),
+    plot_path = plot_path
   )
 }

@@ -16,11 +16,10 @@ library(mlr3proba)
 library(strucchange)
 library(data.table)
 library(ggplot2)
-
 source("R/plackettluce.R")
 
 result_path <- fs::path(here::here("results", "production"))
-plot_path <- here::here("results_paper")
+plot_path <- here::here("results_paper", "PL")
 
 # -- Data -------------------------------------------------------------------
 tasktab <- load_tasktab()
@@ -34,26 +33,38 @@ all_learners <- function(scores_all, measure) {
 }
 
 # -- Run --------------------------------------------------------------------
+set.seed(2026) # PL models / trees are not fully deterministic, fixing seed just in case.
 
-# All learners
+# All learners, stricter settings
 res_all_hc <- run_pl_tree(
   scores_all = scores_all,
   measure = "harrell_c",
   minimize = FALSE,
   learners = all_learners(scores_all, "harrell_c"),
   tasktab = tasktab,
-  plot_name = "all_learners",
+  plot_path = plot_path,
+  plot_name = "all-strict",
+  covariates = c("log_noverp", "ph_violated", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 10,
   alpha = .1,
   width = 12,
   height = 8
 )
+
 res_all_isbs <- run_pl_tree(
   scores_all = scores_all,
   measure = "isbs",
   minimize = TRUE,
   learners = all_learners(scores_all, "isbs"),
   tasktab = tasktab,
-  plot_name = "all_learners",
+  plot_path = plot_path,
+  plot_name = "all-strict",
+  covariates = c("log_noverp", "ph_violated", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 10,
   alpha = .1,
   width = 12,
   height = 8
@@ -66,62 +77,30 @@ res_all_hc <- run_pl_tree(
   minimize = FALSE,
   learners = all_learners(scores_all, "harrell_c"),
   tasktab = tasktab,
-  plot_name = "all_learners-alpha05",
-  alpha = .1,
+  plot_path = plot_path,
+  plot_name = "all-lenient",
+  covariates = c("log_noverp", "ph_violated", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 5,
+  alpha = .2,
   width = 12,
   height = 8
 )
+
 res_all_isbs <- run_pl_tree(
   scores_all = scores_all,
   measure = "isbs",
   minimize = TRUE,
   learners = all_learners(scores_all, "isbs"),
   tasktab = tasktab,
-  plot_name = "all_learners-alpha05",
-  alpha = .8,
+  plot_path = plot_path,
+  plot_name = "all-lenient",
+  covariates = c("log_noverp", "ph_violated", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 5,
+  alpha = .2,
   width = 12,
   height = 8
 )
-
-# all learners, different covariates, high alpha, for experimenting
-if (FALSE) {
-  res_testing_hc <- run_pl_tree(
-    scores_all = scores_all,
-    measure = "harrell_c",
-    minimize = FALSE,
-    covariates = c(
-      # "noverp",
-      "censprop",
-      # "zph_pval_processed"
-      "ph_violated",
-      "n",
-      "p"
-    ),
-    learners = all_learners(scores_all, "harrell_c"),
-    tasktab = tasktab,
-    plot_name = "all_learners-allcov-alpha-5",
-    alpha = .5,
-    width = 12,
-    height = 8
-  )
-
-  res_testing_isbs <- run_pl_tree(
-    scores_all = scores_all,
-    measure = "isbs",
-    minimize = TRUE,
-    covariates = c(
-      # "noverp",
-      "censprop",
-      # "zph_pval_processed"
-      "ph_violated",
-      "n",
-      "p"
-    ),
-    learners = all_learners(scores_all, "isbs"),
-    tasktab = tasktab,
-    plot_name = "all_learners-allcov-alpha-5",
-    alpha = .8,
-    width = 12,
-    height = 8
-  )
-}
