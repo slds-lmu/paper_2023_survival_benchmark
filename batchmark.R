@@ -79,6 +79,7 @@ for (measure in measures) {
       cv_glmnet.alpha = p_dbl(0, 1)
     ),
 
+    # MCP learner based on explicit reviewer request for MCP/SCAD, chose MCP based on maintainer input
     NCV = wrap_auto_tune(
       bl(
         "surv.cv_ncvsurv",
@@ -88,7 +89,7 @@ for (measure in measures) {
         # alpha = 1 -> MCP penalty
         alpha = 1
       ),
-      # Tune on logscale in (1, 20]) https://github.com/pbreheny/ncvreg/discussions/57
+      # Tune on logscale in (1, 10]) https://github.com/pbreheny/ncvreg/discussions/57
       cv_ncv.gamma = p_dbl(1.0001, 10, logscale = TRUE)
     ),
 
