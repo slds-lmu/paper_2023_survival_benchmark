@@ -6,9 +6,10 @@
 
 # Setup ---------------------------------------------------------------------------------------
 if (!exists(".canary")) {
+  # Source only if not already sourced via .Rprofile
   source(here::here("R/helpers.R"))
   source(here::here("R/plotting.R"))
-} # Source only if not already sourced via .Rprofile
+}
 
 # Packages
 # requires package PMCMRplus, was not included in renv because of issues installing it on cluster (libmpfr.so.6)
@@ -20,7 +21,6 @@ library(data.table)
 
 # Load results --------------------------------------------------------------------------------
 plot_path = here::here("results_paper")
-stopifnot(ensure_directory(plot_path))
 lrntab = load_lrntab()
 # Helper table to collect all measures and their attributed
 msr_tbl = measures_tbl()
@@ -42,7 +42,10 @@ stopifnot(any(aggr_scores_scaled[grepl("harrell_c", tune_measure), harrell_c] ==
 stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
 stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] < 0)
 
+cli::cli_h1("Producing paper plots")
+
 # Table of errors -----------------------------------------------------------------------------
+cli::cli_h2("Error table")
 
 errs_table = scores |>
   summarise(
@@ -79,10 +82,9 @@ errs_table |>
   readr::write_lines(fs::path(plot_path, "errors-table.tex"))
 #kableExtra::add_header_above(c(" " = 2, "Tuning Measure" = 2, " " = 1))
 
-# Critical Difference Plots -------------------------------------------------------------------
 cli::cli_h2("Critical Difference Plots")
 
-save_cd_plot = function(p, tuning_measure, formats = c("png", "pdf")) {
+save_cd_plot = function(p, tuning_measure, formats = "pdf") {
   save_plot(
     p,
     name = paste0("critical-difference-baseline-diff-", tuning_measure),
@@ -95,7 +97,6 @@ save_cd_plot = function(p, tuning_measure, formats = c("png", "pdf")) {
 
 cd_ratio = 0.8
 
-# critical-difference-baseline-diff-harrell-c-harrell-c
 p = plot_bma(
   bma = bma_harrell_c,
   type = "cd_bd",
@@ -106,7 +107,6 @@ p = plot_bma(
 )
 save_cd_plot(p, "harrell_c")
 
-# critical-difference-baseline-diff-isbs-isbs
 p = plot_bma(
   bma = bma_isbs,
   type = "cd_bd",
@@ -126,9 +126,9 @@ save_aggr_plot = function(
   eval_measure_id,
   tuning_measure_id,
   tag = "score",
-  width = 8.25,
-  height = 6,
-  formats = c("png", "pdf")
+  width = 8,
+  height = 6.5,
+  formats = "pdf"
 ) {
   type = match.arg(type)
   prefix = if (type == "box") "aggr-boxplot" else "aggr-violin"
@@ -143,13 +143,12 @@ save_aggr_plot = function(
 }
 
 
-# Harrell's C Boxplots ---------------------------------------------------
-# Harrell's C, raw scores
-
+cli::cli_h3("Discrimination (raw scores)")
 for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
   for (ptype in c("box", "violin")) {
+    plot_data = if (ptype == "violin") aggr_scores[!(learner_id %in% c("KM", "NEL"))] else aggr_scores
     p = plot_aggr_scores(
-      aggr_scores,
+      plot_data,
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "harrell_c",
@@ -160,15 +159,13 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
   }
 }
 
-# Harrell's C (Scaled)
-
-# aggr-boxplot-harrell-c-scaled
-
+cli::cli_h3("Discrimination (scaled)")
 for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
   for (ptype in c("box", "violin")) {
     ptype_label = if (ptype == "box") "Boxplot" else "Violin plot"
+    plot_data = if (ptype == "violin") aggr_scores_scaled[!(learner_id %in% c("KM", "NEL"))] else aggr_scores_scaled
     p = plot_aggr_scores(
-      aggr_scores_scaled,
+      plot_data,
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "harrell_c",
@@ -177,20 +174,21 @@ for (measure_id in msr_tbl[(type == "Discrimination") & !erv, id]) {
     ) %+%
       labs(
         title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-        subtitle = glue::glue("{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model")
+        subtitle = glue::glue(
+          "{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
+        )
       )
     save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "harrell_c", tag = "scaled")
   }
 }
 
 
-# ISBS Boxplots ----------------------------------------------------------
-# ISBS (Raw scores)
-
+cli::cli_h3("Scoring rules (raw scores)")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   for (ptype in c("box", "violin")) {
+    plot_data = if (ptype == "violin") aggr_scores[!(learner_id %in% c("KM", "NEL"))] else aggr_scores
     p = plot_aggr_scores(
-      aggr_scores,
+      plot_data,
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "isbs",
@@ -201,12 +199,12 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   }
 }
 
-# ISBS (ERV)
-
+cli::cli_h3("Scoring rules (ERV)")
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   for (ptype in c("box", "violin")) {
+    plot_data = if (ptype == "violin") aggr_scores[!(learner_id %in% c("KM", "NEL"))] else aggr_scores
     p = plot_aggr_scores(
-      aggr_scores,
+      plot_data,
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "isbs",
@@ -217,32 +215,36 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   }
 }
 
-# ISBS (ERV) without AK
+cli::cli_h3("Scoring rules (ERV, without outlier learners)")
 for (measure_id in msr_tbl[type == "Scoring Rule" & erv, id]) {
   for (ptype in c("box", "violin")) {
+    exclude = if (ptype == "violin") c("AK", "NCV", "KM", "NEL") else c("AK", "NCV")
     p = plot_aggr_scores(
-      aggr_scores[learner_id != "AK"],
+      aggr_scores[!(learner_id %in% exclude)],
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "isbs",
       dodge = FALSE,
       flip = TRUE
     )
-    save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "erv-noAK")
+    save_aggr_plot(
+      p,
+      type = ptype,
+      eval_measure_id = measure_id,
+      tuning_measure_id = "isbs",
+      tag = "erv-no-outlier-learners"
+    )
   }
 }
 
 
-# Scaled ISBS Boxplots ---------------------------------------------------
-# Scaled ISBS
-
-#aggr-boxplot-isbs-scaled}
-
+cli::cli_h3("Scoring rules (scaled)")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   for (ptype in c("box", "violin")) {
     ptype_label = if (ptype == "box") "Boxplot" else "Violin plot"
+    plot_data = if (ptype == "violin") aggr_scores_scaled[!(learner_id %in% c("KM", "NEL"))] else aggr_scores_scaled
     p = plot_aggr_scores(
-      aggr_scores_scaled,
+      plot_data,
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "isbs",
@@ -251,14 +253,15 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
     ) %+%
       labs(
         title = glue::glue("{msr_tbl[id == measure_id, label]} [Scaled]"),
-        subtitle = glue::glue("{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model")
+        subtitle = glue::glue(
+          "{ptype_label} of aggregated scores across all tasks\nScaled such that 0 = KM, 1 = Best model"
+        )
       )
     save_aggr_plot(p, type = ptype, eval_measure_id = measure_id, tuning_measure_id = "isbs", tag = "scaled")
   }
 }
 
-# Aggregated Boxplots with 3 types of scaling -------------------------------------------------
-
+cli::cli_h3("Combined scaling comparison (raw / ERV / scaled)")
 measure_normal = "isbs"
 measure_erv = paste0(measure_normal, "_erv")
 measure_scaled = paste0(measure_normal, "_scaled")
@@ -344,12 +347,8 @@ save_plot(
 )
 
 
-# Aggregated Calibration plots ----------------------------------------------------------------
-cli::cli_h2("Aggregated Calibration plots")
-
-# aggr_temp = data.table::copy(aggr_scores)
-# aggr_temp[, dcalib_p := pchisq(dcalib, 10 - 1, lower.tail = FALSE)]
-# aggr_temp[, dcalib_label := fifelse(dcalib_p < 0.05, "X", "")]
+cli::cli_h2("Calibration plots")
+cli::cli_h3("D-Calibration heatmap")
 
 p = aggr_scores |>
   dplyr::filter(grepl("isbs", .data[["tune_measure"]])) |>
@@ -400,8 +399,7 @@ save_plot(
 )
 
 
-# Alpha Calibration
-
+cli::cli_h3("Alpha-Calibration (dot plot)")
 p = aggr_scores |>
   dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV"))) |>
   ggplot(aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
@@ -437,6 +435,7 @@ save_plot(
   formats = c("png", "pdf")
 )
 
+cli::cli_h3("Alpha-Calibration (distribution)")
 p_dist = aggr_scores |>
   dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV", "NEL", "KM"))) |>
   ggplot(aes(x = alpha_calib)) +
@@ -478,8 +477,7 @@ save_plot(
 )
 
 
-# Score Boxplots per Dataset ------------------------------------------------------------------
-cli::cli_h2("Score Boxplots per Dataset")
+cli::cli_h2("Score plots per dataset")
 
 scores[, learner_id := factor(learner_id, levels = rev(lrntab$id))]
 

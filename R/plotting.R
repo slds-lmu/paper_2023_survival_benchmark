@@ -187,7 +187,7 @@ plot_aggr_scores = function(
   measure_label = msr_tbl[id == eval_measure_id, label]
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
 
-  plot_type_label = switch(type, mean = "Mean ± SE", box = "Boxplot")
+  plot_type_label = switch(type, mean = "Mean ± SE", box = "Boxplot", violin = "Violin plot")
 
   minimize = msr_tbl[id == eval_measure_id, minimize]
 
@@ -222,7 +222,7 @@ plot_aggr_scores = function(
 
   p = p +
     labs(
-      title = measure_label,
+      # title = measure_label,
       subtitle = glue::glue("{plot_type_label} of aggregated scores across all tasks ({direction_label})"),
       x = NULL,
       y = measure_label,
@@ -245,7 +245,7 @@ plot_aggr_scores = function(
       plot.title.position = "plot"
     )
 
-  print(p)
+  invisible(p)
 }
 
 #' Analogous plotting function but for by-dataset plots, slightly different, could be consolidated though
