@@ -334,7 +334,7 @@ save_plot(
   plot_path = plot_path,
   width = 12,
   height = 5,
-  formats = c("png", "pdf")
+  formats = "pdf"
 )
 
 save_plot(
@@ -343,7 +343,7 @@ save_plot(
   plot_path = plot_path,
   width = 12,
   height = 5,
-  formats = c("png", "pdf")
+  formats = "pdf"
 )
 
 
@@ -395,15 +395,15 @@ save_plot(
   plot_path = plot_path,
   width = 8,
   height = 8,
-  formats = c("png", "pdf")
+  formats = "pdf"
 )
 
 cli::cli_h3("Alpha-Calibration (distribution)")
 p_alpha_dist = aggr_scores |>
-  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV", "NEL", "KM"))) |>
+  dplyr::filter(grepl("isbs", .data[["tune_measure"]])) |>
+  dplyr::filter(!(learner_id %in% c("AK", "NCV"))) |>
   ggplot(aes(x = alpha_calib)) +
   facet_wrap(vars(learner_id), scales = "free_y", ncol = 2) +
-  # geom_density(aes(y = after_stat(count))) +
   geom_histogram(alpha = 1 / 4, color = "gray", fill = "darkgray") +
   geom_density(aes(y = after_stat(density)), color = "black") +
   geom_vline(xintercept = 1, color = "darkred") +
@@ -411,15 +411,10 @@ p_alpha_dist = aggr_scores |>
   # scale_x_log10() +
   labs(
     title = glue::glue("Alpha-Calibration scores across tasks (tuned on ISBS)"),
-    # subtitle = glue::glue(
-    #   "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
-    #   "Values close to 1 (red line) indicate reasonable calibration"
-    # ),
     y = "Count",
     x = "Alpha"
-    # caption = "AK omitted for largely out of scale values"
   ) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(
     legend.position = "bottom",
     plot.title.position = "plot",
@@ -434,9 +429,9 @@ save_plot(
   p_alpha_dist,
   name = paste("calib-alpha-ratio-plot-dist", "isbs", sep = "-"),
   plot_path = plot_path,
-  width = 6,
-  height = 6,
-  formats = c("png", "pdf")
+  width = 7,
+  height = 8.5,
+  formats = "pdf"
 )
 
 
