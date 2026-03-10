@@ -53,7 +53,7 @@ lr_cens_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, res_cens_hc)
 lr_cens_isbs <- pl_lr_test(pl_full_isbs$pl_fit, res_cens_isbs)
 
 # -- n/p ratio subgroups ---------------------------------------------------
-pl_noverp_hc <- run_pl_noverp_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, )
+pl_noverp_hc <- run_pl_noverp_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab)
 pl_noverp_isbs <- run_pl_noverp_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab)
 
 lr_noverp_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, pl_noverp_hc)
