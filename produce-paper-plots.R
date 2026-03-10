@@ -261,7 +261,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   }
 }
 
-cli::cli_h3("Combined scaling comparison (raw / ERV / scaled)")
+cli::cli_h3("Combined scaling comparison for ISBS (raw / ERV / scaled)")
 measure_normal = "isbs"
 measure_erv = paste0(measure_normal, "_erv")
 measure_scaled = paste0(measure_normal, "_scaled")
@@ -320,7 +320,7 @@ p_threes_violin = p_base +
   geom_violin(alpha = 1 / 4, key_glyph = "rect", draw_quantiles = c(.25, .75)) +
   labs(
     title = "Integrated Survival Brier Score (ISBS)",
-    subtitle = "Violin of aggregated scores",
+    subtitle = "Violin plot of aggregated scores",
     x = NULL,
     y = NULL,
     color = NULL,
@@ -398,45 +398,8 @@ save_plot(
   formats = c("png", "pdf")
 )
 
-
-cli::cli_h3("Alpha-Calibration (dot plot)")
-p = aggr_scores |>
-  dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV"))) |>
-  ggplot(aes(y = forcats::fct_rev(learner_id), x = alpha_calib)) +
-  geom_point() +
-  geom_vline(xintercept = 1) +
-  scale_x_log10() +
-  labs(
-    title = "Alpha-Calibration scores across tasks",
-    subtitle = glue::glue(
-      "Models tuned on {msr_tbl[id == 'isbs', label]}\n",
-      "Values close to 1 indicate reasonable calibration"
-    ),
-    y = "Learner",
-    x = "Alpha (log10)"
-    # caption = "AK omitted for largely out of scale values"
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    plot.title.position = "plot",
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor.y = element_blank()
-    # panel.spacing.x = unit(5, "mm"),
-    # panel.background = element_rect(fill = "#EEEEEE", color = "#EEEEEE")
-  )
-
-save_plot(
-  p,
-  name = paste("calib-alpha-ratio-plot", "isbs", sep = "-"),
-  plot_path = plot_path,
-  width = 7,
-  height = 7,
-  formats = c("png", "pdf")
-)
-
 cli::cli_h3("Alpha-Calibration (distribution)")
-p_dist = aggr_scores |>
+p_alpha_dist = aggr_scores |>
   dplyr::filter(grepl("isbs", .data[["tune_measure"]]), !(learner_id %in% c("AK", "NCV", "NEL", "KM"))) |>
   ggplot(aes(x = alpha_calib)) +
   facet_wrap(vars(learner_id), scales = "free_y", ncol = 2) +
@@ -468,7 +431,7 @@ p_dist = aggr_scores |>
   )
 
 save_plot(
-  p_dist,
+  p_alpha_dist,
   name = paste("calib-alpha-ratio-plot-dist", "isbs", sep = "-"),
   plot_path = plot_path,
   width = 6,
@@ -505,10 +468,8 @@ save_scores_plot = function(
 cli::cli_h3("Discrimination measures")
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
   for (ptype in c("box", "violin")) {
-    cli::cli_progress_step("Plotting {ptype} scores for {.val {measure_id}}")
-
     p = plot_scores(
-      scores,
+      scores[!(learner_id %in% c("KM", "NEL"))],
       type = ptype,
       eval_measure_id = measure_id,
       tuning_measure_id = "harrell_c",
@@ -523,7 +484,7 @@ for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
       tuning_measure_id = "harrell_c",
       width = 10,
       height = 15,
-      formats = c("png", "pdf")
+      formats = "pdf"
     )
   }
 }
@@ -531,8 +492,6 @@ for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
 cli::cli_h3("Scoring rules")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   for (ptype in c("box", "violin")) {
-    cli::cli_progress_step("Plotting {ptype} scores for {.val {measure_id}}")
-
     p = plot_scores(
       scores,
       type = ptype,
@@ -549,7 +508,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
       tuning_measure_id = "isbs",
       width = 10,
       height = 14,
-      formats = c("png", "pdf")
+      formats = "pdf"
     )
   }
 }

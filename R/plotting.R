@@ -275,9 +275,9 @@ plot_scores = function(
     facet_wrap(vars(task_id), scales = "free_x", ncol = ncol) +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
     labs(
-      title = msr_tbl[id == eval_measure_id, label],
+      title = NULL,
       subtitle = glue::glue("Scores per dataset across outer resampling iterations ({direction_label})"),
-      x = "Score",
+      x = msr_tbl[id == eval_measure_id, label],
       y = NULL,
       color = NULL,
       fill = NULL,
@@ -289,7 +289,7 @@ plot_scores = function(
       # base_family = "Fira Sans"
     ) +
     theme(
-      legend.position = "top",
+      legend.position = "bottom",
       panel.background = element_rect(fill = "transparent", color = NA),
       panel.grid.major.x = element_blank(),
       plot.title.position = "plot",
@@ -380,7 +380,7 @@ save_plot = function(p, name, plot_path, height = 6, width = 9, formats = c("png
 
   for (format in formats) {
     filename = fs::path(plot_path, name, ext = format)
-    cli::cli_alert_info("Saving {.file {fs::path_rel(filename)}} / {.val {format}}")
+    cli::cli_progress_step("Saving {.file {fs::path_rel(filename)}} / {.val {format}}")
 
     ggsave(
       filename = filename,
