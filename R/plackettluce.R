@@ -56,15 +56,14 @@ build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tas
   stopifnot(all.equal(tt$task_id, task_ids))
 
   G <- PlackettLuce::group(rankings, index = seq_len(nrow(rankings)))
-  model_data <- data.frame(
-    G = G,
-    noverp = tt$noverp,
-    n = tt$n,
-    p = tt$p,
-    ph_violated = factor(tt$ph_violated),
-    zph_pval_processed = tt$zph_pval_processed,
-    censprop = tt$censprop
-  )
+  # Include all tasktab columns as potential covariates (except task_id)
+  tt_cols <- setdiff(names(tt), "task_id")
+  model_data <- as.data.frame(tt[, tt_cols, with = FALSE])
+  # Ensure ph_violated is a factor if present
+  if ("ph_violated" %in% names(model_data)) {
+    model_data$ph_violated <- factor(model_data$ph_violated)
+  }
+  model_data$G <- G
 
   list(rankings = rankings, model_data = model_data, learner_ids = learner_ids)
 }
@@ -274,7 +273,7 @@ run_pl_tree <- function(
   learners,
   tasktab,
   plot_name,
-  covariates = c("noverp", "ph_violated", "censprop"),
+  covariates = c("log_noverp", "ph_violated", "censprop"),
   alpha = 0.10,
   minsize = 5,
   maxdepth = 4,
