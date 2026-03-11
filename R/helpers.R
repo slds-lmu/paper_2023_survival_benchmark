@@ -343,6 +343,28 @@ measures_tbl = function() {
   msr_tbl[]
 }
 
+#' Save lookup table of measures as flat CSV for later plotting etc.
+#' Loading measures_tbl() directly caused issues in other environments
+#' due to changes in mlr3proba, but the table is most often used only for ids and labels
+save_msr_table = function(path = here::here("tables", "measures.csv")) {
+  ensure_directory(path)
+  msr_tab = measures_tbl()
+  # Remove actual R6 object to make it CSVable
+  msr_tab[, measure := NULL]
+
+  if (fs::file_exists(path)) {
+    cli::cli_alert_warning("Overwriting {.val {fs::path_rel(path)}}")
+  }
+
+  readr::write_csv(x = msr_tab, file = path, append = FALSE)
+}
+
+load_msr_table = function(path = here::here("tables", "measures.csv")) {
+  ensure_directory(path)
+  cli::cli_alert_info("Loading {.file {path}}")
+  data.table::fread(path)
+}
+
 #' Collect tuning archives saved separately to disk via callback
 #' @param conf `config::get()` for result paths
 #' @param keep_logs [`TRUE`] Whether to keep the logs, which drastically increases the size
