@@ -10,6 +10,9 @@ author:
       - name: Munich Center for Machine Learning (MCML)
       - name: University of Bremen
   - name: John Zobolas
+    affiliation:
+      - name: Oslo University Hospital
+      - name: University of Oslo
   - name: Bernd Bischl
     affiliation:
     - name: LMU Munich
@@ -23,6 +26,8 @@ author:
       - name: Leibniz Institute for Prevention Research and Epidemiology - BIPS
       - name: University of Bremen
   - name: Raphael Sonabend
+    affiliation:
+    - OSPO Now
 ---
 
 This site aggregates additional results and metadata accompanying the benchmark project.  
