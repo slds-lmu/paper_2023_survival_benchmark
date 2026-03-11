@@ -8,6 +8,8 @@ editor_options:
 source(here::here("common.R"))
 ```
 
+In the mlr3 ecosystem it is more common to refer to _tasks_ and _learners_ rather than _datasets_ and _models_, and there are real differences between the terms which we unfortunately use inconsistently.
+
 ## Measures {#sec-measures}
 
 The following table provides a brief overview of the measures used in this benchmark.
@@ -28,9 +30,9 @@ msr_tbl |>
 
 Integrated measures are always integrated up to the conventional 80% quantile.
 
-## Tasks {#sec-tasks}
+## Tasks (Datasets) {#sec-tasks}
 
-The following table gives a summary of the included datasets (tasks) in the benchmark.
+The following table gives a summary of the included tasks (datasets) in the benchmark.
 
 Violation of the proportional hazards (PH) assumption is derived from the p-value of the global significance test conducted with `cox.zph()` at the 5% level (i.e., `ph_violated = p.value > 0.05`).
 
@@ -63,9 +65,9 @@ tasktab |>
   )
 ```
 
-## Learners {#sec-learners}
+## Learners (Models) {#sec-learners}
 
-This table shows the models (learners) used in the benchmark with their `mlr3` IDs and additional metadata.
+This table shows the learner (models) used in the benchmark with their `mlr3` IDs and additional metadata.
 
 - "Parameters" is 0 for learners such as KM, NA, CPH, which do not have any hyperparameters. It is also 0 for CoxBoost, which uses its own tuning method.
 - "Survival Prediction" indicates whether the learner provides a survival probability prediction (a `distr` object), which allows evaluation with measures like the ISBS.

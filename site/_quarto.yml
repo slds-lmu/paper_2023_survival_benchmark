@@ -37,7 +37,7 @@ website:
       - section: Metadata
         contents:
           - href: metadata.qmd
-            text: Models, Data, Measures
+            text: Measures, Tasks, Learners
   # navbar:
   #   right:
   #     - href: https://github.com/slds-lmu/paper_2023_survival_benchmark

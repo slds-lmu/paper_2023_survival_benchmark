@@ -22,8 +22,8 @@ library(data.table)
 # Load results --------------------------------------------------------------------------------
 plot_path = here::here("results_paper")
 lrntab = load_lrntab()
-# Helper table to collect all measures and their attributed
-msr_tbl = measures_tbl()
+# Helper table to collect all measures and their attributes
+msr_tbl = load_msr_table()
 # bma is the BenchmarkAggr for use with mlr3benchmark
 bma_harrell_c = readRDS(fs::path(conf$result_path, "bma_harrell_c.rds"))
 bma_isbs = readRDS(fs::path(conf$result_path, "bma_isbs.rds"))
@@ -42,9 +42,9 @@ stopifnot(any(aggr_scores_scaled[grepl("harrell_c", tune_measure), harrell_c] ==
 stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] > 1)
 stopifnot(!aggr_scores_scaled[grepl("isbs", tune_measure), isbs] < 0)
 
-cli::cli_h1("Producing paper plots")
-
 # Table of errors -----------------------------------------------------------------------------
+cli::cli_h1("Producing paper tables")
+
 cli::cli_h2("Error table")
 
 errs_table = scores |>
@@ -82,6 +82,8 @@ errs_table |>
   readr::write_lines(fs::path(plot_path, "errors-table.tex"))
 #kableExtra::add_header_above(c(" " = 2, "Tuning Measure" = 2, " " = 1))
 
+# Plots ------------------------------------------------------------------
+cli::cli_h1("Producing paper plots")
 cli::cli_h2("Critical Difference Plots")
 
 save_cd_plot = function(p, tuning_measure, formats = "pdf") {

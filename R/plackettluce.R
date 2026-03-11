@@ -114,8 +114,8 @@ pl_subgroup_analysis <- function(
     cli::cli_alert_info("AIC: {round(AIC(pl_fit), 2)}")
 
     worth <- coef(pl_fit, log = FALSE)
-    cli::cli_alert_info("Worth (sorted):")
-    print(sort(worth, decreasing = TRUE))
+    # cli::cli_alert_info("Worth (sorted):")
+    # print(sort(worth, decreasing = TRUE))
 
     qv <- PlackettLuce::qvcalc(pl_fit)
     qvdt <- as.data.table(qv$qvframe, keep.rownames = "learner")
@@ -139,8 +139,8 @@ pl_subgroup_analysis <- function(
     rank_comparison[, paste0("worth_", nm) := w[learner]]
   }
 
-  cli::cli_h2("Rank comparison")
-  print(rank_comparison)
+  # cli::cli_h2("Rank comparison")
+  # print(rank_comparison)
 
   # Quasi-variance plot
   qvdt <- rbindlist(qvdt_list)
@@ -199,7 +199,7 @@ pl_lr_test <- function(full_fit, subgroup_result) {
 # -- Analysis functions -------------------------------------------------------
 
 #' Full Plackett-Luce ranking (all learners)
-run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, msr_tbl = NULL) {
+run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, msr_tbl = NULL, trace = FALSE) {
   cli::cli_h1("Plackett-Luce ranking: {measure}")
   m_ <- measure
   measure_label <- msr_tbl[id == m_, label]
@@ -208,18 +208,18 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, ms
   rankings <- prep$rankings
 
   # Fit PL model
-  pl_fit <- PlackettLuce::PlackettLuce(rankings, trace = TRUE)
+  pl_fit <- PlackettLuce::PlackettLuce(rankings, trace = trace)
 
   cli::cli_alert_info("Log-likelihood: {round(logLik(pl_fit), 2)}")
   cli::cli_alert_info("AIC: {round(AIC(pl_fit), 2)}")
   cli::cli_alert_info("Iterations: {pl_fit$iter}")
 
-  cli::cli_h2("Log-worth parameters")
-  print(coef(pl_fit))
+  # cli::cli_h2("Log-worth parameters")
+  # print(coef(pl_fit))
 
   worth <- coef(pl_fit, log = FALSE)
-  cli::cli_h2("Worth parameters (sorted)")
-  print(sort(worth, decreasing = TRUE))
+  # cli::cli_h2("Worth parameters (sorted)")
+  # print(sort(worth, decreasing = TRUE))
 
   # Quasi-variances for SE estimation
   qv <- PlackettLuce::qvcalc(pl_fit)
@@ -253,9 +253,16 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, ms
     ) +
     ggplot2::theme_minimal(base_size = 15)
 
-  save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), plot_path = plot_path, width = 8, height = 6, formats = "pdf")
+  save_plot(
+    p2,
+    name = paste0("pl_worth_", measure, "_cphref"),
+    plot_path = plot_path,
+    width = 8,
+    height = 6,
+    formats = "pdf"
+  )
 
-  invisible(list(pl_fit = pl_fit, qv = qv, worth = worth, p = p2))
+  invisible(list(pl_fit = pl_fit, qv = qvdt, worth = worth, p = p2))
 }
 
 #' Plackett-Luce tree analysis
@@ -285,7 +292,8 @@ run_pl_tree <- function(
   bonferroni = TRUE,
   msr_tbl = NULL,
   width = 10,
-  height = 7
+  height = 7,
+  trace = FALSE
 ) {
   cli::cli_h1("Plackett-Luce tree: {measure} / {plot_name} (alpha = {alpha})")
   cli::cli_alert_info("Covariates: {paste(covariates, collapse = ', ')}")
@@ -316,23 +324,32 @@ run_pl_tree <- function(
       gamma = gamma,
       npseudo = npseudo,
       bonferroni = bonferroni,
-      trace = TRUE
+      trace = trace
     )
   )
   tree
 
-  cli::cli_h2("Instability tests (root node)")
-  print(strucchange::sctest(tree, node = 1))
+  # cli::cli_h2("Instability tests (root node)")
+  # print(strucchange::sctest(tree, node = 1))
 
-  cli::cli_h2("Worth parameters")
-  print(sort(coef(tree, log = FALSE), decreasing = TRUE))
+  # cli::cli_h2("Worth parameters")
+  # print(sort(coef(tree, log = FALSE), decreasing = TRUE))
 
   p <- NULL
   if (length(tree) > 1) {
     m_ <- measure
     measure_label <- msr_tbl[id == m_, label]
     p <- plot_pltree_gg(tree, caption = glue::glue("Measure: {measure_label}"))
-    save_plot(p, name = paste0("pltree_", plot_name, "_", measure), plot_path = plot_path, width = width, height = height, formats = "pdf")
+    save_plot(
+      p,
+      name = paste0("pltree_", plot_name, "_", measure),
+      plot_path = plot_path,
+      width = width,
+      height = height,
+      formats = "pdf"
+    )
+  } else {
+    cli::cli_alert_warning("No split found")
   }
 
   invisible(list(tree = tree, p = p))
@@ -361,7 +378,16 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
 
 #' Censoring proportion subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL, msr_tbl = NULL) {
+run_pl_censprop_subgroups <- function(
+  scores_all,
+  measure,
+  minimize,
+  exclude,
+  tasktab,
+  plot_path,
+  cutoff = NULL,
+  msr_tbl = NULL
+) {
   cli::cli_h1("Censoring proportion subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -392,7 +418,16 @@ run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, ta
 
 #' n/p ratio subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL, msr_tbl = NULL) {
+run_pl_noverp_subgroups <- function(
+  scores_all,
+  measure,
+  minimize,
+  exclude,
+  tasktab,
+  plot_path,
+  cutoff = NULL,
+  msr_tbl = NULL
+) {
   cli::cli_h1("n/p ratio subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)

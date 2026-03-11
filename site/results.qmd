@@ -413,53 +413,6 @@ aggr_scores |>
   )
 ```
 
-### Raw scores
-
-| Column              | Type  | Description |
-| --------------------|-------|-------------|
-| Group               | `fct` | Model / learner group, one of "Baseline", "Classical", "Trees", "Boosting" |
-| Learner             | `fct` | Model / learner name, e.g. `RAN` for `ranger` |
-| Task                | `fct` | Dataset name, e.g. `veteran`                  |
-| Tuning              | `chr` | Tuning measure, one of `harrell_c`, `isbs`, or `harrell_c,isbs` for untuned learners or "self-tuners" |
-| `harrell_c`, `uno_c`, `isll`, `isll_erv`, `isbs`, `isbs_erv`, `dcalib`, `alpha_calib` | `dbl` | Evaluation measure score |
-| warn                | `int` | Number of warnings encountered during outer resampling |
-| err                 | `int` | Number of errors encountered during outer resampling. Errors indicate failure and the prediction of KM was inserted as fallback |
-
-
-```{r aggr-reactable}
-#| column: page
-library(reactable)
-aggr_scores |>
-  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
-  dplyr::mutate(task_id = factor(task_id), tune_measure = factor(tune_measure)) |>
-  dplyr::arrange(task_id, learner_id) |>
-  dplyr::select(
-    learner_group,
-    learner_id,
-    task_id,
-    tune_measure,
-    harrell_c:alpha_calib,
-    warn = warnings_cnt,
-    err = errors_cnt
-  ) |>
-  reactable::reactable(
-    sortable = TRUE,
-    filterable = TRUE,
-    searchable = TRUE,
-    defaultPageSize = 30,
-    compact = TRUE,
-    columns = list(
-      learner_group = reactable::colDef(name = "Group", minWidth = 80),
-      learner_id = reactable::colDef(name = "Learner", minWidth = 60),
-      task_id = reactable::colDef(name = "Task", minWidth = 100),
-      tune_measure = reactable::colDef(name = "Tuning", minWidth = 80),
-      alpha_calib = reactable::colDef(name = "alpha calib", minWidth = 55),
-      warn = reactable::colDef(name = "Warn", minWidth = 55),
-      err = reactable::colDef(name = "Err", minWidth = 55)
-    ),
-    defaultColDef = reactable::colDef(minWidth = 70)
-  )
-```
 
 ## Statistical Analysis
 
@@ -523,3 +476,52 @@ plot_bma(
 ```
 
 :::
+
+
+## Raw scores
+
+| Column              | Type  | Description |
+| --------------------|-------|-------------|
+| Group               | `fct` | Model / learner group, one of "Baseline", "Classical", "Trees", "Boosting" |
+| Learner             | `fct` | Model / learner name, e.g. `RAN` for `ranger` |
+| Task                | `fct` | Dataset name, e.g. `veteran`                  |
+| Tuning              | `chr` | Tuning measure, one of `harrell_c`, `isbs`, or `harrell_c,isbs` for untuned learners or "self-tuners" |
+| `harrell_c`, `uno_c`, `isll`, `isll_erv`, `isbs`, `isbs_erv`, `dcalib`, `alpha_calib` | `dbl` | Evaluation measure score |
+| warn                | `int` | Number of warnings encountered during outer resampling |
+| err                 | `int` | Number of errors encountered during outer resampling. Errors indicate failure and the prediction of KM was inserted as fallback |
+
+
+```{r aggr-reactable}
+#| column: page
+library(reactable)
+aggr_scores |>
+  dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x) round(x, 3))) |>
+  dplyr::mutate(task_id = factor(task_id), tune_measure = factor(tune_measure)) |>
+  dplyr::arrange(task_id, learner_id) |>
+  dplyr::select(
+    learner_group,
+    learner_id,
+    task_id,
+    tune_measure,
+    harrell_c:alpha_calib,
+    warn = warnings_cnt,
+    err = errors_cnt
+  ) |>
+  reactable::reactable(
+    sortable = TRUE,
+    filterable = TRUE,
+    searchable = TRUE,
+    defaultPageSize = 30,
+    compact = TRUE,
+    columns = list(
+      learner_group = reactable::colDef(name = "Group", minWidth = 80),
+      learner_id = reactable::colDef(name = "Learner", minWidth = 60),
+      task_id = reactable::colDef(name = "Task", minWidth = 100),
+      tune_measure = reactable::colDef(name = "Tuning", minWidth = 80),
+      alpha_calib = reactable::colDef(name = "alpha calib", minWidth = 55),
+      warn = reactable::colDef(name = "Warn", minWidth = 55),
+      err = reactable::colDef(name = "Err", minWidth = 55)
+    ),
+    defaultColDef = reactable::colDef(minWidth = 70)
+  )
+```
