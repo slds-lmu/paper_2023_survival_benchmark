@@ -376,6 +376,8 @@ save_plot = function(p, name, plot_path, height = 6, width = 9, formats = c("png
     print(p)
   }
 
+  if (is.null(plot_path)) return(invisible(p))
+
   stopifnot(ensure_directory(plot_path))
 
   for (format in formats) {

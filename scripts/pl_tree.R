@@ -12,7 +12,6 @@
 # Runs for both tuning measures: harrell_c (higher = better) and isbs (lower = better).
 
 library(PlackettLuce)
-library(mlr3proba)
 library(strucchange)
 library(data.table)
 library(ggplot2)
@@ -22,6 +21,7 @@ result_path <- fs::path(here::here("results", "production"))
 plot_path <- here::here("results_paper", "PL")
 
 # -- Data -------------------------------------------------------------------
+msr_tbl <- load_msr_table()
 tasktab <- load_tasktab()
 
 scores_all <- readRDS(fs::path(result_path, "scores.rds"))
@@ -49,6 +49,7 @@ res_all_hc <- run_pl_tree(
   gamma = FALSE,
   minsize = 10,
   alpha = .1,
+  msr_tbl = msr_tbl,
   width = 12,
   height = 8
 )
@@ -66,6 +67,7 @@ res_all_isbs <- run_pl_tree(
   gamma = FALSE,
   minsize = 10,
   alpha = .1,
+  msr_tbl = msr_tbl,
   width = 12,
   height = 8
 )
@@ -84,6 +86,7 @@ res_all_hc <- run_pl_tree(
   gamma = FALSE,
   minsize = 5,
   alpha = .2,
+  msr_tbl = msr_tbl,
   width = 12,
   height = 8
 )
@@ -101,6 +104,7 @@ res_all_isbs <- run_pl_tree(
   gamma = FALSE,
   minsize = 5,
   alpha = .2,
+  msr_tbl = msr_tbl,
   width = 12,
   height = 8
 )

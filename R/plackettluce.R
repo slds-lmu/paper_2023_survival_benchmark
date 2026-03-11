@@ -87,6 +87,7 @@ pl_subgroup_analysis <- function(
   measure,
   plot_name,
   plot_path,
+  msr_tbl = NULL,
   measure_label = NULL,
   reference = "CPH",
   width = 12,
@@ -94,7 +95,7 @@ pl_subgroup_analysis <- function(
 ) {
   if (is.null(measure_label)) {
     m_ <- measure
-    measure_label <- measures_tbl()[id == m_, label]
+    measure_label <- msr_tbl[id == m_, label]
   }
   subgroup_names <- names(subgroups)
 
@@ -163,7 +164,7 @@ pl_subgroup_analysis <- function(
 
   save_plot(p, name = plot_name, plot_path = plot_path, width = width, height = height, formats = "pdf")
 
-  invisible(list(pl_fits = pl_fits, rank_comparison = rank_comparison))
+  invisible(list(pl_fits = pl_fits, rank_comparison = rank_comparison, p = p))
 }
 
 #' Likelihood ratio test: full PL model vs. subgroup PL models
@@ -198,10 +199,10 @@ pl_lr_test <- function(full_fit, subgroup_result) {
 # -- Analysis functions -------------------------------------------------------
 
 #' Full Plackett-Luce ranking (all learners)
-run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path) {
+run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, msr_tbl = NULL) {
   cli::cli_h1("Plackett-Luce ranking: {measure}")
   m_ <- measure
-  measure_label <- measures_tbl()[id == m_, label]
+  measure_label <- msr_tbl[id == m_, label]
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
   rankings <- prep$rankings
@@ -254,7 +255,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path) {
 
   save_plot(p2, name = paste0("pl_worth_", measure, "_cphref"), plot_path = plot_path, width = 8, height = 6, formats = "pdf")
 
-  invisible(list(pl_fit = pl_fit, qv = qv, worth = worth))
+  invisible(list(pl_fit = pl_fit, qv = qv, worth = worth, p = p2))
 }
 
 #' Plackett-Luce tree analysis
@@ -282,6 +283,7 @@ run_pl_tree <- function(
   gamma = FALSE,
   npseudo = 0.5,
   bonferroni = TRUE,
+  msr_tbl = NULL,
   width = 10,
   height = 7
 ) {
@@ -325,18 +327,19 @@ run_pl_tree <- function(
   cli::cli_h2("Worth parameters")
   print(sort(coef(tree, log = FALSE), decreasing = TRUE))
 
+  p <- NULL
   if (length(tree) > 1) {
     m_ <- measure
-    measure_label <- measures_tbl()[id == m_, label]
+    measure_label <- msr_tbl[id == m_, label]
     p <- plot_pltree_gg(tree, caption = glue::glue("Measure: {measure_label}"))
     save_plot(p, name = paste0("pltree_", plot_name, "_", measure), plot_path = plot_path, width = width, height = height, formats = "pdf")
   }
 
-  invisible(tree)
+  invisible(list(tree = tree, p = p))
 }
 
 #' PH subgroup analysis
-run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path) {
+run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, msr_tbl = NULL) {
   cli::cli_h1("PH subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -351,13 +354,14 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
     subgroups = list("PH not violated" = ph0_idx, "PH violated" = ph1_idx),
     measure = measure,
     plot_name = paste0("pl_worth_ph_subgroups_", measure),
-    plot_path = plot_path
+    plot_path = plot_path,
+    msr_tbl = msr_tbl
   )
 }
 
 #' Censoring proportion subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL) {
+run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL, msr_tbl = NULL) {
   cli::cli_h1("Censoring proportion subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -381,13 +385,14 @@ run_pl_censprop_subgroups <- function(scores_all, measure, minimize, exclude, ta
     subgroups = subgroups,
     measure = measure,
     plot_name = paste0("pl_worth_censprop_subgroups_", measure),
-    plot_path = plot_path
+    plot_path = plot_path,
+    msr_tbl = msr_tbl
   )
 }
 
 #' n/p ratio subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
-run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL) {
+run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, cutoff = NULL, msr_tbl = NULL) {
   cli::cli_h1("n/p ratio subgroup analysis: {measure}")
 
   prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
@@ -411,6 +416,7 @@ run_pl_noverp_subgroups <- function(scores_all, measure, minimize, exclude, task
     subgroups = subgroups,
     measure = measure,
     plot_name = paste0("pl_worth_noverp_subgroups_", measure),
-    plot_path = plot_path
+    plot_path = plot_path,
+    msr_tbl = msr_tbl
   )
 }
