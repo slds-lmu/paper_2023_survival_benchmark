@@ -226,9 +226,11 @@ assign_repeats = function(num_events) {
 #' @example
 #' save_lrntab()
 save_lrntab <- function(path = here::here("tables", "learners.csv")) {
-  require(mlr3proba)
-  requireNamespace("mlr3extralearners", quietly = TRUE)
+  # require(mlr3proba)
+  # requireNamespace("mlr3extralearners", quietly = TRUE)
   ensure_directory(path)
+  # source(here::here("R/extralearners-gam.R"))
+  # source(here::here("R/extralearners-extralearners-ncv.R"))
 
   lrntab <- mlr3misc::rowwise_table(
     ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale, ~surv_pred,
@@ -237,9 +239,9 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
     "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "GAM"     , "gam"        , "surv.gam.cox"      , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
-    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
+    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    TRUE , TRUE  ,        FALSE, FALSE,   TRUE,
     "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
-    "NCV"     , "cv_ncv"     , "surv.cv_ncvsurv"   , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
+    "NCV"     , "cv_ncv"     , "surv.cv_ncvsurv"   , 1 ,    TRUE , TRUE  ,        FALSE, FALSE,   TRUE,
     "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
@@ -254,10 +256,12 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
     "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,   FALSE,
     "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE,    FALSE
   )
-
-  lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
-    "threads" %in% unlist(lrn(x)$param_set$tags)
-    }, logical(1))
+  
+# Ignore threading after all, intropduces too much complexity
+  lrntab$has_threads = FALSE
+  # lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
+  #   "threads" %in% unlist(lrn(x)$param_set$tags)
+  #   }, logical(1))
 
   if (fs::file_exists(path)) {
     cli::cli_alert_warning("Overwriting {.val {fs::path_rel(path)}}")
