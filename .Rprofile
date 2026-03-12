@@ -63,6 +63,8 @@ if (FALSE) {
   library("DiceKriging")
   library("rgenoud")
   library("actuar")
+  library("mgcv")
+  library("ncvreg")
 
   library("mlr3batchmark") # on CRAN now with v0.1.0
   library("distr6")

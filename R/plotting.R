@@ -113,7 +113,16 @@ plot_bma = function(
   )
 
   minimize = msr_tbl[id == measure_id, minimize]
-  # browser()
+
+  if (measure_id != tuning_measure_id) {
+    plot_caption = glue::glue(
+      "Evaluation measure: {measure_label}
+                             Tuning measure: {tuning_measure_label}"
+    )
+  } else {
+    plot_caption = glue::glue("Measure: {measure_label}")
+  }
+
   if (type %in% c("cd_n", "cd_bd")) {
     test = switch(type, cd_n = "nemenyi", cd_bd = "bd")
 
@@ -121,10 +130,7 @@ plot_bma = function(
 
     p = mlr3viz::autoplot(bma, type = "cd", meas = measure_id, test = test, minimize = minimize, ...) +
       labs(
-        caption = glue::glue(
-          "Evaluation measure: {measure_label}
-                             Tuning measure: {tuning_measure_label}"
-        )
+        caption = plot_caption
       )
   } else if (type %in% c("mean", "box", "fn")) {
     p = mlr3viz::autoplot(bma, type = type, meas = measure_id, ...)
@@ -181,7 +187,7 @@ plot_aggr_scores = function(
   measure_label = msr_tbl[id == eval_measure_id, label]
   tuning_measure_label = msr_tbl[id == tuning_measure_id, label]
 
-  plot_type_label = switch(type, mean = "Mean ± SE", box = "Boxplot")
+  plot_type_label = switch(type, mean = "Mean ± SE", box = "Boxplot", violin = "Violin plot")
 
   minimize = msr_tbl[id == eval_measure_id, minimize]
 
@@ -204,13 +210,19 @@ plot_aggr_scores = function(
   p = ggplot(
     this_df,
     aes(x = learner_id, y = .data[[eval_measure_id]], color = learner_group, fill = learner_group)
-  ) +
-    geom_boxplot(alpha = 1 / 4, key_glyph = "rect") +
-    scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
+  )
+
+  if (type == "box") {
+    p = p + geom_boxplot(alpha = 1 / 4, key_glyph = "rect")
+  } else if (type == "violin") {
+    p = p + geom_violin(alpha = 1 / 4, key_glyph = "rect", draw_quantiles = c(.25, .75))
+  }
+
+  p = p + scale_color_manual(values = palette_groups, aesthetics = c("color", "fill"), name = NULL)
 
   p = p +
     labs(
-      title = measure_label,
+      # title = measure_label,
       subtitle = glue::glue("{plot_type_label} of aggregated scores across all tasks ({direction_label})"),
       x = NULL,
       y = measure_label,
@@ -233,7 +245,7 @@ plot_aggr_scores = function(
       plot.title.position = "plot"
     )
 
-  print(p)
+  invisible(p)
 }
 
 #' Analogous plotting function but for by-dataset plots, slightly different, could be consolidated though
@@ -243,11 +255,13 @@ plot_scores = function(
   tuning_measure_id = "harrel_c",
   dodge = FALSE,
   flip = TRUE,
-  ncol = 8
+  ncol = 8,
+  type = c("box", "violin")
 ) {
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
   checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
+  type = match.arg(type)
 
   if (msr_tbl[id == eval_measure_id, minimize]) {
     direction_label = "lower is better"
@@ -259,12 +273,11 @@ plot_scores = function(
     dplyr::filter(grepl(pattern = .env$tuning_measure_id, x = .data$tune_measure)) |>
     ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
     facet_wrap(vars(task_id), scales = "free_x", ncol = ncol) +
-    geom_boxplot(alpha = 1 / 4) +
     scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
     labs(
-      title = msr_tbl[id == eval_measure_id, label],
+      title = NULL,
       subtitle = glue::glue("Scores per dataset across outer resampling iterations ({direction_label})"),
-      x = "Score",
+      x = msr_tbl[id == eval_measure_id, label],
       y = NULL,
       color = NULL,
       fill = NULL,
@@ -276,7 +289,7 @@ plot_scores = function(
       # base_family = "Fira Sans"
     ) +
     theme(
-      legend.position = "top",
+      legend.position = "bottom",
       panel.background = element_rect(fill = "transparent", color = NA),
       panel.grid.major.x = element_blank(),
       plot.title.position = "plot",
@@ -285,6 +298,12 @@ plot_scores = function(
       strip.text = element_text(size = rel(1.1))
     )
 
+  if (type == "box") {
+    p = p + geom_boxplot(alpha = 1 / 4)
+  } else if (type == "violin") {
+    p = p + geom_violin(alpha = 1 / 4, draw_quantiles = c(.25, .75))
+  }
+
   # if (interactive()) {
   #   print(p)
   # }
@@ -292,14 +311,78 @@ plot_scores = function(
   p
 }
 
-save_plot = function(p, name, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {
+plot_pltree_gg <- function(tree, caption = NULL) {
+  require(ggparty)
+
+  # Extract worth parameters per terminal node into a data.frame with 'id' column
+  term_ids <- partykit::nodeids(tree, terminal = TRUE)
+  worth_df <- do.call(
+    rbind,
+    lapply(term_ids, function(nid) {
+      w <- coef(tree, node = nid, log = FALSE)
+      data.frame(id = nid, learner = names(w), worth = as.numeric(w))
+    })
+  )
+
+  # Order learners by overall mean worth (ascending, so best is at top after coord_flip)
+  learner_order <- tapply(worth_df$worth, worth_df$learner, mean)
+  worth_df$learner <- factor(worth_df$learner, levels = names(sort(learner_order)))
+
+  p <- ggparty(tree, terminal_space = 0.6) +
+    geom_edge(linewidth = 0.8) +
+    geom_edge_label(size = 3.5) +
+    geom_node_label(
+      aes(label = paste0(splitvar, "\np = ", formatC(p.value, format = "f", digits = 3))),
+      ids = "inner",
+      size = 4,
+      fontface = "bold"
+    ) +
+    geom_node_label(
+      aes(label = paste0("Node ", id, ", n = ", nodesize)),
+      ids = "terminal",
+      size = 3,
+      nudge_y = 0.01
+    ) +
+    geom_node_plot(
+      gglist = list(
+        geom_col(
+          data = worth_df,
+          aes(x = learner, y = worth),
+          width = 0.7,
+          fill = "steelblue"
+        ),
+        coord_flip(),
+        labs(x = NULL, y = "Worth"),
+        theme_minimal(base_size = 9),
+        theme(
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor = element_blank()
+        )
+      ),
+      shared_axis_labels = TRUE,
+      shared_legend = FALSE,
+      ids = "terminal"
+    ) +
+    theme_void() +
+    labs(caption = caption) +
+    theme(
+      plot.caption = element_text(size = 9, hjust = .95, vjust = 10),
+      plot.caption.position = "panel"
+    )
+}
+
+save_plot = function(p, name, plot_path, height = 6, width = 9, formats = c("png", "pdf"), dpi = 300) {
   if (interactive()) {
     print(p)
   }
 
+  if (is.null(plot_path)) return(invisible(p))
+
+  stopifnot(ensure_directory(plot_path))
+
   for (format in formats) {
     filename = fs::path(plot_path, name, ext = format)
-    cli::cli_alert_info("Saving {.file {fs::path_rel(filename)}} / {.val {format}}")
+    cli::cli_progress_step("Saving {.file {fs::path_rel(filename)}} / {.val {format}}")
 
     ggsave(
       filename = filename,

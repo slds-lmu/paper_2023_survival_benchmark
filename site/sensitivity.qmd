@@ -1,0 +1,283 @@
+---
+format:
+  html:
+    page-layout: full
+    tbl-cap-location: top
+editor: source
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source(here::here("common.R"))
+source(here::here("../", "R", "plackettluce.R"))
+library(PlackettLuce)
+set.seed(2026)
+
+exclude = c("KM", "NEL")
+all_learners = function(measure) {
+  setdiff(unique(scores[grepl(pattern = measure, tune_measure), learner_id]), exclude)
+}
+```
+
+Plackett-Luce (PL) models are used as a sensitivity analysis complementary to the critical difference plots.
+Each dataset acts as a "rater" providing a complete ranking over all models ("items").  
+KM and NEL baselines are excluded as they are uninformative for model comparison.
+
+We refer to the [`PlackettLuce`](https://hturner.github.io/PlackettLuce/) package for more details.
+
+## Full Model
+
+::: {.panel-tabset}
+
+### Harrell's C
+
+```{r pl-full-hc}
+#| fig-width: 10
+#| fig-height: 7
+
+pl_full_hc = run_pl_ranking(scores, "harrell_c", minimize = FALSE, exclude, plot_path = NULL, msr_tbl = msr_tbl)
+pl_full_hc$p
+```
+
+### ISBS
+
+```{r pl-full-isbs}
+#| fig-width: 10
+#| fig-height: 7
+
+pl_full_isbs = run_pl_ranking(scores, "isbs", minimize = TRUE, exclude, plot_path = NULL, msr_tbl = msr_tbl)
+pl_full_isbs$p
+```
+
+:::
+
+## Subgroup Analysis
+
+Separate PL models are fit for subgroups based on dataset characteristics.
+Likelihood ratio tests compare the combined log-likelihood of subgroup-specific models against the full model.
+
+### PH Assumption Violation
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r pl-ph-hc}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_ph_hc = run_pl_ph_subgroups(
+  scores,
+  "harrell_c",
+  minimize = FALSE,
+  exclude,
+  tasktab,
+  plot_path = NULL,
+  msr_tbl = msr_tbl
+)
+pl_ph_hc$p
+```
+
+```{r pl-ph-hc-lr}
+lr_ph_hc = pl_lr_test(pl_full_hc$pl_fit, pl_ph_hc)
+```
+
+LR test p-value: `r format.pval(lr_ph_hc$p_value)`
+
+#### ISBS
+
+```{r pl-ph-isbs}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_ph_isbs = run_pl_ph_subgroups(scores, "isbs", minimize = TRUE, exclude, tasktab, plot_path = NULL, msr_tbl = msr_tbl)
+pl_ph_isbs$p
+```
+
+```{r pl-ph-isbs-lr}
+lr_ph_isbs = pl_lr_test(pl_full_isbs$pl_fit, pl_ph_isbs)
+```
+
+LR test p-value: `r format.pval(lr_ph_isbs$p_value)`
+
+:::
+
+### Censoring Proportion
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r pl-cens-hc}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_cens_hc = run_pl_censprop_subgroups(
+  scores,
+  "harrell_c",
+  minimize = FALSE,
+  exclude,
+  tasktab,
+  plot_path = NULL,
+  msr_tbl = msr_tbl
+)
+pl_cens_hc$p
+```
+
+```{r pl-cens-hc-lr}
+lr_cens_hc = pl_lr_test(pl_full_hc$pl_fit, pl_cens_hc)
+```
+
+LR test p-value: `r format.pval(lr_cens_hc$p_value)`
+
+#### ISBS
+
+```{r pl-cens-isbs}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_cens_isbs = run_pl_censprop_subgroups(
+  scores,
+  "isbs",
+  minimize = TRUE,
+  exclude,
+  tasktab,
+  plot_path = NULL,
+  msr_tbl = msr_tbl
+)
+pl_cens_isbs$p
+```
+
+```{r pl-cens-isbs-lr}
+lr_cens_isbs = pl_lr_test(pl_full_isbs$pl_fit, pl_cens_isbs)
+```
+
+LR test p-value: `r format.pval(lr_cens_isbs$p_value)`
+
+:::
+
+### Sample Size to Feature Ratio (n/p)
+
+::: {.panel-tabset}
+
+#### Harrell's C
+
+```{r pl-noverp-hc}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_noverp_hc = run_pl_noverp_subgroups(
+  scores,
+  "harrell_c",
+  minimize = FALSE,
+  exclude,
+  tasktab,
+  plot_path = NULL,
+  msr_tbl = msr_tbl
+)
+pl_noverp_hc$p
+```
+
+```{r pl-noverp-hc-lr}
+lr_noverp_hc = pl_lr_test(pl_full_hc$pl_fit, pl_noverp_hc)
+```
+
+LR test p-value: `r format.pval(lr_noverp_hc$p_value)`
+
+#### ISBS
+
+```{r pl-noverp-isbs}
+#| fig-width: 12
+#| fig-height: 7
+
+pl_noverp_isbs = run_pl_noverp_subgroups(
+  scores,
+  "isbs",
+  minimize = TRUE,
+  exclude,
+  tasktab,
+  plot_path = NULL,
+  msr_tbl = msr_tbl
+)
+pl_noverp_isbs$p
+```
+
+```{r pl-noverp-isbs-lr}
+lr_noverp_isbs = pl_lr_test(pl_full_isbs$pl_fit, pl_noverp_isbs)
+```
+
+LR test p-value: `r format.pval(lr_noverp_isbs$p_value)`
+
+:::
+
+## PL Trees
+
+PL trees use model-based recursive partitioning to automatically detect dataset subgroups where model rankings differ significantly.
+
+::: {.panel-tabset}
+
+### Harrell's C (lenient)
+
+```{r pltree-lenient-hc}
+#| fig-width: 13
+#| fig-height: 9
+
+run_pl_tree(
+  scores,
+  "harrell_c",
+  minimize = FALSE,
+  learners = all_learners("harrell_c"),
+  tasktab = tasktab,
+  plot_name = "lenient",
+  plot_path = NULL,
+  alpha = 0.2,
+  minsize = 5,
+  bonferroni = TRUE,
+  msr_tbl = msr_tbl
+)$p
+```
+
+### ISBS (strict)
+
+```{r pltree-strict-isbs}
+#| fig-width: 13
+#| fig-height: 9
+
+run_pl_tree(
+  scores,
+  "isbs",
+  minimize = TRUE,
+  learners = all_learners("isbs"),
+  tasktab = tasktab,
+  plot_name = "strict",
+  plot_path = NULL,
+  alpha = 0.1,
+  minsize = 10,
+  bonferroni = TRUE,
+  msr_tbl = msr_tbl
+)$p
+```
+
+### ISBS (lenient)
+
+```{r pltree-lenient-isbs}
+#| fig-width: 13
+#| fig-height: 9
+
+run_pl_tree(
+  scores,
+  "isbs",
+  minimize = TRUE,
+  learners = all_learners("isbs"),
+  tasktab = tasktab,
+  plot_name = "lenient",
+  plot_path = NULL,
+  alpha = 0.2,
+  minsize = 5,
+  bonferroni = TRUE,
+  msr_tbl = msr_tbl
+)$p
+```
+
+:::

@@ -2,7 +2,9 @@
 
 > L. Burk, J. Zobolas, B. Bischl, A. Bender, M. N. Wright, and R. Sonabend, “A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data.” arXiv, Jun. 06, 2024. doi: [10.48550/arXiv.2406.04098](https://arxiv.org/abs/2406.04098).
 
-:warning: A note on versioning: This repository is actively in development. To view its state at the time of submission of the arXiv preprint, please [browse this tag on GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark/tree/f6c36cd43f1705e3612ff4f47472327a3d29ebe8)
+:warning: A note on versioning: This repository is in development. 
+To view its state at the time of submission of the first version of the arXiv preprint, please [browse this tag on GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark/tree/f6c36cd43f1705e3612ff4f47472327a3d29ebe8)
+
 
 ## Setup
 
@@ -12,15 +14,17 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
   - It is loaded using `config::get()` in the main scripts.
 - `batchmark.R` is the main setup script. It creates a benchmark registry (using `batchtools` and `mlr3batchmark`).
   - Resulting compute jobs can be submitted with `batchtools::submitJobs()` depending on available resources.
-  - `submit.R` contains job management steps specific to the HPC environment used for the benchmark.
-  - To actually run the benchmark, you need to adjust the `submit.R` script to your environment! Please refer to the `batchtools` documentation for more information.
+  - `job-scripts/submit.R` contains job management steps specific to the HPC environment used for the benchmark.
+  - To actually run the benchmark, you need to adjust the submit script to your environment! Please refer to the `batchtools` documentation for more information.
 - Datasets are loaded from `./datasets` in `.rds` format, where they are also stored in CSV and arff formats.
   - Code for retrieval and minimal preprocessing is in `import_datasets.R`
   - In `batchmark.R`, the datasets are loaded and converted into `{mlr3}` `TaskSurv` objects.
-- `resamplings` contains resampling fold information for each dataset in CSV form to ensure reproducibility.
+- `resamplings/` contains resampling fold information for each dataset in CSV form to ensure reproducibility.
   - These files are automatically generated when running `batchmark.R`, where resampling is done using a set RNG seed.
-- `helpers.R` contains helper functions for benchmark setup and later analysis.
+- `R/` contains helper functions (`helpers.R`), learner wrappers, and other R source files used during benchmark setup and analysis.
+- `process-results.R` processes the raw `batchtools` registry into aggregated result files.
 - `site/` contains a quarto site with all results.
+- `scripts/` contains additional analysis scripts (e.g., proportional hazards checks, Plackett-Luce rankings).
 
 ## Reproducibility
 

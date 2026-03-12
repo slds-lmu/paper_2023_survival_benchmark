@@ -1,6 +1,7 @@
 help:
 	@echo "Available targets:"
 	@echo "  results-paper  - Fun results-paper-plots.R for figures & tables used in publication"
+	@echo "  pl             - Run all Plackett-Luce analysis scripts"
 	@echo "  results        - Run process-results.R to start the (long and memory intensive!) task of aggregating batchtools result objects to results/production/"
 	@echo "  site           - Render results ./site/ with quarto"
 	@echo "  predictions    - Run store-predictions.R to store the outer resampling learner prediction objects alongside other results"
@@ -11,6 +12,11 @@ help:
 .PHONY: results-paper
 results-paper:
 	Rscript produce-paper-plots.R
+
+.PHONY: pl
+pl:
+	Rscript scripts/pl_ranking_subgroups.R
+	Rscript scripts/pl_tree.R
 
 .PHONY: results
 results:

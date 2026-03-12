@@ -10,3 +10,5 @@ attic/*.R
 analysis.qmd
 tmp
 produce-paper-plots.R
+qmd
+overleaf

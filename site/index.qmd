@@ -1,13 +1,39 @@
 ---
 title: "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data"
-author: "Lukas Burk, John Zobolas, Bernd Bischl, Andreas Bender, Marvin N. Wright, Raphael Sonabend"
+author: 
+  - name: Lukas Burk
+    orcid: 0000-0001-7528-3795
+    email: burk@leibniz-bips.de
+    affiliation:
+      - name: Leibniz Institute for Prevention Research and Epidemiology - BIPS
+      - name: LMU Munich
+      - name: Munich Center for Machine Learning (MCML)
+      - name: University of Bremen
+  - name: John Zobolas
+    affiliation:
+      - name: Oslo University Hospital
+      - name: University of Oslo
+  - name: Bernd Bischl
+    affiliation:
+    - name: LMU Munich
+    - name: Munich Center for Machine Learning (MCML)
+  - name: Andreas Bender
+    affiliation:
+    - name: LMU Munich
+    - name: Munich Center for Machine Learning (MCML)
+  - name: Marvin N. Wright 
+    affiliation:
+      - name: Leibniz Institute for Prevention Research and Epidemiology - BIPS
+      - name: University of Bremen
+  - name: Raphael Sonabend
+    affiliation:
+    - OSPO Now
 ---
 
-This site aggregates additional results and metadata accompanying the benchmark project.
-
-All code is available on [GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark).
-
-Note that this page belongs to the most recent version of the project. A previous version from 2024 is [available here](https://projects.lukasburk.de/survival_benchmark_2024).
+This site aggregates additional results and metadata accompanying the benchmark project.  
+All code is available on [GitHub](https://github.com/slds-lmu/paper_2023_survival_benchmark).  
+Note that this page belongs to the most recent version of the project.  
+A previous version from 2024 is [available here](https://projects.lukasburk.de/survival_benchmark_2024).
 
 ## Downloading Results
 
@@ -15,7 +41,8 @@ Results can be downloaded from [the web](https://projects.lukasburk.de/survival_
 
 Files are suffixed with the associated tuning measure unless already combined, where `harrell_c,isbs` indicates results for learners which are not at all or not explicitly tuned during the experiment but rather use an internal mechanism, i.e. Kaplan-Meier or CoxBoost (see learner table on [Metadata](metadata.qmd))
 
-- `scores` are individual scores per outer resampling iteration
+- `scores` are outer evaluation scores, i.e., one score per `task` x `learner` x `tuning_measure` x `iter` (outer resampling iteration)
+- `aggr` are aggregates scores, i.e., one score per `task` and `learner` and `tuning_measure`
 - `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
 See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.
@@ -24,10 +51,13 @@ See also [the table of measures](metadata.qmd) for a list of measures and their 
 | File | Description |
 |------|-------------|
 | [`scores.rds`][scores_rds]            | Scores for all learners, tasks and measures for individual outer resampling iterations |
-| [`archives.zip`][archive_zip]         | ZIP file of all tuning archives produced during the benchmark (over 19000) in CSV files for each combination of learner, task, tuning measure, and resampling iteration |
+| [`aggr.rds`][aggr_rds]               | Aggregated scores (averaged across outer resampling folds) per task and learner |
+| [`archives.rds`][archives_rds]       | All tuning archives produced during the benchmark as an RDS file |
+| [`archives.zip`][archives_zip]       | ZIP file of all tuning archives (over 19000) in CSV files for each combination of learner, task, tuning measure, and resampling iteration |
 
 : Index of most relevant result files for download {#tbl-files-results tbl-colwidths="[30,70]"}
 
-[scores_csv]: https://projects.lukasburk.de/survival_benchmark/results/scores.csv
 [scores_rds]: https://projects.lukasburk.de/survival_benchmark/results/scores.rds
-[archive_zip]: https://projects.lukasburk.de/survival_benchmark/results/archives.zip
+[aggr_rds]: https://projects.lukasburk.de/survival_benchmark/results/aggr.rds
+[archives_rds]: https://projects.lukasburk.de/survival_benchmark/results/archives.rds
+[archives_zip]: https://projects.lukasburk.de/survival_benchmark/results/archives.zip

@@ -1,0 +1,9 @@
+id,mlr_id,type,label,erv,minimize
+harrell_c,surv.cindex,Discrimination,Harrell's C,FALSE,FALSE
+uno_c,surv.cindex,Discrimination,Uno's C,FALSE,FALSE
+isll,surv.isll,Scoring Rule,Integrated Survival Log-Likelihood (ISLL),FALSE,TRUE
+isll_erv,surv.isll,Scoring Rule,Integrated Survival Log-Likelihood (ISLL) [ERV],TRUE,FALSE
+isbs,surv.brier,Scoring Rule,Integrated Survival Brier Score (ISBS),FALSE,TRUE
+isbs_erv,surv.brier,Scoring Rule,Integrated Survival Brier Score (ISBS) [ERV],TRUE,FALSE
+dcalib,surv.dcalib,Calibration,D-Calibration,FALSE,TRUE
+alpha_calib,surv.calib_alpha,Calibration,Van Houwelingen's Alpha,FALSE,FALSE

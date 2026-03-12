@@ -121,6 +121,9 @@ save_tasktab = function(tasks, path = here::here("tables", "tasktab.csv")) {
   }))
   tasktab[, dimrank := data.table::frank(dim)]
   tasktab[, uniq_t_rank := data.table::frank(n_uniq_t)]
+  tasktab[, ph_violated := ifelse(zph_pval_processed < 0.05 | is.na(zph_pval_processed), 1, 0)]
+  tasktab[, noverp := n / p]
+  tasktab[, log_noverp := log(noverp)]
 
   write.csv(tasktab, path, row.names = FALSE)
   tasktab
@@ -223,9 +226,11 @@ assign_repeats = function(num_events) {
 #' @example
 #' save_lrntab()
 save_lrntab <- function(path = here::here("tables", "learners.csv")) {
-  require(mlr3proba)
-  requireNamespace("mlr3extralearners", quietly = TRUE)
+  # require(mlr3proba)
+  # requireNamespace("mlr3extralearners", quietly = TRUE)
   ensure_directory(path)
+  # source(here::here("R/extralearners-gam.R"))
+  # source(here::here("R/extralearners-extralearners-ncv.R"))
 
   lrntab <- mlr3misc::rowwise_table(
     ~id,      ~base_id,      ~base_lrn,            ~params, ~encode, ~internal_cv, ~grid,  ~scale, ~surv_pred,
@@ -233,8 +238,10 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
     "NEL"     , "nelson"     , "surv.nelson"       , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "AK"      , "akritas"    , "surv.akritas"      , 1 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
     "CPH"     , "cph"        , "surv.coxph"        , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
-    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    FALSE , TRUE  ,        FALSE, FALSE,   TRUE,
+    "GAM"     , "gam"        , "surv.gam.cox"      , 0 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "GLMN"    , "cv_glmnet"  , "surv.cv_glmnet"    , 1 ,    TRUE , TRUE  ,        FALSE, FALSE,   TRUE,
     "Pen"     , "penalized"  , "surv.penalized"    , 2 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
+    "NCV"     , "cv_ncv"     , "surv.cv_ncvsurv"   , 1 ,    TRUE , TRUE  ,        FALSE, FALSE,   TRUE,
     "AFT"     , "parametric" , "surv.parametric"   , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "Flex"    , "flexible"   , "surv.flexible"     , 1 ,    FALSE , FALSE ,        TRUE , FALSE,   TRUE,
     "RFSRC"   , "rfsrc"      , "surv.rfsrc"        , 5 ,    FALSE , FALSE ,        FALSE, FALSE,   TRUE,
@@ -249,10 +256,12 @@ save_lrntab <- function(path = here::here("tables", "learners.csv")) {
     "XGBAFT"  , "xgb_aft"    , "surv.xgboost.aft"  , 7 ,    TRUE  , FALSE ,        FALSE, FALSE,   FALSE,
     "SSVM"    , "svm"        , "surv.svm"          , 4 ,    TRUE  , FALSE ,        FALSE, TRUE,    FALSE
   )
-
-  lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
-    "threads" %in% unlist(lrn(x)$param_set$tags)
-    }, logical(1))
+  
+# Ignore threading after all, intropduces too much complexity
+  lrntab$has_threads = FALSE
+  # lrntab$has_threads = vapply(lrntab$base_lrn, \(x) {
+  #   "threads" %in% unlist(lrn(x)$param_set$tags)
+  #   }, logical(1))
 
   if (fs::file_exists(path)) {
     cli::cli_alert_warning("Overwriting {.val {fs::path_rel(path)}}")
@@ -280,6 +289,9 @@ load_tasktab = function(path = here::here("tables", "tasktab.csv")) {
 #'
 #' Define once, use everywhere.
 get_measures_eval = function() {
+  require(mlr3)
+  require(mlr3proba)
+  
   measures_eval = list(
     msr("surv.cindex",      id = "harrell_c",                      label = "Harrell's C"),
     msr("surv.cindex",      id = "uno_c",      weight_meth = "G2", label = "Uno's C"),
@@ -333,6 +345,28 @@ measures_tbl = function() {
   msr_tbl[, minimize := fifelse(erv, FALSE, minimize)]
 
   msr_tbl[]
+}
+
+#' Save lookup table of measures as flat CSV for later plotting etc.
+#' Loading measures_tbl() directly caused issues in other environments
+#' due to changes in mlr3proba, but the table is most often used only for ids and labels
+save_msr_table = function(path = here::here("tables", "measures.csv")) {
+  ensure_directory(path)
+  msr_tab = measures_tbl()
+  # Remove actual R6 object to make it CSVable
+  msr_tab[, measure := NULL]
+
+  if (fs::file_exists(path)) {
+    cli::cli_alert_warning("Overwriting {.val {fs::path_rel(path)}}")
+  }
+
+  readr::write_csv(x = msr_tab, file = path, append = FALSE)
+}
+
+load_msr_table = function(path = here::here("tables", "measures.csv")) {
+  ensure_directory(path)
+  cli::cli_alert_info("Loading {.file {path}}")
+  data.table::fread(path)
 }
 
 #' Collect tuning archives saved separately to disk via callback
@@ -637,7 +671,7 @@ add_learner_groups = function(x) {
       learner_group = dplyr::case_match(
         learner_id,
         c("KM", "NEL", "AK") ~ "Baseline",
-        c("CPH", "GLMN", "Pen", "AFT", "Flex", "SSVM") ~ "Classical",
+        c("CPH", "GLMN", "GAM", "Pen", "NCV", "AFT", "Flex", "SSVM") ~ "Classical",
         c("RRT", "RFSRC", "RAN", "CIF", "ORSF") ~ "Trees",
         c("MBSTCox", "MBSTAFT", "XGBCox", "XGBAFT", "CoxB") ~ "Boosting",
         .ptype = factor(levels = c("Baseline", "Classical", "Trees", "Boosting"))
@@ -980,6 +1014,15 @@ convert_tasks_arff = function(data_dir = here::here("datasets"), overwrite = TRU
   )
 
   invisible(all(res))
+}
+
+# backport from mlr3extralearners version newer than we can use here
+# needed for backported learners (surv.cv_ncvsurv)
+ordered_features = function(task, learner) {
+  require(checkmate) # for %??%
+  # the data_prototype is not present when calling the workhorse function, as it can blow up memory usage
+  cols = names(learner$state$data_prototype) %??% learner$state$feature_names
+  task$data(cols = intersect(cols, task$feature_names))
 }
 
 .canary = "Hello! This variable is here to indicate that the helper functions have been loaded."

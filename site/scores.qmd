@@ -1,0 +1,43 @@
+---
+format:
+  html:
+    page-layout: full
+    tbl-cap-location: top
+editor: source
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source(here::here("common.R"))
+```
+
+Scores from the outer evaluation folds per dataset and model, see `scores.[csv|rds]`.
+
+## Score Plots
+
+::: {.panel-tabset}
+
+### Harrell's C
+
+```{r scores-boxplot-harrell-c}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
+  print(plot_scores(scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE))
+}
+```
+
+### ISBS
+
+```{r scores-boxplot-isbs}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  print(plot_scores(scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE))
+}
+```
+
+:::

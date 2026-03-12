@@ -1,0 +1,57 @@
+---
+format:
+  html:
+    page-layout: full
+    tbl-cap-location: top
+editor: source
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source(here::here("common.R"))
+```
+
+## Errors and Elapsed Time Limits
+
+The following table lists the number of errors in the outer resampling iterations per tuning measure (`tune_measure`).
+These errors were caused by the learner exceeding the time limit or exceeding memory limitations.
+We attempted to resubmit failing computational jobs with increased memory limits, yet in some cases the jobs still failed, at which point we considered the learner/task combination to be computationally infeasible.
+
+We note:
+
+- the affected learners were particularly slow or memory intensive for large tasks with many observations or a large number of unique time points, where the latter in particular appeared even more relevant than the number of observations.
+- the tasks below are most often those with many observations and unique time points (hdfail, child, check_times).
+
+We therefore consider the errors to be a result of the learners' complexity and the tasks' size, given reasonable computational constraints.
+
+```{r error-tables-aggr}
+err_tbl <- scores |>
+  dplyr::group_by(learner_id, task_id, tune_measure) |>
+  dplyr::summarise(
+    affected_iterations = sum(errors_cnt > 0),
+    total_iterations = dplyr::n(),
+    .groups = "drop"
+  ) |>
+  dplyr::filter(affected_iterations > 0) |>
+  dplyr::mutate(
+    error_rate = round(100 * affected_iterations / total_iterations, 1),
+    errors_fmt = glue::glue("{affected_iterations} / {total_iterations} ({error_rate}%)")
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = c("learner_id", "task_id"),
+    names_from = "tune_measure",
+    values_from = "errors_fmt",
+    values_fill = "\u2014"
+  )
+
+err_tbl |>
+  dplyr::select(-learner_id) |>
+  kableExtra::kbl(
+    col.names = c("Dataset", "Harrell's C", "ISBS"),
+    caption = "Number of evaluations with errors of the total outer resampling iterations by tuning measure. (\u2014) indicates there were no errors during evaluation, but possible during tuning."
+  ) |>
+  kableExtra::kable_styling() |>
+  kableExtra::pack_rows(index = table(err_tbl$learner_id))
+
+```
