@@ -1,0 +1,59 @@
+cff-version: 1.2.0
+title: "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data"
+message: "If you use this software, please cite it as below."
+type: software
+license: GPL-3.0
+repository-code: "https://github.com/slds-lmu/paper_2023_survival_benchmark"
+keywords:
+  - survival analysis
+  - benchmarking
+  - machine learning
+  - mlr3
+  - R
+authors:
+  - family-names: Burk
+    given-names: Lukas
+    orcid: "https://orcid.org/0000-0001-7528-3795"
+    affiliation: "Leibniz Institute for Prevention Research and Epidemiology - BIPS"
+    email: burk@leibniz-bips.de
+  - family-names: Zobolas
+    given-names: John
+    orcid: "https://orcid.org/0000-0002-3609-8674"
+    affiliation: "Institute for Cancer Research, Oslo University Hospital"
+  - family-names: Bischl
+    given-names: Bernd
+    orcid: "https://orcid.org/0000-0001-6002-6980"
+    affiliation: "Department of Statistics, LMU Munich"
+  - family-names: Bender
+    given-names: Andreas
+    orcid: "https://orcid.org/0000-0001-5628-8611"
+    affiliation: "Department of Statistics, LMU Munich"
+  - family-names: Wright
+    given-names: "Marvin N."
+    orcid: "https://orcid.org/0000-0002-8542-6291"
+    affiliation: "Leibniz Institute for Prevention Research and Epidemiology - BIPS"
+  - family-names: Sonabend
+    given-names: Raphael
+    orcid: "https://orcid.org/0000-0001-9225-4654"
+    affiliation: "OSPO Now"
+preferred-citation:
+  type: article
+  title: "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data"
+  authors:
+    - family-names: Burk
+      given-names: Lukas
+    - family-names: Zobolas
+      given-names: John
+    - family-names: Bischl
+      given-names: Bernd
+    - family-names: Bender
+      given-names: Andreas
+    - family-names: Wright
+      given-names: "Marvin N."
+    - family-names: Sonabend
+      given-names: Raphael
+  year: 2026
+  url: "https://arxiv.org/abs/2406.04098"
+  identifiers:
+    - type: other
+      value: "arXiv:2406.04098"
