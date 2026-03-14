@@ -47,6 +47,7 @@ website:
 
 format:
   html:
+    include-in-header: _analytics.html
     code-fold: true
     toc: true
     toc-depth: 4
