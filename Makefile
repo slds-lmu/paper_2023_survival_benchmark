@@ -1,17 +1,17 @@
 help:
 	@echo "Available targets:"
-	@echo "  results-paper  - Fun results-paper-plots.R for figures & tables used in publication"
+	@echo "  results-paper  - Run produce-paper-plots.R for figures & tables used in publication"
 	@echo "  pl             - Run all Plackett-Luce analysis scripts"
-	@echo "  results        - Run process-results.R to start the (long and memory intensive!) task of aggregating batchtools result objects to results/production/"
+	@echo "  results        - Run scripts/process-results.R to start the (long and memory intensive!) task of aggregating batchtools result objects to results/production/"
 	@echo "  site           - Render results ./site/ with quarto"
-	@echo "  predictions    - Run store-predictions.R to store the outer resampling learner prediction objects alongside other results"
+	@echo "  predictions    - Run scripts/store-predictions.R to store the outer resampling learner prediction objects alongside other results"
 	@echo "-------------------------------------------------------------------------"
 	@echo "  upload-site    - Private use: Upload result site to S3 bucket"
 	@echo "  upload-results - Private use: Upload result data to S3 bucket"
 
 .PHONY: results-paper
 results-paper:
-	Rscript produce-paper-plots.R
+	Rscript scripts/produce-paper-plots.R
 
 .PHONY: pl
 pl:
@@ -20,11 +20,11 @@ pl:
 
 .PHONY: results
 results:
-	Rscript process-results.R
+	Rscript scripts/process-results.R
 
 .PHONY: predictions
 predictions:
-	Rscript store-predictions.R
+	Rscript scripts/store-predictions.R
 
 .PHONY: site
 site:

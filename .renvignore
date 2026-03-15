@@ -9,6 +9,6 @@ attic/_dependencies.R
 attic/*.R
 analysis.qmd
 tmp
-produce-paper-plots.R
+scripts/produce-paper-plots.R
 qmd
 overleaf

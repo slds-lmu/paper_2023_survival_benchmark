@@ -792,7 +792,7 @@ rescale_aggr_scores = function(aggr_scores, msr_tbl) {
 #' to
 #' learner/task/tuning measure
 #' The result also serves the basis for the bma object used with mlr3benchmark
-#' @param scores A data.table as produced by `bmr$score()`, including a `tune_measure` column (see `process-results.R`)
+#' @param scores A data.table as produced by `bmr$score()`, including a `tune_measure` column (see `scripts/process-results.R`)
 #' @param msr_tbl Table of measures used to identify relevant columns, see `measures_tbl()`
 #'
 scores_to_aggr = function(scores, msr_tbl) {
