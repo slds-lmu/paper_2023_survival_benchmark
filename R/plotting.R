@@ -8,6 +8,8 @@ names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 #' @param xdf A `data.table` as contained in a `BenchmarkAggr`'s `$data` slot.
 #' @param eval_measure E.g. `"harrell_c"`.
 #' @param tuning_measure E.g. `"harrell_c"`.
+#' @param learners_exclude Optional character vector of learner IDs to exclude.
+#' @param tasks_exclude Optional character vector of task IDs to exclude.
 #'
 #' @return
 #'
@@ -68,6 +70,7 @@ plot_aggr_ph = function(
 #'   `"cd_bd"` for Critical Differences with baseline comparison
 #' @param measure_id,tuning_measure_id (`character(1)`) Measure ids as per `measures_tbl()`.
 #' @param flip (`FALSE`) If `TRUE`, applies `coord_flip()`.
+#' @param exclude_learners (`character`) Learner IDs to exclude from the plot.
 #' @param dodge (`TRUE`) If `TRUE`, applies `scale_x_discrete(guide = guide_axis(n.dodge = 2))`.
 #' @param ... Additional arguments passed to `autoplot()`.
 #'

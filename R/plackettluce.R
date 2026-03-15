@@ -78,6 +78,9 @@ build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tas
 #'   Names are used as subgroup labels.
 #' @param measure Character, measure ID for labeling.
 #' @param plot_name Character, base name for the saved plot file.
+#' @param plot_path Character, directory path for saving the plot.
+#' @param msr_tbl Optional measures table (from `measures_tbl()`), used to look up `measure_label`.
+#' @param measure_label Optional character, label for the measure. If `NULL`, looked up from `msr_tbl`.
 #' @param reference Character, learner to re-reference log-worth to (default "CPH").
 #' @param width,height Plot dimensions.
 #' @return Invisibly, a list with pl_fits (named list of PL model fits) and rank_comparison.
@@ -275,6 +278,17 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, ms
 #' @param npseudo Number of pseudo-rankings used in PL estimation within nodes.
 #' @param bonferroni Logical; if TRUE, apply Bonferroni correction for the
 #'   number of covariates tested (mob-level correction).
+#' @param scores_all A `data.table` of scores (with `tune_measure` column).
+#' @param measure Character, measure ID used to filter scores and label output.
+#' @param minimize Logical; if TRUE, lower scores are better (affects ranking direction).
+#' @param learners Character vector of learner IDs to include.
+#' @param tasktab A `data.table` of task metadata (e.g., with `ph_violated`, `censprop` columns).
+#' @param plot_name Character, base name for the saved plot file.
+#' @param plot_path Character, directory path for saving the plot.
+#' @param covariates Character vector of covariate names for the tree model.
+#' @param msr_tbl Optional measures table (from `measures_tbl()`), used for labeling.
+#' @param width,height Plot dimensions.
+#' @param trace Logical; if TRUE, print tree fitting trace.
 run_pl_tree <- function(
   scores_all,
   measure,

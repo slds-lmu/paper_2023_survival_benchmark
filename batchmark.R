@@ -44,7 +44,10 @@ reg = makeExperimentRegistry(
 )
 
 # Tasks ---------------------------------------------------------------------------------------
-source(here::here("tasks.R"))
+task_result = create_tasks_and_resamplings(conf)
+tasks = task_result$tasks
+resamplings = task_result$resamplings
+
 source(here::here("R/learner-wrappers.R"))
 
 # Set tuning measures -----------------------------------------------------
