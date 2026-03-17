@@ -461,36 +461,32 @@ save_scores_plot = function(
   )
 }
 
-future::plan("multisession", workers = parallelly::availableCores() - 1)
-
 cli::cli_h3("Discrimination measures")
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
   for (ptype in c("box", "violin")) {
     for (scores_color_var in c("learner_group", "learner_hspace")) {
-      future::future({
-        p = plot_scores(
-          scores[!(learner_id %in% c("KM", "NEL"))],
-          type = ptype,
-          eval_measure_id = measure_id,
-          tuning_measure_id = "harrell_c",
-          dodge = FALSE,
-          flip = TRUE,
-          ncol = 5,
-          color_var = scores_color_var,
-          msr_tbl = msr_tbl,
-          tasktab = tasktab
-        )
-        save_scores_plot(
-          p,
-          type = ptype,
-          eval_measure_id = measure_id,
-          tuning_measure_id = "harrell_c",
-          grouping = scores_color_var,
-          width = 10,
-          height = 17,
-          formats = "pdf"
-        )
-      })
+      p = plot_scores(
+        scores[!(learner_id %in% c("KM", "NEL"))],
+        type = ptype,
+        eval_measure_id = measure_id,
+        tuning_measure_id = "harrell_c",
+        dodge = FALSE,
+        flip = TRUE,
+        ncol = 5,
+        color_var = scores_color_var,
+        msr_tbl = msr_tbl,
+        tasktab = tasktab
+      )
+      save_scores_plot(
+        p,
+        type = ptype,
+        eval_measure_id = measure_id,
+        tuning_measure_id = "harrell_c",
+        grouping = scores_color_var,
+        width = 10,
+        height = 17,
+        formats = "pdf"
+      )
     }
   }
 }
@@ -499,30 +495,28 @@ cli::cli_h3("Scoring rules")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   for (ptype in c("box", "violin")) {
     for (scores_color_var in c("learner_group", "learner_hspace")) {
-      future::future({
-        p = plot_scores(
-          scores,
-          type = ptype,
-          eval_measure_id = measure_id,
-          tuning_measure_id = "isbs",
-          dodge = FALSE,
-          flip = TRUE,
-          ncol = 5,
-          color_var = scores_color_var,
-          msr_tbl = msr_tbl,
-          tasktab = tasktab
-        )
-        save_scores_plot(
-          p,
-          type = ptype,
-          eval_measure_id = measure_id,
-          tuning_measure_id = "isbs",
-          grouping = scores_color_var,
-          width = 10,
-          height = 16,
-          formats = "pdf"
-        )
-      })
+      p = plot_scores(
+        scores,
+        type = ptype,
+        eval_measure_id = measure_id,
+        tuning_measure_id = "isbs",
+        dodge = FALSE,
+        flip = TRUE,
+        ncol = 5,
+        color_var = scores_color_var,
+        msr_tbl = msr_tbl,
+        tasktab = tasktab
+      )
+      save_scores_plot(
+        p,
+        type = ptype,
+        eval_measure_id = measure_id,
+        tuning_measure_id = "isbs",
+        grouping = scores_color_var,
+        width = 10,
+        height = 16,
+        formats = "pdf"
+      )
     }
   }
 }
