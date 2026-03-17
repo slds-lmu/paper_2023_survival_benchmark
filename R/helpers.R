@@ -761,6 +761,37 @@ add_learner_groups = function(x) {
     )
 }
 
+add_learner_hspace = function(x) {
+  if (checkmate::test_class(x, classes = "BenchmarkAggr")) {
+    x = data.table::copy(x$data)
+  } else {
+    checkmate::assert_data_table(x)
+  }
+
+  x |>
+    dplyr::mutate(
+      learner_hspace = dplyr::case_match(
+        learner_id,
+        c("KM", "NEL", "AK") ~ "Baseline",
+        "GAM" ~ "Non-linear",
+        c(
+          "RRT",
+          "RFSRC",
+          "RAN",
+          "CIF",
+          "ORSF",
+          "XGBCox",
+          "XGBAFT",
+          "MBSTAFT",
+          "MBSTCox",
+          "SSVM"
+        ) ~ "Non-linear + interactions",
+        .default = "Linear",
+        .ptype = factor(levels = c("Baseline", "Linear", "Non-linear", "Non-linear + interactions"))
+      )
+    )
+}
+
 tablify = function(x, caption = NULL, ...) {
   x |>
     kableExtra::kbl(caption = caption, booktabs = TRUE, ...) |>

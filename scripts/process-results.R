@@ -156,8 +156,10 @@ cli::cli_h2("Combining results")
 
 # Combine by tuning measure first
 for (tune_measure in tune_measures) {
-  if (fs::file_exists(result_path("scores_combined", suffix = tune_measure)) &&
-      fs::file_exists(result_path("aggr", suffix = tune_measure))) {
+  if (
+    fs::file_exists(result_path("scores_combined", suffix = tune_measure)) &&
+      fs::file_exists(result_path("aggr", suffix = tune_measure))
+  ) {
     cli::cli_alert_info("Skipping combining for {.val {tune_measure}}: results already exist")
     next
   }
@@ -206,7 +208,9 @@ if (!fs::file_exists(result_path("aggr"))) {
     purrr::keep(fs::file_exists) |>
     lapply(readRDS) |>
     data.table::rbindlist(fill = TRUE) |>
-    add_learner_groups()
+    add_learner_groups() |>
+    add_learner_hspace()
+
   save_obj(aggr, "aggr")
 } else {
   cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('aggr'))}} already exists")
@@ -218,7 +222,9 @@ if (!fs::file_exists(result_path("scores"))) {
     purrr::keep(fs::file_exists) |>
     lapply(readRDS) |>
     data.table::rbindlist(fill = TRUE) |>
-    add_learner_groups()
+    add_learner_groups() |>
+    add_learner_hspace()
+
   save_obj(scores, "scores")
 } else {
   cli::cli_alert_info("Skipping: {.file {fs::path_rel(result_path('scores'))}} already exists")

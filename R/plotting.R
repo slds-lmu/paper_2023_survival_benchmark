@@ -1,8 +1,17 @@
 # Color palette for learner groups
-palette_groups = RColorBrewer::brewer.pal(4, "Dark2")
-names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
+# palette_groups = RColorBrewer::brewer.pal(4, "Dark2")
+# names(palette_groups) = c("Baseline", "Classical", "Trees", "Boosting")
 
+# palette_hspace = RColorBrewer::brewer.pal(4, "Dark2")
+# names(palette_hspace) = c("Featureless", "Linear", "Non-linear", "Non-linear + interactions")
 
+# palette_groups = c(palette_groups, palette_hspace)
+
+palette_groups = RColorBrewer::brewer.pal(7, "Dark2")
+names(palette_groups) = union(
+  c("Baseline", "Classical", "Trees", "Boosting"),
+  c("Baseline", "Linear", "Non-linear", "Non-linear + interactions")
+)
 #' Boxplot of scores separated by violation of PH assumption
 #'
 #' @param xdf A `data.table` as contained in a `BenchmarkAggr`'s `$data` slot.
@@ -244,7 +253,7 @@ plot_aggr_scores = function(
   p = p +
     theme(
       plot.background = element_rect(fill = "transparent", color = NA),
-      legend.position = "bottom",
+      legend.position = "top",
       plot.title.position = "plot"
     )
 
@@ -259,12 +268,16 @@ plot_scores = function(
   dodge = FALSE,
   flip = TRUE,
   ncol = 8,
-  type = c("box", "violin")
+  type = c("box", "violin"),
+  color_var = c("learner_group", "learner_hspace")
 ) {
+  msr_tbl = load_msr_table()
+
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
   checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
   type = match.arg(type)
+  color_var = match.arg(color_var)
 
   if (msr_tbl[id == eval_measure_id, minimize]) {
     direction_label = "lower is better"
@@ -272,15 +285,27 @@ plot_scores = function(
     direction_label = "higher is better"
   }
 
+  # append dimensionality to task id
+  tasktab = load_tasktab()
+  scores = copy(scores)[tasktab[, .(task_id, n, p, ph_violated)], on = "task_id"]
+  scores[, ph_violated := fifelse(ph_violated == 1, "PH: violated", "PH: not violated")]
+  scores[,
+    task_id_label := sprintf("%s\n(n=%i, p=%i)\n%s", task_id, n, p, ph_violated)
+  ]
+
   p = scores |>
     dplyr::filter(grepl(pattern = .env$tuning_measure_id, x = .data$tune_measure)) |>
-    ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = learner_group, fill = learner_group)) +
-    facet_wrap(vars(task_id), scales = "free_x", ncol = ncol) +
-    scale_color_manual(values = palette_groups, aesthetics = c("color", "fill")) +
+    ggplot(aes(y = learner_id, x = .data[[eval_measure_id]], color = .data[[color_var]], fill = .data[[color_var]])) +
+    facet_wrap(vars(task_id_label), scales = "free_x", ncol = ncol) +
+    scale_color_manual(
+      values = palette_groups,
+      aesthetics = c("color", "fill")
+    ) +
     labs(
       title = NULL,
-      subtitle = glue::glue("Scores per dataset across outer resampling iterations ({direction_label})"),
-      x = msr_tbl[id == eval_measure_id, label],
+      subtitle = NULL,
+      # x = msr_tbl[id == eval_measure_id, label],
+      x = glue::glue("{msr_tbl[id == eval_measure_id, label]} ({direction_label})"),
       y = NULL,
       color = NULL,
       fill = NULL,
@@ -292,13 +317,13 @@ plot_scores = function(
       # base_family = "Fira Sans"
     ) +
     theme(
-      legend.position = "bottom",
+      legend.position = "top",
       panel.background = element_rect(fill = "transparent", color = NA),
       panel.grid.major.x = element_blank(),
       plot.title.position = "plot",
       # axis.text.x = element_text(size = rel(.7)),
       axis.text.y = element_text(size = rel(.7)),
-      strip.text = element_text(size = rel(1.1))
+      strip.text = element_text(size = rel(0.8))
     )
 
   if (type == "box") {
@@ -379,7 +404,9 @@ save_plot = function(p, name, plot_path, height = 6, width = 9, formats = c("png
     print(p)
   }
 
-  if (is.null(plot_path)) return(invisible(p))
+  if (is.null(plot_path)) {
+    return(invisible(p))
+  }
 
   stopifnot(ensure_directory(plot_path))
 

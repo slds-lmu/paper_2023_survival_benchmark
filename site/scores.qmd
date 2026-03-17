@@ -20,23 +20,76 @@ Scores from the outer evaluation folds per dataset and model, see `scores.[csv|r
 
 ### Harrell's C
 
-```{r scores-boxplot-harrell-c}
+```{r scores-boxplot-harrell-c-group}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Discrimination", id]) {
+  print(plot_scores(
+    scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE,
+    color_var = "learner_group"
+  ))
+}
+```
+
+```{r scores-boxplot-harrell-c-hspace}
 #| fig-width: 11
 #| fig-height: 11
 
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
-  print(plot_scores(scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "harrell_c", dodge = FALSE, flip = TRUE))
+  print(plot_scores(
+    scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "harrell_c",
+    dodge = FALSE,
+    flip = TRUE,
+    ncol = 5,
+    color_var = "learner_hspace"
+  ))
 }
 ```
 
 ### ISBS
 
-```{r scores-boxplot-isbs}
+```{r scores-boxplot-isbs-group}
 #| fig-width: 11
 #| fig-height: 11
 
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  print(plot_scores(scores, type = "box", eval_measure_id = measure_id, tuning_measure_id = "isbs", dodge = FALSE, flip = TRUE))
+  print(plot_scores(
+    scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE,
+    ncol = 5,
+    color_var = "learner_group"
+  ))
+}
+```
+
+```{r scores-boxplot-isbs-hspace}
+#| fig-width: 11
+#| fig-height: 11
+
+for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
+  print(plot_scores(
+    scores,
+    type = "box",
+    eval_measure_id = measure_id,
+    tuning_measure_id = "isbs",
+    dodge = FALSE,
+    flip = TRUE,
+    ncol = 5,
+    color_var = "learner_hspace"
+  ))
 }
 ```
 
