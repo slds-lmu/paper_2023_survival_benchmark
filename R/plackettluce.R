@@ -38,7 +38,7 @@ pl_prepare_rankings <- function(scores_all, measure, minimize, exclude = c("KM",
 #' @param measure Character, measure ID.
 #' @param minimize Logical.
 #' @param learner_subset Character vector of learner IDs to include.
-#' @param tasktab data.table of task metadata (must have noverp, n, p, ph_violated, etc.).
+#' @param tasktab data.table of task metadata (must have noverp, n, p, cph_misspecified, etc.).
 #' @return A list with rankings, model_data (data.frame for pltree), learner_ids.
 build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tasktab) {
   dt <- scores_avg[learner_id %in% learner_subset]
@@ -59,9 +59,9 @@ build_pltree_data <- function(scores_avg, measure, minimize, learner_subset, tas
   # Include all tasktab columns as potential covariates (except task_id)
   tt_cols <- setdiff(names(tt), "task_id")
   model_data <- as.data.frame(tt[, tt_cols, with = FALSE])
-  # Ensure ph_violated is a factor if present
-  if ("ph_violated" %in% names(model_data)) {
-    model_data$ph_violated <- factor(model_data$ph_violated)
+  # Ensure cph_misspecified is a factor if present
+  if ("cph_misspecified" %in% names(model_data)) {
+    model_data$cph_misspecified <- factor(model_data$cph_misspecified)
   }
   model_data$G <- G
 
@@ -282,7 +282,7 @@ run_pl_ranking <- function(scores_all, measure, minimize, exclude, plot_path, ms
 #' @param measure Character, measure ID used to filter scores and label output.
 #' @param minimize Logical; if TRUE, lower scores are better (affects ranking direction).
 #' @param learners Character vector of learner IDs to include.
-#' @param tasktab A `data.table` of task metadata (e.g., with `ph_violated`, `censprop` columns).
+#' @param tasktab A `data.table` of task metadata (e.g., with `cph_misspecified`, `censprop` columns).
 #' @param plot_name Character, base name for the saved plot file.
 #' @param plot_path Character, directory path for saving the plot.
 #' @param covariates Character vector of covariate names for the tree model.
@@ -297,7 +297,7 @@ run_pl_tree <- function(
   tasktab,
   plot_name,
   plot_path,
-  covariates = c("log_noverp", "ph_violated", "censprop"),
+  covariates = c("log_noverp", "cph_misspecified", "censprop"),
   alpha = 0.10,
   minsize = 5,
   maxdepth = 4,
@@ -369,7 +369,7 @@ run_pl_tree <- function(
   invisible(list(tree = tree, p = p))
 }
 
-#' PH subgroup analysis
+#' PH subgroup analysis (CPH misspecification rather)
 run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab, plot_path, msr_tbl = NULL) {
   cli::cli_h1("PH subgroup analysis: {measure}")
 
@@ -377,12 +377,12 @@ run_pl_ph_subgroups <- function(scores_all, measure, minimize, exclude, tasktab,
 
   # Build subgroups based on PH violation status
   tt <- tasktab[match(prep$task_ids, task_id)]
-  ph0_idx <- which(tt$ph_violated == 0)
-  ph1_idx <- which(tt$ph_violated == 1)
+  ph0_idx <- which(tt$cph_misspecified == 0)
+  ph1_idx <- which(tt$cph_misspecified == 1)
 
   pl_subgroup_analysis(
     rankings = prep$rankings,
-    subgroups = list("PH not violated" = ph0_idx, "PH violated" = ph1_idx),
+    subgroups = list("CPH not misspecified" = ph0_idx, "CPH misspecified" = ph1_idx),
     measure = measure,
     plot_name = paste0("pl_worth_ph_subgroups_", measure),
     plot_path = plot_path,

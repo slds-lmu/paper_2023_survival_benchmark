@@ -286,10 +286,10 @@ plot_scores = function(
   }
 
   # append dimensionality to task id
-  scores = copy(scores)[tasktab[, .(task_id, n, p, ph_violated)], on = "task_id"]
-  scores[, ph_violated := fifelse(ph_violated == 1, "PH: violated", "PH: not violated")]
+  scores = copy(scores)[tasktab[, .(task_id, n, p, cph_misspecified)], on = "task_id"]
+  scores[, cph_misspecified := fifelse(cph_misspecified == 1, "CPH misspecified: yes", "CPH misspecified: no")]
   scores[,
-    task_id_label := sprintf("%s\n(n=%i, p=%i)\n%s", task_id, n, p, ph_violated)
+    task_id_label := sprintf("%s\n(n=%i, p=%i)\n%s", task_id, n, p, cph_misspecified)
   ]
 
   p = scores |>

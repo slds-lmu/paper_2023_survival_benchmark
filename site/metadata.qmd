@@ -34,7 +34,7 @@ Integrated measures are always integrated up to the conventional 80% quantile.
 
 The following table gives a summary of the included tasks (datasets) in the benchmark.
 
-Violation of the proportional hazards (PH) assumption is derived from the p-value of the global significance test conducted with `cox.zph()` at the 5% level (i.e., `ph_violated = p.value > 0.05`).
+Violation of the proportional hazards (PH) assumption is derived from the p-value of the global significance test conducted with `cox.zph()` at the 5% level (i.e., `cph_misspecified = p.value > 0.05`).
 
 ```{r task-tab}
 tasktab |>
@@ -42,10 +42,10 @@ tasktab |>
   dplyr::mutate(
     censprop = round(100 * censprop, 1),
     repeats = assign_repeats(events),
-    ph_violated = factor(ifelse(ph_violated == 1, "Yes", "No")),
+    cph_misspecified = factor(ifelse(cph_misspecified == 1, "Yes", "No")),
     noverp = round(noverp, 2)
   ) |>
-  dplyr::select(task_id, repeats, n, p, noverp, events, censprop, n_uniq_t, ph_violated) |>
+  dplyr::select(task_id, repeats, n, p, noverp, events, censprop, n_uniq_t, cph_misspecified) |>
   setNames(c(
     "Dataset",
     "# CV Repeats",
