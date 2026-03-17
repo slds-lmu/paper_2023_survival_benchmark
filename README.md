@@ -44,7 +44,7 @@ The benchmark is conducted using R and the `mlr3` framework. The following files
 - `scripts/produce-paper-plots.R` contains code to reproduce the plots used in the paper and aims to be as self-contained as possible
   - The output path is `./results_paper` by default.
   
-Please note that due to the large file sizes of the `BenchmarkResult` (`bmr`) objects produced by the aggregation of the `batchtools` registry, this repository only contains the processed result files (`./results/registry_beartooth/`) required to produce the main results of the paper.
+Please note that due to the large file sizes of the `BenchmarkResult` (`bmr`) objects produced by the aggregation of the `batchtools` registry, this repository only contains the processed result files (`./results/production/`) required to produce the main results of the paper.
 
 
 ## Results
@@ -52,6 +52,7 @@ Please note that due to the large file sizes of the `BenchmarkResult` (`bmr`) ob
 Results are available online at [projects.lukasburk.de/survival_benchmark/][quarto_site]
 
 The site is generated from the [quarto][quarto] site in `./site/`.
+Make sure to `cd site` into the directory when running `quarto render`.
 
 ## Datasets
 
