@@ -59,6 +59,13 @@ pl_noverp_isbs <- run_pl_noverp_subgroups(scores_all, "isbs", minimize = TRUE, e
 lr_noverp_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, pl_noverp_hc)
 lr_noverp_isbs <- pl_lr_test(pl_full_isbs$pl_fit, pl_noverp_isbs)
 
+# -- Sample size subgroups (N < 1000 vs N >= 1000) ---------------------------
+pl_n_hc <- run_pl_samplesize_subgroups(scores_all, "harrell_c", minimize = FALSE, exclude, tasktab, plot_path, cutoff = 1000, msr_tbl = msr_tbl)
+pl_n_isbs <- run_pl_samplesize_subgroups(scores_all, "isbs", minimize = TRUE, exclude, tasktab, plot_path, cutoff = 1000, msr_tbl = msr_tbl)
+
+lr_n_hc <- pl_lr_test(pl_full_harrell_c$pl_fit, pl_n_hc)
+lr_n_isbs <- pl_lr_test(pl_full_isbs$pl_fit, pl_n_isbs)
+
 # -- LR test results -----------------------------------------
 
 cli::cli_h1("Likelihood ratio tests")
@@ -79,4 +86,10 @@ cli::cli_h2("Based on n/p ratio {.code n/p > median(n/p)}")
 cli::cli_inform(c(
   "LR test p-value using {.val harrell_c}: {format.pval(lr_noverp_hc$p_value)}",
   "LR test p-value {.val isbs}: {format.pval(lr_noverp_isbs$p_value)}"
+))
+
+cli::cli_h2("Based on sample size {.code N < 1000 vs N >= 1000}")
+cli::cli_inform(c(
+  "LR test p-value using {.val harrell_c}: {format.pval(lr_n_hc$p_value)}",
+  "LR test p-value {.val isbs}: {format.pval(lr_n_isbs$p_value)}"
 ))

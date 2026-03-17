@@ -430,6 +430,43 @@ run_pl_censprop_subgroups <- function(
   )
 }
 
+#' Sample size subgroup analysis (N < cutoff vs N >= cutoff)
+#' @param cutoff Numeric cutoff for splitting (default 1000).
+run_pl_samplesize_subgroups <- function(
+  scores_all,
+  measure,
+  minimize,
+  exclude,
+  tasktab,
+  plot_path,
+  cutoff = 1000,
+  msr_tbl = NULL
+) {
+  cli::cli_h1("Sample size subgroup analysis: {measure}")
+
+  prep <- pl_prepare_rankings(scores_all, measure, minimize, exclude)
+
+  tt <- tasktab[match(prep$task_ids, task_id)]
+  lo_idx <- which(tt$n < cutoff)
+  hi_idx <- which(tt$n >= cutoff)
+
+  cli::cli_alert_info("Cutoff: {cutoff} (small: {length(lo_idx)}, large: {length(hi_idx)})")
+
+  subgroups <- setNames(
+    list(lo_idx, hi_idx),
+    c(paste0("N < ", cutoff), paste0("N >= ", cutoff))
+  )
+
+  pl_subgroup_analysis(
+    rankings = prep$rankings,
+    subgroups = subgroups,
+    measure = measure,
+    plot_name = paste0("pl_worth_samplesize_subgroups_", measure),
+    plot_path = plot_path,
+    msr_tbl = msr_tbl
+  )
+}
+
 #' n/p ratio subgroup analysis
 #' @param cutoff Numeric cutoff for splitting. NULL (default) uses the median.
 run_pl_noverp_subgroups <- function(
