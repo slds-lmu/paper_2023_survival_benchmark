@@ -476,7 +476,9 @@ for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
           dodge = FALSE,
           flip = TRUE,
           ncol = 5,
-          color_var = scores_color_var
+          color_var = scores_color_var,
+          msr_tbl = msr_tbl,
+          tasktab = tasktab
         )
         save_scores_plot(
           p,
@@ -506,7 +508,9 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
           dodge = FALSE,
           flip = TRUE,
           ncol = 5,
-          color_var = scores_color_var
+          color_var = scores_color_var,
+          msr_tbl = msr_tbl,
+          tasktab = tasktab
         )
         save_scores_plot(
           p,

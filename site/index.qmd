@@ -42,21 +42,21 @@ Results can be downloaded from [the web](https://projects.lukasburk.de/survival_
 Files are suffixed with the associated tuning measure unless already combined, where `harrell_c,isbs` indicates results for learners which are not at all or not explicitly tuned during the experiment but rather use an internal mechanism, i.e. Kaplan-Meier or CoxBoost (see learner table on [Metadata](metadata.qmd))
 
 - `scores` are outer evaluation scores, i.e., one score per `task` x `learner` x `tuning_measure` x `iter` (outer resampling iteration)
-- `aggr` are aggregates scores, i.e., one score per `task` and `learner` and `tuning_measure`
+- `aggr` are aggregates scores, i.e., one score per `task` and `learner` and `tuning_measure`, derived from `scores`
 - `bma_` (`BenchmarkAggr`) are intermediate results and are only relevant if these `mlr3` objects are specifically required.
 
 See also [the table of measures](metadata.qmd) for a list of measures and their abbreviated and full names.
 
-
 | File | Description |
 |------|-------------|
 | [`scores.rds`][scores_rds]            | Scores for all learners, tasks and measures for individual outer resampling iterations |
-| [`aggr.rds`][aggr_rds]               | Aggregated scores (averaged across outer resampling folds) per task and learner |
+| [`scores.csv`][scores_csv]            | Same scores, but in CSV format for portability |
 | [`archives.rds`][archives_rds]       | All tuning archives produced during the benchmark as an RDS file |
 | [`archives.zip`][archives_zip]       | ZIP file of all tuning archives (over 19000) in CSV files for each combination of learner, task, tuning measure, and resampling iteration |
 
 : Index of most relevant result files for download {#tbl-files-results tbl-colwidths="[30,70]"}
 
+[scores_csv]: https://projects.lukasburk.de/survival_benchmark/results/scores.csv
 [scores_rds]: https://projects.lukasburk.de/survival_benchmark/results/scores.rds
 [aggr_rds]: https://projects.lukasburk.de/survival_benchmark/results/aggr.rds
 [archives_rds]: https://projects.lukasburk.de/survival_benchmark/results/archives.rds

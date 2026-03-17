@@ -10,87 +10,102 @@ editor_options:
 
 ```{r setup, include=FALSE}
 source(here::here("common.R"))
+
+scores[, learner_id := factor(learner_id, levels = rev(lrntab$id))]
 ```
 
 Scores from the outer evaluation folds per dataset and model, see `scores.[csv|rds]`.
 
 ## Score Plots
 
-::: {.panel-tabset}
-
-### Harrell's C
-
-```{r scores-boxplot-harrell-c-group}
+```{r scores-all-tasks, results='asis'}
 #| fig-width: 11
-#| fig-height: 11
+#| fig-height: 16
 
-for (measure_id in msr_tbl[type == "Discrimination", id]) {
-  print(plot_scores(
-    scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE,
-    color_var = "learner_group"
-  ))
+tune_eval_combos = list(
+  list(tune = "harrell_c", evals = msr_tbl[type == "Discrimination" & !erv, id]),
+  list(tune = "isbs", evals = msr_tbl[type == "Scoring Rule" & !erv, id])
+)
+
+cat("::: {.panel-tabset}\n\n")
+
+for (combo in tune_eval_combos) {
+  tune_id = combo$tune
+  tune_label = msr_tbl[id == tune_id, label]
+
+  for (measure_id in combo$evals) {
+    measure_label = msr_tbl[id == measure_id, label]
+
+    for (color_var in c("learner_group", "learner_hspace")) {
+      color_label = if (color_var == "learner_group") "Group" else "Hypothesis Space"
+      cat("###", paste0(measure_label, " / ", tune_label, " / ", color_label), "\n\n")
+
+      p = plot_scores(
+        scores,
+        type = "box",
+        eval_measure_id = measure_id,
+        tuning_measure_id = tune_id,
+        dodge = FALSE,
+        flip = TRUE,
+        ncol = 5,
+        color_var = color_var,
+        msr_tbl = msr_tbl,
+        tasktab = tasktab
+      )
+      print(p)
+      cat("\n\n")
+    }
+  }
 }
+
+cat(":::\n\n")
 ```
 
-```{r scores-boxplot-harrell-c-hspace}
-#| fig-width: 11
-#| fig-height: 11
+## Scores by Dataset
 
-for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
-  print(plot_scores(
-    scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "harrell_c",
-    dodge = FALSE,
-    flip = TRUE,
-    ncol = 5,
-    color_var = "learner_hspace"
-  ))
+```{r scores-by-task, results='asis'}
+#| fig-width: 7
+#| fig-height: 6
+
+task_ids = sort(unique(scores$task_id))
+
+tune_eval_combos = list(
+  list(tune = "harrell_c", evals = msr_tbl[type == "Discrimination" & !erv, id]),
+  list(tune = "isbs", evals = msr_tbl[type == "Scoring Rule" & !erv, id])
+)
+
+for (tid in task_ids) {
+  cat("\n\n### ", tid, "\n\n")
+  cat("::: {.panel-tabset}\n\n")
+
+  for (combo in tune_eval_combos) {
+    tune_id = combo$tune
+    tune_label = msr_tbl[id == tune_id, label]
+
+    for (measure_id in combo$evals) {
+      measure_label = msr_tbl[id == measure_id, label]
+
+      cat("####", paste0(measure_label, " (tuned: ", tune_label, ")"), "\n\n")
+
+      for (color_var in c("learner_group", "learner_hspace")) {
+        p = plot_scores(
+          scores[task_id == tid],
+          type = "box",
+          eval_measure_id = measure_id,
+          tuning_measure_id = tune_id,
+          dodge = FALSE,
+          flip = TRUE,
+          ncol = 1,
+          color_var = color_var,
+          msr_tbl = msr_tbl,
+          tasktab = tasktab
+        )
+        print(p)
+        cat("\n\n")
+      }
+    }
+  }
+
+  cat(":::\n\n")
 }
 ```
-
-### ISBS
-
-```{r scores-boxplot-isbs-group}
-#| fig-width: 11
-#| fig-height: 11
-
-for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  print(plot_scores(
-    scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE,
-    ncol = 5,
-    color_var = "learner_group"
-  ))
-}
-```
-
-```{r scores-boxplot-isbs-hspace}
-#| fig-width: 11
-#| fig-height: 11
-
-for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
-  print(plot_scores(
-    scores,
-    type = "box",
-    eval_measure_id = measure_id,
-    tuning_measure_id = "isbs",
-    dodge = FALSE,
-    flip = TRUE,
-    ncol = 5,
-    color_var = "learner_hspace"
-  ))
-}
-```
-
-:::

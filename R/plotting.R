@@ -269,10 +269,10 @@ plot_scores = function(
   flip = TRUE,
   ncol = 8,
   type = c("box", "violin"),
-  color_var = c("learner_group", "learner_hspace")
+  color_var = c("learner_group", "learner_hspace"),
+  msr_tbl = load_msr_table(),
+  tasktab = load_tasktab()
 ) {
-  msr_tbl = load_msr_table()
-
   checkmate::assert_data_table(scores)
   checkmate::assert_subset(eval_measure_id, choices = msr_tbl$id)
   checkmate::assert_subset(tuning_measure_id, choices = c("isbs", "harrell_c"))
@@ -286,7 +286,6 @@ plot_scores = function(
   }
 
   # append dimensionality to task id
-  tasktab = load_tasktab()
   scores = copy(scores)[tasktab[, .(task_id, n, p, ph_violated)], on = "task_id"]
   scores[, ph_violated := fifelse(ph_violated == 1, "PH: violated", "PH: not violated")]
   scores[,
