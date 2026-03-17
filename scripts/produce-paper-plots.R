@@ -22,6 +22,8 @@ library(data.table)
 # Load results --------------------------------------------------------------------------------
 plot_path = here::here("results_paper")
 lrntab = load_lrntab()
+tasktab = load_tasktab()
+
 # Helper table to collect all measures and their attributes
 msr_tbl = load_msr_table()
 # bma is the BenchmarkAggr for use with mlr3benchmark
@@ -461,10 +463,13 @@ save_scores_plot = function(
   )
 }
 
+# future::plan("multisession", workers = parallelly::availableCores() - 1)
+
 cli::cli_h3("Discrimination measures")
 for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
   for (ptype in c("box", "violin")) {
     for (scores_color_var in c("learner_group", "learner_hspace")) {
+      # future::future({
       p = plot_scores(
         scores[!(learner_id %in% c("KM", "NEL"))],
         type = ptype,
@@ -487,6 +492,7 @@ for (measure_id in msr_tbl[type == "Discrimination" & !erv, id]) {
         height = 17,
         formats = "pdf"
       )
+      # })
     }
   }
 }
@@ -495,6 +501,7 @@ cli::cli_h3("Scoring rules")
 for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
   for (ptype in c("box", "violin")) {
     for (scores_color_var in c("learner_group", "learner_hspace")) {
+      # future::future({
       p = plot_scores(
         scores,
         type = ptype,
@@ -517,6 +524,7 @@ for (measure_id in msr_tbl[type == "Scoring Rule" & !erv, id]) {
         height = 16,
         formats = "pdf"
       )
+      # })
     }
   }
 }
