@@ -108,3 +108,41 @@ res_all_isbs <- run_pl_tree(
   width = 12,
   height = 8
 )
+
+
+# All learners  with higher alpha with n instead of log(n/p) as per reviewer question
+res_all_hc <- run_pl_tree(
+  scores_all = scores_all,
+  measure = "harrell_c",
+  minimize = FALSE,
+  learners = all_learners(scores_all, "harrell_c"),
+  tasktab = tasktab,
+  plot_path = plot_path,
+  plot_name = "all-lenient-n",
+  covariates = c("n", "cph_misspecified", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 5,
+  alpha = .2,
+  msr_tbl = msr_tbl,
+  width = 12,
+  height = 8
+)
+
+res_all_isbs <- run_pl_tree(
+  scores_all = scores_all,
+  measure = "isbs",
+  minimize = TRUE,
+  learners = all_learners(scores_all, "isbs"),
+  tasktab = tasktab,
+  plot_path = plot_path,
+  plot_name = "all-lenient-n",
+  covariates = c("n", "cph_misspecified", "censprop"),
+  bonferroni = TRUE,
+  gamma = FALSE,
+  minsize = 5,
+  alpha = .2,
+  msr_tbl = msr_tbl,
+  width = 12,
+  height = 8
+)
