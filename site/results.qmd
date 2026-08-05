@@ -446,17 +446,15 @@ Using Cox (`CPH`) as baseline for comparison, these represent the primary result
 #### Harrell's C
 
 ```{r critical-difference-baseline-diff-harrell-c-harrell-c}
-#| fig-width: 10
+#| fig-width: 10.5
 #| fig-height: 6.25
-
-cd_ratio = 10 / 11
 
 plot_bma(
   bma = bma_harrell_c,
   type = "cd_bd",
   measure_id = "harrell_c",
   tuning_measure_id = "harrell_c",
-  ratio = cd_ratio,
+  ratio = 0.8,
   baseline = "CPH"
 )
 ```
@@ -470,7 +468,7 @@ plot_bma(
   type = "cd_bd",
   measure_id = "isbs",
   tuning_measure_id = "isbs",
-  ratio = cd_ratio,
+  ratio = 0.8,
   baseline = "CPH"
 )
 ```
