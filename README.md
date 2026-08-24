@@ -2,7 +2,7 @@
 
 [![](https://zenodo.org/badge/DOI/10.5281/zenodo.19075310.svg)](https://doi.org/10.5281/zenodo.19075309)
 
-> L. Burk, J. Zobolas, B. Bischl, A. Bender, M. N. Wright, and R. Sonabend, “A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data.” arXiv, 28. Feb, 2026. doi: [10.48550/arXiv.2406.04098](https://arxiv.org/abs/2406.04098).
+> L. Burk, J. Zobolas, B. Bischl, A. Bender, M. N. Wright, and R. Sonabend, "A Large-Scale Neutral Comparison Study of Survival Models on Low-Dimensional Data", Bioinformatics, vol. 42, no. 5, p. btag186, May 2026, doi: [10.1093/bioinformatics/btag186](https://doi.org/10.1093/bioinformatics/btag186).
 
 ## Setup
 
