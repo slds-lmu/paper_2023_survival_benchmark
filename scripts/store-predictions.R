@@ -15,14 +15,14 @@ data.table::setkey(tab, job.id)
 ensure_directory(fs::path(conf$result_path, "predictions"))
 
 future::plan("multisession")
-subgrid = unique(grid[, .(learner_id, measure)])
+subgrid = unique(tab[, .(learner_id, measure)])
 
 invisible(future.apply::future_mapply(
   FUN = \(learn, meas) {
     cli::cli_alert_info(
       "Saving predictions for {.val {learn}} tuned on {.val {meas}}"
     )
-    tmp = grid[learner_id == learn & measure == meas]
+    tmp = tab[learner_id == learn & measure == meas]
     tmp[,
       pred := lapply(job.id, \(i) {
         as_prediction(loadResult(i, reg = reg)$prediction$test)
